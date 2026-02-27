@@ -1,5 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
+import fs from 'node:fs';
+import path from 'node:path';
 import { buildCoursePayloadBySlug, generateCourseWebsite } from './services/generator';
 import { fetchAllCourses } from './services/notion';
 import { syncCourseLink, syncProjectMappings, validateSyncSecret } from './services/webhookSync';
@@ -9,6 +11,8 @@ app.use(express.json());
 
 const port = Number(process.env.PORT || 8787);
 const baseUrl = process.env.BASE_URL || `http://localhost:${port}`;
+const distDir = path.resolve(process.cwd(), 'dist');
+const hasFrontendBuild = fs.existsSync(path.join(distDir, 'index.html'));
 
 function readStringCandidate(value: unknown): string {
   if (typeof value === 'string') return value.trim();
@@ -192,6 +196,24 @@ app.all('/api/admin/sync-project-mappings', async (req, res) => {
   }
 });
 
+if (hasFrontendBuild) {
+  app.use(express.static(distDir, { index: false }));
+}
+
+app.get('*', (req, res) => {
+  if (req.path.startsWith('/api') || req.path === '/health') {
+    res.status(404).json({ error: 'Not found' });
+    return;
+  }
+
+  if (!hasFrontendBuild) {
+    res.status(404).send('Frontend build not found. Run `npm run build` before starting the server.');
+    return;
+  }
+
+  res.sendFile(path.join(distDir, 'index.html'));
+});
+
 app.listen(port, () => {
-  console.log(`[server] listening on ${port}`);
+  console.log(`[server] listening on ${port} (frontend: ${hasFrontendBuild ? 'enabled' : 'missing dist'})`);
 });
