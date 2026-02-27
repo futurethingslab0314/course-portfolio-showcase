@@ -26,3 +26,13 @@ View your app in AI Studio: https://ai.studio/apps/9e81d424-336d-4875-a7ed-3c3fd
 - `GET /api/courses`: list courses from Notion ID1
 - `GET /api/course/:slug`: fetch course + projects + normalized student works
 - `POST /api/generate` with body `{ \"slug\": \"your-course-slug\" }`: generate payload and write back `CourseLink` + `Status` to ID1
+
+## Notion Webhooks (Button)
+
+- `POST/GET /api/admin/sync-course-link`
+  - Header: `x-sync-secret: <COURSE_LINK_SYNC_SECRET>`
+  - Body/query: `coursePageId` or `slug`
+- `POST/GET /api/admin/sync-project-mappings`
+  - Header: `x-sync-secret: <COURSE_LINK_SYNC_SECRET>`
+  - Body/query: `projectPageId`
+  - Optional: `overwrite=true|false`

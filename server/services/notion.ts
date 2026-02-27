@@ -2,7 +2,7 @@ import { Course, Project } from '../../src/types';
 import { FieldMapping, NormalizationWarning } from '../../shared/contracts';
 import { mapUiPattern, normalizeStudentWork, parseFieldMapping } from '../../shared/notionMapper';
 
-interface NotionPage {
+export interface NotionPage {
   id: string;
   cover?: { type: 'external' | 'file'; external?: { url: string }; file?: { url: string } };
   properties: Record<string, any>;
@@ -25,9 +25,13 @@ function getEnv(name: string, required = true): string {
 }
 
 function notionHeaders() {
+  const token = process.env.NOTION_TOKEN || process.env.NOTION_API_KEY;
+  if (!token) {
+    throw new Error('Missing required env var: NOTION_TOKEN (or NOTION_API_KEY)');
+  }
   return {
-    Authorization: `Bearer ${getEnv('NOTION_TOKEN')}`,
-    'Notion-Version': getEnv('NOTION_API_VERSION', false) || '2022-06-28',
+    Authorization: `Bearer ${token}`,
+    'Notion-Version': process.env.NOTION_API_VERSION || process.env.NOTION_VERSION || '2022-06-28',
     'Content-Type': 'application/json',
   };
 }
@@ -111,6 +115,15 @@ async function notionRequest<T>(path: string, init: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+async function notionRequestRaw(path: string, init: RequestInit): Promise<Response> {
+  const response = await fetch(`${notionBase}${path}`, init);
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`Notion API error (${response.status}): ${body}`);
+  }
+  return response;
+}
+
 async function queryDatabase(databaseId: string, body: Record<string, unknown> = {}): Promise<NotionPage[]> {
   const results: NotionPage[] = [];
   let hasMore = true;
@@ -132,6 +145,29 @@ async function queryDatabase(databaseId: string, body: Record<string, unknown> =
   }
 
   return results;
+}
+
+export async function fetchPageById(pageId: string): Promise<NotionPage> {
+  return notionRequest<NotionPage>(`/pages/${normalizeNotionId(pageId)}`, {
+    method: 'GET',
+    headers: notionHeaders(),
+  });
+}
+
+export async function fetchDatabaseSchema(databaseId: string): Promise<Record<string, any>> {
+  const response = await notionRequest<{ properties: Record<string, any> }>(`/databases/${normalizeNotionId(databaseId)}`, {
+    method: 'GET',
+    headers: notionHeaders(),
+  });
+  return response.properties || {};
+}
+
+export async function updatePageProperties(pageId: string, properties: Record<string, unknown>) {
+  await notionRequestRaw(`/pages/${normalizeNotionId(pageId)}`, {
+    method: 'PATCH',
+    headers: notionHeaders(),
+    body: JSON.stringify({ properties }),
+  });
 }
 
 export async function fetchCourseBySlug(slug: string, warnings: NormalizationWarning[]): Promise<{ course: Course; pageId: string }> {
@@ -318,9 +354,35 @@ export async function updateCourseGenerationStatus(coursePageId: string, status:
     properties.CourseLink = { url: courseLink };
   }
 
-  await notionRequest(`/pages/${normalizeNotionId(coursePageId)}`, {
-    method: 'PATCH',
-    headers: notionHeaders(),
-    body: JSON.stringify({ properties }),
-  });
+  await updatePageProperties(coursePageId, properties);
+}
+
+export async function findCourseSlugByPageId(coursePageId: string): Promise<string> {
+  const page = await fetchPageById(coursePageId);
+  const slug = asText(property(page, 'Slug')).trim();
+  if (!slug) {
+    throw new Error(`Course slug is missing for page ${coursePageId}`);
+  }
+  return slug;
+}
+
+export async function fetchProjectSyncContext(projectPageId: string): Promise<{
+  page: NotionPage;
+  sourceDatabaseId: string;
+  fieldMappingValue: string;
+  uiPatternValue: string;
+}> {
+  const page = await fetchPageById(projectPageId);
+  const sourceDbIdRaw = asText(property(page, 'SourceDatabaseId', 'Source Database Id', 'SourceDB'));
+  const sourceDatabaseId = sourceDbIdRaw || asStringArray(property(page, 'SourceDatabase'))[0] || '';
+  if (!sourceDatabaseId) {
+    throw new Error(`SourceDatabaseId is missing on project ${projectPageId}`);
+  }
+
+  return {
+    page,
+    sourceDatabaseId,
+    fieldMappingValue: asText(property(page, 'FieldMapping')).trim(),
+    uiPatternValue: asText(property(page, 'UiPattern', 'DisplayStyle', 'Pattern')).trim(),
+  };
 }
