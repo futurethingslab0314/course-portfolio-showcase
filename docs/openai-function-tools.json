@@ -1,0 +1,326 @@
+{
+  "version": "1.0.0",
+  "name": "ui-pattern-mapping-tools",
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "profile_source_schema",
+        "description": "Profile one source database schema and summarize field names, inferred types, null rates, and sample values.",
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["sourceDatabaseId", "records"],
+          "properties": {
+            "sourceDatabaseId": {
+              "type": "string",
+              "description": "Notion source database identifier."
+            },
+            "records": {
+              "type": "array",
+              "description": "Raw records from the source database.",
+              "items": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            },
+            "propertyMeta": {
+              "type": "array",
+              "description": "Optional property metadata from Notion schema.",
+              "items": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "infer_ui_pattern",
+        "description": "Infer the best UiPattern for a source schema. Must fallback to generic-card when confidence is low.",
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["sourceDatabaseId", "schemaProfile"],
+          "properties": {
+            "sourceDatabaseId": {
+              "type": "string"
+            },
+            "schemaProfile": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "allowedPatterns": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "card-spec",
+                  "data-matrix",
+                  "gallery-slide",
+                  "gallery-story",
+                  "generic-card"
+                ]
+              },
+              "default": [
+                "card-spec",
+                "data-matrix",
+                "gallery-slide",
+                "gallery-story",
+                "generic-card"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "infer_field_mapping",
+        "description": "Generate mapping rules from source schema to canonical StudentWork fields, with confidence and reason per target field.",
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["sourceDatabaseId", "uiPattern", "schemaProfile", "targetSchemaFields"],
+          "properties": {
+            "sourceDatabaseId": {
+              "type": "string"
+            },
+            "uiPattern": {
+              "type": "string",
+              "enum": [
+                "card-spec",
+                "data-matrix",
+                "gallery-slide",
+                "gallery-story",
+                "generic-card"
+              ]
+            },
+            "schemaProfile": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "targetSchemaFields": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "historicalMappings": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            },
+            "confidenceThreshold": {
+              "type": "number",
+              "default": 0.85
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "parse_datacard_text",
+        "description": "Parse a datacard text blob into dataSpecs entries with label/value/timestamp.",
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["text"],
+          "properties": {
+            "text": {
+              "type": "string"
+            },
+            "timezone": {
+              "type": "string",
+              "default": "Asia/Taipei"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "normalize_student_work_record",
+        "description": "Normalize one raw source record into canonical StudentWork shape using the selected fieldMapping.",
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["sourceDatabaseId", "rawRecord", "fieldMapping"],
+          "properties": {
+            "sourceDatabaseId": {
+              "type": "string"
+            },
+            "rawRecord": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "fieldMapping": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "sourceCandidates": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "transform": {
+                    "type": "string",
+                    "enum": ["string", "string[]", "boolean", "number-string", "json"]
+                  },
+                  "default": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "validate_records_for_pattern",
+        "description": "Validate normalized StudentWork records for selected UiPattern requirements.",
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["uiPattern", "records"],
+          "properties": {
+            "uiPattern": {
+              "type": "string",
+              "enum": [
+                "card-spec",
+                "data-matrix",
+                "gallery-slide",
+                "gallery-story",
+                "generic-card"
+              ]
+            },
+            "records": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "upsert_file_mapping_record",
+        "description": "Persist mapping artifact for a sourceDatabaseId + uiPattern with version, confidence report, and updated timestamp.",
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "sourceDatabaseId",
+            "uiPattern",
+            "version",
+            "fieldMapping",
+            "confidenceReport",
+            "updatedAt"
+          ],
+          "properties": {
+            "sourceDatabaseId": {
+              "type": "string"
+            },
+            "uiPattern": {
+              "type": "string",
+              "enum": [
+                "card-spec",
+                "data-matrix",
+                "gallery-slide",
+                "gallery-story",
+                "generic-card"
+              ]
+            },
+            "version": {
+              "type": "string"
+            },
+            "fieldMapping": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "confidenceReport": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["targetField", "score", "reason", "status"],
+                "properties": {
+                  "targetField": {
+                    "type": "string"
+                  },
+                  "score": {
+                    "type": "number"
+                  },
+                  "reason": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": ["auto", "review"]
+                  }
+                }
+              }
+            },
+            "updatedAt": {
+              "type": "string",
+              "description": "ISO-8601 timestamp."
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "run_mapping_pipeline",
+        "description": "Orchestrate profiling, ui pattern inference, field mapping, normalization, validation, and mapping upsert in one job.",
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["sourceDatabaseId", "records"],
+          "properties": {
+            "sourceDatabaseId": {
+              "type": "string"
+            },
+            "records": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            },
+            "overwrite": {
+              "type": "boolean",
+              "default": false
+            },
+            "confidenceThreshold": {
+              "type": "number",
+              "default": 0.85
+            },
+            "timezone": {
+              "type": "string",
+              "default": "Asia/Taipei"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

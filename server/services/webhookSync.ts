@@ -1,108 +1,8 @@
-import { FieldMapping, UiPattern } from '../../shared/contracts';
+import { runMappingPipeline } from './mappingPipeline';
 import { fetchCourseBySlug, fetchDatabaseSchema, fetchProjectSyncContext, findCourseSlugByPageId, updatePageProperties } from './notion';
 import { generateCourseWebsite } from './generator';
 
 type PropertySchema = { type?: string } & Record<string, unknown>;
-
-const UI_PATTERNS: UiPattern[] = ['card-spec', 'data-matrix', 'gallery-slide', 'gallery-story', 'generic-card'];
-
-function lowerSet(values: string[]): Set<string> {
-  return new Set(values.map((v) => v.toLowerCase()));
-}
-
-function pickCandidates(propertyNames: string[], keys: string[]): string[] {
-  const lowered = lowerSet(keys);
-  return propertyNames.filter((name) => {
-    const v = name.toLowerCase();
-    for (const key of lowered) {
-      if (v.includes(key)) return true;
-    }
-    return false;
-  });
-}
-
-function inferFieldMapping(propertyNames: string[]): FieldMapping {
-  return {
-    assignmentName: {
-      sourceCandidates: pickCandidates(propertyNames, ['title', 'name', 'assignment']),
-      transform: 'string',
-      default: 'Untitled',
-    },
-    members: {
-      sourceCandidates: pickCandidates(propertyNames, ['member', 'author', 'student']),
-      transform: 'string[]',
-      default: [],
-    },
-    description: {
-      sourceCandidates: pickCandidates(propertyNames, ['description', 'summary', 'content', 'story']),
-      transform: 'string',
-      default: '',
-    },
-    mainImage: {
-      sourceCandidates: pickCandidates(propertyNames, ['main image', 'mainimage', 'cover', 'image', 'thumbnail']),
-      transform: 'string',
-      default: 'https://picsum.photos/seed/fallback/800/600',
-    },
-    moreImages: {
-      sourceCandidates: pickCandidates(propertyNames, ['more image', 'moreimage', 'images', 'gallery']),
-      transform: 'string[]',
-      default: [],
-    },
-    url: {
-      sourceCandidates: pickCandidates(propertyNames, ['url', 'link', 'website']),
-      transform: 'string',
-    },
-    video: {
-      sourceCandidates: pickCandidates(propertyNames, ['video']),
-      transform: 'string',
-    },
-    tags: {
-      sourceCandidates: pickCandidates(propertyNames, ['tag', 'category']),
-      transform: 'string[]',
-      default: [],
-    },
-    year: {
-      sourceCandidates: pickCandidates(propertyNames, ['year', 'semester', 'date']),
-      transform: 'string',
-    },
-    isStarred: {
-      sourceCandidates: pickCandidates(propertyNames, ['star', 'featured', 'recommend']),
-      transform: 'boolean',
-      default: false,
-    },
-    methodologies: {
-      sourceCandidates: pickCandidates(propertyNames, ['method', 'methodology']),
-      transform: 'string[]',
-      default: [],
-    },
-    dataSpecs: {
-      sourceCandidates: pickCandidates(propertyNames, ['dataspec', 'data spec', 'spec', 'metric']),
-      transform: 'json',
-      default: [],
-    },
-    gridLocation: {
-      sourceCandidates: pickCandidates(propertyNames, ['grid', 'location', 'cell']),
-      transform: 'string',
-    },
-  };
-}
-
-function inferUiPattern(propertyNames: string[]): UiPattern {
-  const names = propertyNames.map((v) => v.toLowerCase());
-  if (names.some((n) => n.includes('grid') || n.includes('cell'))) {
-    return 'data-matrix';
-  }
-  if (names.some((n) => n.includes('dataspec') || n.includes('metric') || n.includes('timestamp'))) {
-    return 'card-spec';
-  }
-  if (names.some((n) => n.includes('gallery') || n.includes('more image') || n.includes('moreimage'))) {
-    return 'gallery-slide';
-  }
-  if (names.some((n) => n.includes('story') || n.includes('narrative'))) {
-    return 'gallery-story';
-  }
-  return 'generic-card';
-}
 
 function toRichText(content: string) {
   const trimmed = content.length > 1900 ? content.slice(0, 1900) : content;
@@ -177,13 +77,20 @@ export async function syncProjectMappings(params: {
 
   const { page, sourceDatabaseId, fieldMappingValue, uiPatternValue } = await fetchProjectSyncContext(projectPageId);
   const sourceSchema = await fetchDatabaseSchema(sourceDatabaseId);
-  const propertyNames = Object.keys(sourceSchema);
+  const propertyMeta = Object.entries(sourceSchema).map(([name, schema]) => ({
+    name,
+    ...(schema && typeof schema === 'object' ? schema : {}),
+  }));
 
-  const inferredMapping = inferFieldMapping(propertyNames);
-  const inferredUiPattern = inferUiPattern(propertyNames);
+  const pipelineResult = runMappingPipeline({
+    sourceDatabaseId,
+    records: [],
+    overwrite: Boolean(params.overwrite),
+    propertyMeta,
+  });
 
-  const nextFieldMapping = JSON.stringify(inferredMapping);
-  const nextUiPattern = UI_PATTERNS.includes(inferredUiPattern) ? inferredUiPattern : 'generic-card';
+  const nextFieldMapping = JSON.stringify(pipelineResult.fieldMapping);
+  const nextUiPattern = pipelineResult.uiPattern;
 
   const shouldUpdateFieldMapping = params.overwrite || !fieldMappingValue;
   const shouldUpdateUiPattern = params.overwrite || !uiPatternValue;
@@ -213,7 +120,9 @@ export async function syncProjectMappings(params: {
     projectPageId,
     sourceDatabaseId,
     inferredUiPattern: nextUiPattern,
-    inferredFieldMapping: inferredMapping,
+    inferredFieldMapping: pipelineResult.fieldMapping,
+    confidenceReport: pipelineResult.confidenceReport,
+    mappingVersion: pipelineResult.mappingRecord.version,
     overwrite: Boolean(params.overwrite),
   };
 }

@@ -3,6 +3,7 @@ import express from 'express';
 import fs from 'node:fs';
 import path from 'node:path';
 import { buildCoursePayloadBySlug, generateCourseWebsite } from './services/generator';
+import { executeFunctionTool, listFunctionTools } from './services/mappingPipeline';
 import { fetchAllCourses } from './services/notion';
 import { syncCourseLink, syncProjectMappings, validateSyncSecret } from './services/webhookSync';
 
@@ -141,6 +142,30 @@ app.post('/api/generate', async (req, res) => {
     res.status(statusCode).json(result);
   } catch (error) {
     res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown generate failure' });
+  }
+});
+
+app.get('/api/function-tools', (_req, res) => {
+  res.json(listFunctionTools());
+});
+
+app.post('/api/function-tools/:toolName', (req, res) => {
+  const toolName = String(req.params.toolName || '').trim();
+  const args = req.body && typeof req.body === 'object' ? req.body : {};
+  if (!toolName) {
+    res.status(400).json({ error: 'toolName is required' });
+    return;
+  }
+
+  try {
+    const result = executeFunctionTool(toolName, args);
+    res.json({ ok: true, toolName, result });
+  } catch (error) {
+    res.status(400).json({
+      ok: false,
+      toolName,
+      error: error instanceof Error ? error.message : 'Tool execution failed',
+    });
   }
 });
 
