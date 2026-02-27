@@ -53,6 +53,14 @@ const TARGET_SCHEMA_FIELDS: Array<keyof StudentWork> = [
   'sourceDatabaseId',
   'gridLocation',
 ];
+const BASE_TEMPLATE_FIELDS: Array<keyof StudentWork> = ['assignmentName', 'members', 'description', 'mainImage'];
+const TEMPLATE_FIELDS_BY_PATTERN: Record<UiPattern, Array<keyof StudentWork>> = {
+  'generic-card': [...BASE_TEMPLATE_FIELDS, 'moreImages', 'tags', 'year', 'isStarred'],
+  'gallery-slide': [...BASE_TEMPLATE_FIELDS, 'moreImages', 'year', 'tags'],
+  'gallery-story': [...BASE_TEMPLATE_FIELDS, 'moreImages', 'methodologies', 'url', 'year', 'tags'],
+  'card-spec': [...BASE_TEMPLATE_FIELDS, 'dataSpecs', 'tags', 'year'],
+  'data-matrix': [...BASE_TEMPLATE_FIELDS, 'gridLocation', 'year', 'tags'],
+};
 
 const mappingStorePath = path.resolve(process.cwd(), 'server/data/filemapping-records.json');
 
@@ -364,6 +372,10 @@ export function inferFieldMapping(params: {
   return { fieldMapping, confidenceReport };
 }
 
+export function getTemplateTargetFields(uiPattern: UiPattern): string[] {
+  return TEMPLATE_FIELDS_BY_PATTERN[uiPattern] ?? TEMPLATE_FIELDS_BY_PATTERN[UI_PATTERN_FALLBACK];
+}
+
 export function parseDatacardTextTool(params: {
   text: string;
   timezone?: string;
@@ -441,6 +453,7 @@ export function runMappingPipeline(params: {
   confidenceThreshold?: number;
   timezone?: string;
   propertyMeta?: Array<Record<string, unknown>>;
+  uiPattern?: UiPattern;
 }): {
   sourceDatabaseId: string;
   uiPattern: UiPattern;
@@ -461,15 +474,16 @@ export function runMappingPipeline(params: {
     sourceDatabaseId: params.sourceDatabaseId,
     schemaProfile,
   });
+  const effectiveUiPattern = params.uiPattern || inferredPattern.uiPattern;
 
   const store = loadMappingStore();
   const historicalMappings = store.filter((item) => item.sourceDatabaseId === params.sourceDatabaseId);
 
   const { fieldMapping, confidenceReport } = inferFieldMapping({
     sourceDatabaseId: params.sourceDatabaseId,
-    uiPattern: inferredPattern.uiPattern,
+    uiPattern: effectiveUiPattern,
     schemaProfile,
-    targetSchemaFields: TARGET_SCHEMA_FIELDS,
+    targetSchemaFields: getTemplateTargetFields(effectiveUiPattern),
     historicalMappings,
     confidenceThreshold: params.confidenceThreshold,
   });
@@ -487,16 +501,16 @@ export function runMappingPipeline(params: {
   });
 
   const validation = validateRecordsForPattern({
-    uiPattern: inferredPattern.uiPattern,
+    uiPattern: effectiveUiPattern,
     records: normalizedRecords,
   });
 
-  const existing = store.find((item) => item.sourceDatabaseId === params.sourceDatabaseId && item.uiPattern === inferredPattern.uiPattern);
+  const existing = store.find((item) => item.sourceDatabaseId === params.sourceDatabaseId && item.uiPattern === effectiveUiPattern);
   const version = params.overwrite ? bumpPatchVersion(existing?.version) : existing?.version || '1.0.0';
 
   const mappingRecord: FileMappingRecord = {
     sourceDatabaseId: params.sourceDatabaseId,
-    uiPattern: inferredPattern.uiPattern,
+    uiPattern: effectiveUiPattern,
     version,
     fieldMapping,
     confidenceReport,
@@ -507,7 +521,7 @@ export function runMappingPipeline(params: {
 
   return {
     sourceDatabaseId: params.sourceDatabaseId,
-    uiPattern: inferredPattern.uiPattern,
+    uiPattern: effectiveUiPattern,
     fieldMapping,
     confidenceReport,
     normalizedRecords,
@@ -591,6 +605,7 @@ export function executeFunctionTool(toolName: string, args: Record<string, unkno
         confidenceThreshold: typeof args.confidenceThreshold === 'number' ? args.confidenceThreshold : undefined,
         timezone: typeof args.timezone === 'string' ? args.timezone : undefined,
         propertyMeta: (args.propertyMeta as Array<Record<string, unknown>>) || undefined,
+        uiPattern: (args.uiPattern as UiPattern) || undefined,
       });
     default:
       throw new Error(`Unknown tool name: ${toolName}`);

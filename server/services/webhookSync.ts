@@ -1,6 +1,8 @@
 import { runMappingPipeline } from './mappingPipeline';
 import { fetchCourseBySlug, fetchDatabaseSchema, fetchProjectSyncContext, findCourseSlugByPageId, updatePageProperties } from './notion';
 import { generateCourseWebsite } from './generator';
+import { FieldMapping } from '../../shared/contracts';
+import { mapUiPattern } from '../../shared/notionMapper';
 
 type PropertySchema = { type?: string } & Record<string, unknown>;
 
@@ -25,6 +27,18 @@ function buildPatchByType(schema: PropertySchema | undefined, value: string): Re
     default:
       return null;
   }
+}
+
+function serializeFieldMappingToDsl(fieldMapping: FieldMapping): string {
+  const lines: string[] = [];
+  for (const [targetField, rule] of Object.entries(fieldMapping)) {
+    if (!rule) continue;
+    const candidates = (rule.sourceCandidates || []).slice(0, 3).join(',');
+    const transform = rule.transform || 'string';
+    if (!candidates) continue;
+    lines.push(`${targetField}=${candidates}|${transform}`);
+  }
+  return lines.join('\n');
 }
 
 function parseSyncSecret(input: unknown): string {
@@ -82,14 +96,19 @@ export async function syncProjectMappings(params: {
     ...(schema && typeof schema === 'object' ? schema : {}),
   }));
 
+  const selectedUiPattern = uiPatternValue
+    ? mapUiPattern(uiPatternValue, [], { projectId: projectPageId, sourceDatabaseId })
+    : undefined;
+
   const pipelineResult = runMappingPipeline({
     sourceDatabaseId,
     records: [],
     overwrite: Boolean(params.overwrite),
     propertyMeta,
+    uiPattern: selectedUiPattern,
   });
 
-  const nextFieldMapping = JSON.stringify(pipelineResult.fieldMapping);
+  const nextFieldMapping = serializeFieldMappingToDsl(pipelineResult.fieldMapping);
   const nextUiPattern = pipelineResult.uiPattern;
 
   const shouldUpdateFieldMapping = params.overwrite || !fieldMappingValue;
