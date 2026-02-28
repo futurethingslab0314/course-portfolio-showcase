@@ -142,4 +142,12 @@ export async function syncProjectMappings(params: {
     inferredFieldMapping: pipelineResult.fieldMapping,
     confidenceReport: pipelineResult.confidenceReport,
     mappingVersion: pipelineResult.mappingRecord.version,
-    overwr
+    overwrite: Boolean(params.overwrite),
+  };
+}
+
+export async function resolveCoursePageIdBySlug(slug: string): Promise<string | undefined> {
+  const warnings = [];
+  const result = await fetchCourseBySlug(slug, warnings);
+  return result.pageId;
+}

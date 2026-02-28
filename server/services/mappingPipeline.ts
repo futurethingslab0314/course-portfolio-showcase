@@ -549,47 +549,78 @@ export function listFunctionTools() {
 }
 
 export function executeFunctionTool(toolName: string, args: Record<string, unknown>) {
-  switch (toolName) {
-    case 'profile_source_schema':
-      return profileSourceSchema({
-        sourceDatabaseId: String(args.sourceDatabaseId || ''),
-        records: (args.records as UnknownRecord[]) || [],
-        propertyMeta: (args.propertyMeta as Array<Record<string, unknown>>) || undefined,
-      });
-    case 'infer_ui_pattern':
-      return inferUiPattern({
-        sourceDatabaseId: String(args.sourceDatabaseId || ''),
-        schemaProfile: args.schemaProfile as SchemaProfile,
-        allowedPatterns: (args.allowedPatterns as UiPattern[]) || undefined,
-      });
-    case 'infer_field_mapping':
-      return inferFieldMapping({
-        sourceDatabaseId: String(args.sourceDatabaseId || ''),
-        uiPattern: (args.uiPattern as UiPattern) || UI_PATTERN_FALLBACK,
-        schemaProfile: args.schemaProfile as SchemaProfile,
-        targetSchemaFields: (args.targetSchemaFields as string[]) || TARGET_SCHEMA_FIELDS,
-        historicalMappings: (args.historicalMappings as FileMappingRecord[]) || undefined,
-        confidenceThreshold: typeof args.confidenceThreshold === 'number' ? args.confidenceThreshold : undefined,
-      });
-    case 'parse_datacard_text':
-      return parseDatacardTextTool({
-        text: String(args.text || ''),
-        timezone: typeof args.timezone === 'string' ? args.timezone : undefined,
-      });
-    case 'normalize_student_work_record':
-      return normalizeStudentWorkRecord({
-        sourceDatabaseId: String(args.sourceDatabaseId || ''),
-        rawRecord: (args.rawRecord as UnknownRecord) || {},
-        fieldMapping: (args.fieldMapping as FieldMapping) || {},
-        timezone: typeof args.timezone === 'string' ? args.timezone : undefined,
-      });
-    case 'validate_records_for_pattern':
-      return validateRecordsForPattern({
-        uiPattern: (args.uiPattern as UiPattern) || UI_PATTERN_FALLBACK,
-        records: (args.records as StudentWork[]) || [],
-      });
-    case 'upsert_file_mapping_record':
-      return upsertFileMappingRecord({
-        sourceDatabaseId: String(args.sourceDatabaseId || ''),
-        uiPattern: ((args.uiPattern as UiPattern) || UI_PATTERN_FALLBACK),
- 
+  if (toolName === 'profile_source_schema') {
+    return profileSourceSchema({
+      sourceDatabaseId: String(args.sourceDatabaseId || ''),
+      records: (args.records as UnknownRecord[]) || [],
+      propertyMeta: (args.propertyMeta as Array<Record<string, unknown>>) || undefined,
+    });
+  }
+
+  if (toolName === 'infer_ui_pattern') {
+    return inferUiPattern({
+      sourceDatabaseId: String(args.sourceDatabaseId || ''),
+      schemaProfile: args.schemaProfile as SchemaProfile,
+      allowedPatterns: (args.allowedPatterns as UiPattern[]) || undefined,
+    });
+  }
+
+  if (toolName === 'infer_field_mapping') {
+    return inferFieldMapping({
+      sourceDatabaseId: String(args.sourceDatabaseId || ''),
+      uiPattern: (args.uiPattern as UiPattern) || UI_PATTERN_FALLBACK,
+      schemaProfile: args.schemaProfile as SchemaProfile,
+      targetSchemaFields: (args.targetSchemaFields as string[]) || TARGET_SCHEMA_FIELDS,
+      historicalMappings: (args.historicalMappings as FileMappingRecord[]) || undefined,
+      confidenceThreshold: typeof args.confidenceThreshold === 'number' ? args.confidenceThreshold : undefined,
+    });
+  }
+
+  if (toolName === 'parse_datacard_text') {
+    return parseDatacardTextTool({
+      text: String(args.text || ''),
+      timezone: typeof args.timezone === 'string' ? args.timezone : undefined,
+    });
+  }
+
+  if (toolName === 'normalize_student_work_record') {
+    return normalizeStudentWorkRecord({
+      sourceDatabaseId: String(args.sourceDatabaseId || ''),
+      rawRecord: (args.rawRecord as UnknownRecord) || {},
+      fieldMapping: (args.fieldMapping as FieldMapping) || {},
+      timezone: typeof args.timezone === 'string' ? args.timezone : undefined,
+    });
+  }
+
+  if (toolName === 'validate_records_for_pattern') {
+    return validateRecordsForPattern({
+      uiPattern: (args.uiPattern as UiPattern) || UI_PATTERN_FALLBACK,
+      records: (args.records as StudentWork[]) || [],
+    });
+  }
+
+  if (toolName === 'upsert_file_mapping_record') {
+    return upsertFileMappingRecord({
+      sourceDatabaseId: String(args.sourceDatabaseId || ''),
+      uiPattern: (args.uiPattern as UiPattern) || UI_PATTERN_FALLBACK,
+      version: String(args.version || '1.0.0'),
+      fieldMapping: (args.fieldMapping as FieldMapping) || {},
+      confidenceReport: (args.confidenceReport as ConfidenceItem[]) || [],
+      updatedAt: String(args.updatedAt || new Date().toISOString()),
+    });
+  }
+
+  if (toolName === 'run_mapping_pipeline') {
+    return runMappingPipeline({
+      sourceDatabaseId: String(args.sourceDatabaseId || ''),
+      records: (args.records as UnknownRecord[]) || [],
+      overwrite: Boolean(args.overwrite),
+      confidenceThreshold: typeof args.confidenceThreshold === 'number' ? args.confidenceThreshold : undefined,
+      timezone: typeof args.timezone === 'string' ? args.timezone : undefined,
+      propertyMeta: (args.propertyMeta as Array<Record<string, unknown>>) || undefined,
+      uiPattern: (args.uiPattern as UiPattern) || undefined,
+    });
+  }
+
+  throw new Error(`Unknown tool name: ${toolName}`);
+}
