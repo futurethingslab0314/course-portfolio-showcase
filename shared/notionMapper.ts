@@ -308,6 +308,20 @@ function mergeDataSpecs(primary: string[], inferred: string[]): string[] {
   return merged;
 }
 
+function mergeUniqueStrings(primary: string[], secondary: string[]): string[] {
+  const merged: string[] = [];
+  const seen = new Set<string>();
+  for (const item of [...primary, ...secondary]) {
+    const normalized = item.trim();
+    if (!normalized || seen.has(normalized)) {
+      continue;
+    }
+    seen.add(normalized);
+    merged.push(normalized);
+  }
+  return merged;
+}
+
 function buildFallbackMembers(source: UnknownRecord): string[] {
   return ensureStringArray(source.members ?? source.member ?? source.author ?? source.authors);
 }
@@ -410,7 +424,10 @@ export function normalizeStudentWork(
     moreImages: ensureStringArray(pick('moreImages')),
     url: firstString(pick('url')) || undefined,
     video: firstString(pick('video')) || undefined,
-    tags: ensureStringArray(pick('tags')),
+    tags: mergeUniqueStrings(
+      ensureStringArray(pick('tags')),
+      ensureStringArray(source.themeTag ?? source.themetag ?? source.ThemeTag ?? source.Themetag),
+    ),
     year: firstString(pick('year')) || undefined,
     isStarred: toBoolean(pick('isStarred')),
     methodologies: ensureStringArray(pick('methodologies')),

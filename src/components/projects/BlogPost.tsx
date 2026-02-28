@@ -2,12 +2,15 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { ExternalLink, Plus, User, X } from 'lucide-react';
 import { StudentWork } from '../../types';
+import { memberRows } from '../../lib/memberRows';
 
 interface BlogPostProps {
   work: StudentWork;
 }
 
 function BlogPostArticle({ work }: { work: StudentWork }) {
+  const members = memberRows(work);
+
   return (
     <article className="max-w-4xl mx-auto bg-white border border-black/5 shadow-sm overflow-hidden mb-24">
       <div className="aspect-[21/9] w-full overflow-hidden">
@@ -80,10 +83,13 @@ function BlogPostArticle({ work }: { work: StudentWork }) {
             <div>
               <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-black/30 mb-3">Contributors</h4>
               <div className="flex flex-wrap gap-2">
-                {work.members.map((member, i) => (
-                  <div key={`${member}-${i}`} className="flex items-center gap-2 bg-black/5 px-3 py-1.5">
+                {members.map((member, i) => (
+                  <div key={`${member.name}-${i}`} className="flex items-center gap-2 bg-black/5 px-3 py-1.5">
                     <User size={12} className="text-black/40" />
-                    <span className="text-xs font-semibold text-black/70">{member}</span>
+                    <span className="text-xs font-semibold text-black/70">{member.name}</span>
+                    {member.studentId ? (
+                      <span className="text-[10px] font-mono text-black/25">{member.studentId}</span>
+                    ) : null}
                   </div>
                 ))}
               </div>
@@ -157,6 +163,18 @@ export const BlogPost = ({ work }: BlogPostProps) => {
         <div className="p-4">
           <h3 className="font-bold text-lg mb-1">{work.assignmentName}</h3>
           <p className="text-xs text-black/40 font-medium mb-3">{work.members.join(', ') || 'Unassigned'}</p>
+          {work.tags && work.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {work.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="text-[10px] font-bold uppercase tracking-widest text-black/55 border border-black/10 px-2 py-0.5 rounded"
+                >
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          )}
           <p className="text-sm text-black/60 line-clamp-2">{previewText}</p>
         </div>
       </div>

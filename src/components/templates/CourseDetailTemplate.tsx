@@ -32,11 +32,21 @@ export const CourseDetailTemplate = ({
   const activeProject = projects.find(p => p.id === activeProjectId);
   const [selectedYear, setSelectedYear] = useState<string>('ALL');
   const [starredOnly, setStarredOnly] = useState<boolean>(false);
+  const [selectedThemeTag, setSelectedThemeTag] = useState<string>('ALL');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const isBlogPostProject = activeProject?.displayStyle === 'blog-post';
 
   const availableYears = useMemo(() => {
     const years = new Set(works.map(w => w.year).filter(Boolean));
     return ['ALL', ...Array.from(years).sort().reverse()];
+  }, [works]);
+
+  const availableThemeTags = useMemo(() => {
+    const tags = new Set<string>();
+    works.forEach((w) => {
+      w.tags?.forEach((tag) => tags.add(tag));
+    });
+    return ['ALL', ...Array.from(tags).sort((a, b) => a.localeCompare(b))];
   }, [works]);
 
   const filteredWorks = useMemo(() => {
@@ -44,11 +54,14 @@ export const CourseDetailTemplate = ({
     if (selectedYear !== 'ALL') {
       result = result.filter(w => w.year === selectedYear);
     }
+    if (isBlogPostProject && selectedThemeTag !== 'ALL') {
+      result = result.filter((w) => w.tags?.includes(selectedThemeTag));
+    }
     if (starredOnly) {
       result = result.filter(w => w.isStarred);
     }
     return result;
-  }, [works, selectedYear, starredOnly]);
+  }, [works, selectedYear, selectedThemeTag, starredOnly, isBlogPostProject]);
 
   return (
     <div className="min-h-screen bg-white">
@@ -77,6 +90,7 @@ export const CourseDetailTemplate = ({
                   setActiveProjectId(project.id);
                   setSelectedYear('ALL'); // Reset filter when switching projects
                   setStarredOnly(false);
+                  setSelectedThemeTag('ALL');
                 }}
                 className={cn(
                   "text-[11px] font-bold uppercase tracking-[0.3em] whitespace-nowrap transition-all relative py-2",
@@ -112,6 +126,7 @@ export const CourseDetailTemplate = ({
                       setActiveProjectId(project.id);
                       setSelectedYear('ALL');
                       setStarredOnly(false);
+                      setSelectedThemeTag('ALL');
                       setIsMobileMenuOpen(false);
                     }}
                     className={cn(
@@ -184,6 +199,27 @@ export const CourseDetailTemplate = ({
               <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-black/30" />
             </div>
           </div>
+
+          {isBlogPostProject && (
+            <div className="flex items-center justify-between md:justify-start gap-6 md:pl-8 md:border-l border-black/5">
+              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-black/30">
+                <Filter size={12} />
+                <span>ThemeTag</span>
+              </div>
+              <div className="relative group">
+                <select
+                  value={selectedThemeTag}
+                  onChange={(e) => setSelectedThemeTag(e.target.value)}
+                  className="appearance-none bg-white border border-black/10 rounded-lg px-4 py-2 pr-10 text-[11px] font-bold uppercase tracking-wider focus:outline-none focus:border-black cursor-pointer min-w-[140px]"
+                >
+                  {availableThemeTags.map((tag) => (
+                    <option key={tag} value={tag}>{tag}</option>
+                  ))}
+                </select>
+                <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-black/30" />
+              </div>
+            </div>
+          )}
         </div>
 
         {activeProject?.displayStyle === 'data-matrix' ? (
