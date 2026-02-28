@@ -10,6 +10,7 @@ interface BlogPostProps {
 
 function BlogPostArticle({ work }: { work: StudentWork }) {
   const members = memberRows(work);
+  const storyButtons = work.storyButtons?.filter((button) => button.label && button.url) ?? [];
 
   return (
     <article className="max-w-4xl mx-auto bg-white border border-black/5 shadow-sm overflow-hidden mb-24">
@@ -23,6 +24,23 @@ function BlogPostArticle({ work }: { work: StudentWork }) {
       </div>
 
       <div className="p-8 md:p-16">
+        {storyButtons.length > 0 && (
+          <div className="flex flex-wrap gap-3 mb-8">
+            {storyButtons.map((button, index) => (
+              <a
+                key={`${button.label}-${index}`}
+                href={button.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 bg-black text-white px-4 py-2 text-[10px] font-bold uppercase tracking-widest hover:scale-105 transition-transform active:scale-95"
+              >
+                {button.label}
+                <ExternalLink size={12} />
+              </a>
+            ))}
+          </div>
+        )}
+
         <div className="flex flex-wrap items-center gap-4 mb-8">
           <span className="bg-black text-white text-[10px] font-bold px-3 py-1 uppercase tracking-widest">
             Blog Post
