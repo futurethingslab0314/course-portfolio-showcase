@@ -84,9 +84,10 @@ export const STUDENT_WORKS: StudentWork[] = [
     year: '2026',
     isStarred: true,
     dataSpecs: [
-      { label: 'location', value: '廚房門把', timestamp: '2026/02/02 10:00' },
-      { label: 'data type', value: '有無震動 (Y=1 ; N=0)', timestamp: '2026/02/02 10:00' },
-      { label: 'data value', value: '0', timestamp: '2026/02/02 10:00' }
+      '[timestamp] 2026/02/02 10:00',
+      '[location] 廚房門把',
+      '[data type] 有無震動 (Y=1 ; N=0)',
+      '[data value] 0'
     ],
     sourceDatabaseId: 'db-seeing'
   },
@@ -99,9 +100,10 @@ export const STUDENT_WORKS: StudentWork[] = [
     tags: ['DATA CHARADES'],
     year: '2026',
     dataSpecs: [
-      { label: 'location', value: '廚房門把', timestamp: '2026/02/02 10:10' },
-      { label: 'data type', value: '有無震動 (Y=1 ; N=0)', timestamp: '2026/02/02 10:10' },
-      { label: 'data value', value: '1', timestamp: '2026/02/02 10:10' }
+      '[timestamp] 2026/02/02 10:10',
+      '[location] 廚房門把',
+      '[data type] 有無震動 (Y=1 ; N=0)',
+      '[data value] 1'
     ],
     sourceDatabaseId: 'db-seeing'
   },

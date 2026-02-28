@@ -139,7 +139,7 @@ function keywordCandidates(field: keyof StudentWork): string[] {
     case 'methodologies':
       return ['method', 'methodology', 'process'];
     case 'dataSpecs':
-      return ['dataspec', 'data spec', 'spec', 'metric', 'timestamp'];
+      return ['dataspec', 'data spec', 'spec', 'metric', 'timestamp', 'card', 'datacard'];
     case 'sourceDatabaseId':
       return ['sourcedatabaseid', 'source database id'];
     case 'gridLocation':
@@ -400,7 +400,11 @@ export function normalizeStudentWorkRecord(params: {
   if ((!normalized.dataSpecs || normalized.dataSpecs.length === 0) && typeof getSourceValue(params.rawRecord, params.fieldMapping.dataSpecs?.sourceCandidates || []) === 'string') {
     const text = String(getSourceValue(params.rawRecord, params.fieldMapping.dataSpecs?.sourceCandidates || []) || '');
     if (text.includes('[') && text.includes(']')) {
-      normalized.dataSpecs = parseDatacardText(text, params.timezone || 'Asia/Taipei');
+      normalized.dataSpecs = parseDatacardText(text, params.timezone || 'Asia/Taipei').map((item) => {
+        const prefix = item.label ? `[${item.label}] ` : '';
+        const withLabel = `${prefix}${item.value}`.trim();
+        return `${withLabel}${item.timestamp ? ` ${item.timestamp}` : ''}`.trim();
+      }).filter(Boolean);
     }
   }
 

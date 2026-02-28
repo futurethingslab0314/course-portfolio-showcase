@@ -11,6 +11,8 @@ interface CardSpecProps {
 }
 
 export const CardSpec = ({ work, zoomedImage, setZoomedImage }: CardSpecProps) => {
+  const specCards = (work.dataSpecs ?? []).filter((card) => Boolean(card?.trim()));
+
   return (
     <div className="card-spec-grid">
       <div 
@@ -57,8 +59,15 @@ export const CardSpec = ({ work, zoomedImage, setZoomedImage }: CardSpecProps) =
         <div>
           <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-black/30 mb-6">Interactive Data Card Spec</h4>
           <div className="grid grid-cols-1 gap-4">
-            <TechnicalDataCard work={work} />
-            <TechnicalDataCard work={work} />
+            {specCards.length ? (
+              specCards.map((card, index) => (
+                <div key={`${work.id}-spec-card-${index}`}>
+                  <TechnicalDataCard content={card} />
+                </div>
+              ))
+            ) : (
+              <TechnicalDataCard content="No spec cards found." />
+            )}
           </div>
         </div>
       </div>

@@ -170,18 +170,57 @@ export function parseFieldMapping(raw: unknown, warnings: NormalizationWarning[]
   return map;
 }
 
-function ensureDataSpecs(value: unknown): { label: string; value: string; timestamp: string }[] {
-  if (!Array.isArray(value)) {
+function ensureDataSpecs(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value
+      .flatMap((item) => ensureDataSpecs(item))
+      .filter(Boolean);
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    return trimmed ? [trimmed] : [];
+  }
+
+  if (value && typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+    const legacyLabel = firstString(record.label);
+    const legacyValue = firstString(record.value);
+    const legacyTimestamp = firstString(record.timestamp);
+
+    if (legacyLabel || legacyValue || legacyTimestamp) {
+      const prefix = legacyLabel ? `[${legacyLabel}] ` : '';
+      const body = `${prefix}${legacyValue}`.trim();
+      const line = `${body}${legacyTimestamp ? ` ${legacyTimestamp}` : ''}`.trim();
+      return line ? [line] : [];
+    }
+
     return [];
   }
-  return value
-    .filter((item): item is Record<string, unknown> => !!item && typeof item === 'object' && !Array.isArray(item))
-    .map((item) => ({
-      label: String(item.label ?? ''),
-      value: String(item.value ?? ''),
-      timestamp: String(item.timestamp ?? ''),
-    }))
-    .filter((item) => item.label || item.value || item.timestamp);
+
+  return [];
+}
+
+function collectCardNamedSpecs(source: UnknownRecord): string[] {
+  return Object.entries(source)
+    .filter(([key]) => /card/i.test(key))
+    .flatMap(([, value]) => ensureDataSpecs(value));
+}
+
+function mergeDataSpecs(primary: string[], inferred: string[]): string[] {
+  const merged: string[] = [];
+  const seen = new Set<string>();
+
+  for (const item of [...primary, ...inferred]) {
+    const normalized = item.trim();
+    if (!normalized || seen.has(normalized)) {
+      continue;
+    }
+    seen.add(normalized);
+    merged.push(normalized);
+  }
+
+  return merged;
 }
 
 function buildFallbackMembers(source: UnknownRecord): string[] {
@@ -215,7 +254,7 @@ export function normalizeStudentWork(
     year: firstString(pick('year')) || undefined,
     isStarred: toBoolean(pick('isStarred')),
     methodologies: ensureStringArray(pick('methodologies')),
-    dataSpecs: ensureDataSpecs(pick('dataSpecs')),
+    dataSpecs: mergeDataSpecs(ensureDataSpecs(pick('dataSpecs')), collectCardNamedSpecs(source)),
     sourceDatabaseId,
     gridLocation: firstString(pick('gridLocation')) || undefined,
   };

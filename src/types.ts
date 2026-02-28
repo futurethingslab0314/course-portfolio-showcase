@@ -11,7 +11,7 @@ export interface StudentWork {
   year?: string;
   isStarred?: boolean;
   methodologies?: string[];
-  dataSpecs?: { label: string; value: string; timestamp: string }[];
+  dataSpecs?: string[];
   sourceDatabaseId: string;
   gridLocation?: string;
 }

@@ -29,11 +29,8 @@
   "isStarred": true,
   "methodologies": ["Interview", "Journey Map"],
   "dataSpecs": [
-    {
-      "label": "timestamp",
-      "value": "2026/02/02 10:00",
-      "timestamp": "2026-02-02T10:00:00+08:00"
-    }
+    "[timestamp] 2026/02/02 10:00",
+    "[location] 廚房門把"
   ],
   "sourceDatabaseId": "notion-db-abc123",
   "gridLocation": "A1"
@@ -57,7 +54,7 @@
 | `year` | string | 否 | 年份（目前前端以字串處理） |
 | `isStarred` | boolean | 否 | 推薦標記 |
 | `methodologies` | string[] | 否 | 方法標籤 |
-| `dataSpecs` | object[] | 否 | 技術資料卡內容 |
+| `dataSpecs` | string[] | 否 | 技術資料卡內容（每個字串 = 一張 spec 卡） |
 | `gridLocation` | string | 否 | 矩陣座標（如 `A1`） |
 
 ## 3. 五種 UiPattern JSON 範例與規格
@@ -169,21 +166,9 @@ Work 最小可用 JSON：
   "tags": ["Sensor", "IoT"],
   "year": "2026",
   "dataSpecs": [
-    {
-      "label": "timestamp",
-      "value": "2026/02/02 10:00",
-      "timestamp": "2026-02-02T10:00:00+08:00"
-    },
-    {
-      "label": "location",
-      "value": "廚房門把",
-      "timestamp": ""
-    },
-    {
-      "label": "data value",
-      "value": "1",
-      "timestamp": ""
-    }
+    "[timestamp] 2026/02/02 10:00",
+    "[location] 廚房門把",
+    "[data value] 1"
   ],
   "sourceDatabaseId": "db-card-spec"
 }
@@ -191,7 +176,8 @@ Work 最小可用 JSON：
 
 欄位重點：
 - 必填：`assignmentName`, `members`, `description`, `mainImage`
-- 強烈建議：`dataSpecs`（`card-spec` 的核心）
+- 強烈建議：`dataSpecs`（`card-spec` 的核心，`string[]`）
+- 自動推論：來源欄位名含 `card`（例如 `datacard01`, `card02`）會自動收進 `dataSpecs`
 - 建議：`tags`, `year`
 
 ### 3.5 `data-matrix`
