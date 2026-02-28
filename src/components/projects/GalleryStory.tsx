@@ -64,6 +64,26 @@ export const GalleryStory = ({ work, isExpanded, setIsExpanded, zoomedImage, set
             </div>
           </div>
 
+          {storyButtons.length > 0 && (
+            <div className="mb-10">
+              <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-black/30 mb-4">Project Links</h4>
+              <div className="flex flex-col gap-3">
+                {storyButtons.map((button, index) => (
+                  <a
+                    key={`${button.label}-inline-${index}`}
+                    href={button.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between px-4 py-4 bg-white border border-black/10 rounded-xl group hover:border-blue-600 transition-all shadow-sm hover:shadow-blue-600/10"
+                  >
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-black group-hover:text-blue-600">{button.label}</span>
+                    <ExternalLink size={14} className="text-black/20 group-hover:text-blue-600 group-hover:translate-x-1 transition-transform" />
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
           <button 
             onClick={() => setIsExpanded(!isExpanded)}
             className="flex items-center gap-3 text-blue-600 text-[11px] font-bold uppercase tracking-[0.2em] group"
@@ -104,25 +124,6 @@ export const GalleryStory = ({ work, isExpanded, setIsExpanded, zoomedImage, set
                   </div>
                 </div>
 
-                {storyButtons.length > 0 && (
-                  <div className="mt-12">
-                    <h4 className="text-[11px] font-bold uppercase tracking-[0.2em] text-black/30 mb-8">Project Links</h4>
-                    <div className="flex flex-col gap-3">
-                      {storyButtons.map((button, index) => (
-                        <a
-                          key={`${button.label}-${index}`}
-                          href={button.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center justify-between px-4 py-4 bg-white border border-black/10 rounded-xl group hover:border-blue-600 transition-all shadow-sm hover:shadow-blue-600/10"
-                        >
-                          <span className="text-[10px] font-bold uppercase tracking-widest text-black group-hover:text-blue-600">{button.label}</span>
-                          <ExternalLink size={14} className="text-black/20 group-hover:text-blue-600 group-hover:translate-x-1 transition-transform" />
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
 
               <div className="lg:col-span-2">

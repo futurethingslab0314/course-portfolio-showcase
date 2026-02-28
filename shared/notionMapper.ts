@@ -239,8 +239,8 @@ function collectStoryButtonsFromSource(source: UnknownRecord): { label: string; 
   const buffer = new Map<string, { label?: string; url?: string }>();
 
   for (const [key, rawValue] of Object.entries(source)) {
-    const labelMatch = key.match(/^button(\d+)$/i);
-    const urlMatch = key.match(/^urlbutton(\d+)$/i);
+    const labelMatch = key.match(/^button[\s_-]*(\d+)$/i);
+    const urlMatch = key.match(/^url[\s_-]*button[\s_-]*(\d+)$/i);
 
     if (!labelMatch && !urlMatch) {
       continue;

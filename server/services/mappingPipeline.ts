@@ -123,13 +123,13 @@ function keywordCandidates(field: keyof StudentWork): string[] {
     case 'id':
       return ['id', 'recordid', 'pageid'];
     case 'assignmentName':
-      return ['assignmentname', 'assignment', 'title', 'name', 'project'];
+      return ['assignmentname', 'assignment', 'title', 'projectname', 'project title', 'topic', 'name'];
     case 'members':
-      return ['studentname', 'student name', 'members', 'member', 'author', 'team'];
+      return ['studentname', 'student name', 'membername', 'member name', 'members', 'member', 'author', 'team'];
     case 'studentIds':
       return ['studentid', 'student id', 'memberid', 'member id', 'idnumber', '學號'];
     case 'description':
-      return ['description', 'summary', 'content', 'story'];
+      return ['description', 'projectintro', 'project intro', 'summary', 'brief', 'abstract', 'overview', 'content', 'story'];
     case 'mainImage':
       return ['mainimage', 'main image', 'cover', 'image', 'thumbnail'];
     case 'moreImages':
@@ -157,6 +157,46 @@ function keywordCandidates(field: keyof StudentWork): string[] {
     default:
       return [];
   }
+}
+
+function rankCandidatesForField(field: keyof StudentWork, candidates: string[]): string[] {
+  const normalized = [...new Set(candidates)];
+
+  if (field === 'assignmentName') {
+    return normalized
+      .filter((candidate) => !/student|member|author/i.test(candidate))
+      .sort((a, b) => {
+        const wa = /assignment|title|projectname|topic|name/i.test(a) ? 1 : 0;
+        const wb = /assignment|title|projectname|topic|name/i.test(b) ? 1 : 0;
+        return wb - wa;
+      });
+  }
+
+  if (field === 'members') {
+    return normalized.sort((a, b) => {
+      const wa = /studentname|membername|members|member/i.test(a) ? 1 : 0;
+      const wb = /studentname|membername|members|member/i.test(b) ? 1 : 0;
+      return wb - wa;
+    });
+  }
+
+  if (field === 'studentIds') {
+    return normalized.sort((a, b) => {
+      const wa = /studentid|memberid|idnumber|學號/i.test(a) ? 1 : 0;
+      const wb = /studentid|memberid|idnumber|學號/i.test(b) ? 1 : 0;
+      return wb - wa;
+    });
+  }
+
+  if (field === 'description') {
+    return normalized.sort((a, b) => {
+      const wa = /description|projectintro|summary|brief|abstract|overview|content|story/i.test(a) ? 1 : 0;
+      const wb = /description|projectintro|summary|brief|abstract|overview|content|story/i.test(b) ? 1 : 0;
+      return wb - wa;
+    });
+  }
+
+  return normalized;
 }
 
 function scoreStatus(score: number, threshold: number): 'auto' | 'review' {
@@ -342,6 +382,7 @@ export function inferFieldMapping(params: {
       const lowered = candidate.toLowerCase();
       return keywords.some((kw) => lowered.includes(kw));
     });
+    const rankedFuzzy = rankCandidatesForField(fieldName, fuzzy);
 
     let sourceCandidates: string[] = [];
     let score = 0.5;
@@ -351,8 +392,8 @@ export function inferFieldMapping(params: {
       sourceCandidates = [exact];
       score = 0.95;
       reason = `Exact field match for ${fieldName}.`;
-    } else if (fuzzy.length > 0) {
-      sourceCandidates = fuzzy;
+    } else if (rankedFuzzy.length > 0) {
+      sourceCandidates = rankedFuzzy;
       score = 0.86;
       reason = `Keyword-based match for ${fieldName}.`;
     } else if (params.historicalMappings?.length) {

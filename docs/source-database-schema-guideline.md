@@ -11,6 +11,15 @@
 2. 欄位名稱請保持英文、大小寫固定，避免同義名稱散落（例如同時出現 `Name`、`Title`、`ProjectName`）。
 3. 一個來源 DB 只維護一套欄位語意，不要重複放同意義欄位。
 
+### 1.1 FieldMapping 推論重點（建議）
+
+1. `assignmentName` 優先來源：`AssignmentName` / `Title` / `ProjectName` / `Name`。
+2. `assignmentName` 不應對到 `StudentName`。
+3. `description` 常見來源：`Description` / `ProjectIntro` / `Summary` / `Brief` / `Overview`。
+4. `members` 優先對到 `StudentName`（姓名）。
+5. `studentIds` 優先對到 `StudentID`（學號）。
+6. 請避免把 `StudentName` 與 `StudentID` 同時塞進同一個 `members` mapping。
+
 ## 2. 共同必要欄位（所有 Source DB 都要有）
 
 這些欄位會對應到 `StudentWork` 的最低可用資料。
