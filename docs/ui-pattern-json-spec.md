@@ -29,6 +29,10 @@
   "year": "2026",
   "isStarred": true,
   "methodologies": ["Interview", "Journey Map"],
+  "storyButtons": [
+    { "label": "View Full Project", "url": "https://example.com/project-1" },
+    { "label": "Research Notes", "url": "https://example.com/research-1" }
+  ],
   "dataSpecs": [
     "[timestamp] 2026/02/02 10:00",
     "[location] 廚房門把"
@@ -56,6 +60,7 @@
 | `year` | string | 否 | 年份（目前前端以字串處理） |
 | `isStarred` | boolean | 否 | 推薦標記 |
 | `methodologies` | string[] | 否 | 方法標籤 |
+| `storyButtons` | {label:string,url:string}[] | 否 | `gallery-story` 按鈕資料（文字 + 新視窗 URL） |
 | `dataSpecs` | string[] | 否 | 技術資料卡內容（每個字串 = 一張 spec 卡） |
 | `gridLocation` | string | 否（`data-matrix` 必填） | 矩陣座標（如 `A1`） |
 
@@ -141,6 +146,10 @@ Work 最小可用 JSON：
     "https://example.com/story-2.jpg"
   ],
   "methodologies": ["Interview", "Mapping"],
+  "storyButtons": [
+    { "label": "View Full Project", "url": "https://example.com/project" },
+    { "label": "Research Notes", "url": "https://example.com/research" }
+  ],
   "url": "https://example.com/project",
   "year": "2026",
   "sourceDatabaseId": "db-gallery-story"
@@ -149,7 +158,8 @@ Work 最小可用 JSON：
 
 欄位重點：
 - 必填：`assignmentName`, `members`, `description`, `mainImage`
-- 建議：`moreImages`, `methodologies`, `url`, `year`
+- 建議：`moreImages`, `methodologies`, `storyButtons`, `year`
+- 按鈕規則：來源欄位若有成對 `button01 + URLbutton01`（可延伸到 `button02 + URLbutton02`），會依組數渲染按鈕；未成對不顯示
 
 ### 3.4 `card-spec`
 
@@ -237,3 +247,4 @@ Work 最小可用 JSON：
   - `data-matrix` 補 `gridLocation`
   - `card-spec` 補 `dataSpecs`
   - `gallery-*` 補 `moreImages`
+  - `gallery-story` 可補 `storyButtons`（或以 `button01/URLbutton01` 自動推論）

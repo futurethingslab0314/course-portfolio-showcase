@@ -206,13 +206,14 @@ app.all('/api/admin/sync-project-mappings', async (req, res) => {
   const projectPageId = pickFromRequest(req, ['projectPageId', 'pageId', 'page_id', 'id', 'Page ID']);
   const sourceDatabaseId = pickFromRequest(req, ['sourceDatabaseId', 'sourceDatabaseID', 'SourceDatabaseId', 'SourceDatabaseID', 'Source DB ID']);
   const overwrite = String(req.body?.overwrite ?? req.query?.overwrite ?? 'false') === 'true';
+  const forceReinfer = String(req.body?.forceReinfer ?? req.query?.forceReinfer ?? 'false') === 'true';
   if (!projectPageId && !sourceDatabaseId) {
     res.status(400).json({ error: 'Missing target project identifier (projectPageId or sourceDatabaseId).' });
     return;
   }
 
   try {
-    const result = await syncProjectMappings({ projectPageId, sourceDatabaseId, overwrite });
+    const result = await syncProjectMappings({ projectPageId, sourceDatabaseId, overwrite, forceReinfer });
     res.json({ ok: true, ...result });
   } catch (error) {
     res.status(500).json({

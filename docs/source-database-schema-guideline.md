@@ -38,6 +38,7 @@
 | `Year` | `year` | `select` 或 `rich_text` | 可選 | 年份/學期 |
 | `IsStarred` | `isStarred` | `checkbox` | 可選 | 精選標記 |
 | `Methodologies` | `methodologies` | `multi_select` | 可選 | 方法論標籤 |
+| `button01` + `URLbutton01`... | `storyButtons` | `rich_text` + `url` | 可選 | `gallery-story` 按鈕（文字 + 新視窗連結） |
 | `DataSpecs` | `dataSpecs` | `rich_text`（每筆為一張卡片文字）或 `multi_select` | 可選 | 技術資料卡文字內容 |
 | `StudentID` | `studentIds` | `multi_select` 或 `rich_text` | 可選（建議） | 成員學號（與 `StudentName`/`Members` 依順序對應） |
 | `GridLocation` | `gridLocation` | `rich_text` 或 `select` | 可選（某些 pattern 必要） | 矩陣座標（例如 `A1`） |
@@ -48,7 +49,7 @@
 |---|---|---|---|---|
 | `generic-card` | `AssignmentName`, `Members`, `Description`, `MainImage` | 無 | `MoreImages`, `Year`, `Tags` | 一般卡片展示，無特殊資料結構 |
 | `gallery-slide` | 同上 | 無 | `MoreImages`（至少 1 筆） | 以多圖輪播為主 |
-| `gallery-story` | 同上 | 無 | `MoreImages`, `Methodologies`, `URL` | 有敘事段落、方法脈絡 |
+| `gallery-story` | 同上 | 無 | `MoreImages`, `Methodologies`, `button01 + URLbutton01` | 有敘事段落、方法脈絡 |
 | `card-spec` | 同上 | 無（但建議視為準必要） | `DataSpecs` 或任何欄位名含 `card`（至少 1 筆） | 有技術量測/規格資料 |
 | `data-matrix` | 同上 | `GridLocation` | `Year`, `Tags` | 需要放進矩陣座標格位 |
 
@@ -83,7 +84,8 @@
 | `StudentWork.Core` | `AssignmentName`, `Members`, `Description`, `MainImage` | 提供故事卡片基本內容。 |
 | `StudentWork.MemberPair` | `StudentName` + `StudentID` | 依陣列順序對應姓名與學號顯示。 |
 | `StudentWork.Story` | `MoreImages`, `Methodologies` | 提供故事圖片序列與方法脈絡標籤。 |
-| `StudentWork.Optional` | `URL`, `Year`, `Tags` | 補充延伸閱讀、年份與分類。 |
+| `StudentWork.Buttons` | `button01+URLbutton01`, `button02+URLbutton02`... | 每組成對後渲染一個按鈕。 |
+| `StudentWork.Optional` | `Year`, `Tags` | 補充年份與分類。 |
 
 ### 5.4 `card-spec`
 
@@ -114,7 +116,7 @@
 | 有 `GridLocation`（或欄位名含 `grid`/`cell`） | `data-matrix` |
 | 有 `DataSpecs` 或任何欄位名含 `card` | `card-spec` |
 | 有 `MoreImages`（或欄位名含 `gallery`） | `gallery-slide` |
-| 有 `Methodologies`、`Story` 類欄位 | `gallery-story` |
+| 有 `Methodologies`、`Story`、`button01/URLbutton01` 類欄位 | `gallery-story` |
 | 以上都不明確 | `generic-card`（fallback） |
 
 ## 7. 建議建立模板（可直接複製）
@@ -130,7 +132,7 @@
 2. `Tags` (`multi_select`)
 3. `Year` (`select`)
 4. `Methodologies` (`multi_select`)
-5. `URL` (`url`)
+5. `button01` (`rich_text`) + `URLbutton01` (`url`)
 6. `DataSpecs` (`rich_text`) 或 `datacard01`/`datacard02`... (`rich_text`)
 7. `GridLocation` (`rich_text`)
 
@@ -139,6 +141,7 @@
 1. 共同必要欄位 4 項是否都存在。
 2. `MainImage` 是否能輸出有效 URL（`files` 最穩定）。
 3. 若要用 `data-matrix`，是否有 `GridLocation` 且格式一致（建議 `A1` 形式）。
-4. 若要用 `card-spec`，是否有 `DataSpecs` 或任何命名含 `card` 的欄位可供轉成 spec 卡。
-5. Project 資料列中的 `SourceDatabaseId`、`UiPattern`、`FieldMapping` 是否已同步。
-6. 跑一次 mapping sync 後，是否無高風險 warning（required field missing）。
+4. 若要用 `gallery-story`，是否有成對按鈕欄位（`button01 + URLbutton01`，可多組）。
+5. 若要用 `card-spec`，是否有 `DataSpecs` 或任何命名含 `card` 的欄位可供轉成 spec 卡。
+6. Project 資料列中的 `SourceDatabaseId`、`UiPattern`、`FieldMapping` 是否已同步。
+7. 跑一次 mapping sync 後，是否無高風險 warning（required field missing）。

@@ -50,6 +50,7 @@ const TARGET_SCHEMA_FIELDS: Array<keyof StudentWork> = [
   'year',
   'isStarred',
   'methodologies',
+  'storyButtons',
   'dataSpecs',
   'sourceDatabaseId',
   'gridLocation',
@@ -58,7 +59,7 @@ const BASE_TEMPLATE_FIELDS: Array<keyof StudentWork> = ['assignmentName', 'membe
 const TEMPLATE_FIELDS_BY_PATTERN: Record<UiPattern, Array<keyof StudentWork>> = {
   'generic-card': [...BASE_TEMPLATE_FIELDS, 'moreImages', 'tags', 'year', 'isStarred'],
   'gallery-slide': [...BASE_TEMPLATE_FIELDS, 'moreImages', 'year', 'tags'],
-  'gallery-story': [...BASE_TEMPLATE_FIELDS, 'moreImages', 'methodologies', 'url', 'year', 'tags'],
+  'gallery-story': [...BASE_TEMPLATE_FIELDS, 'moreImages', 'methodologies', 'storyButtons', 'url', 'year', 'tags'],
   'card-spec': [...BASE_TEMPLATE_FIELDS, 'dataSpecs', 'tags', 'year'],
   'data-matrix': [...BASE_TEMPLATE_FIELDS, 'gridLocation', 'year', 'tags'],
 };
@@ -87,6 +88,7 @@ function getSourceValue(record: UnknownRecord, candidates: string[]): unknown {
 function inferTransformFromField(field: keyof StudentWork): MappingRule['transform'] {
   if (['members', 'studentIds', 'moreImages', 'tags', 'methodologies'].includes(field)) return 'string[]';
   if (field === 'isStarred') return 'boolean';
+  if (field === 'storyButtons') return 'json';
   if (field === 'dataSpecs') return 'json';
   return 'string';
 }
@@ -108,6 +110,7 @@ function defaultValueForField(field: keyof StudentWork): unknown {
     case 'tags':
     case 'methodologies':
     case 'moreImages':
+    case 'storyButtons':
     case 'dataSpecs':
       return [];
     default:
@@ -143,6 +146,8 @@ function keywordCandidates(field: keyof StudentWork): string[] {
       return ['star', 'featured', 'recommend'];
     case 'methodologies':
       return ['method', 'methodology', 'process'];
+    case 'storyButtons':
+      return ['button', 'urlbutton', 'cta', 'action'];
     case 'dataSpecs':
       return ['dataspec', 'data spec', 'spec', 'metric', 'timestamp', 'card', 'datacard'];
     case 'sourceDatabaseId':

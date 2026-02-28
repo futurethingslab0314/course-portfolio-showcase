@@ -221,6 +221,71 @@ function ensureDataSpecs(value: unknown): string[] {
   return [];
 }
 
+function ensureStoryButtons(value: unknown): { label: string; url: string }[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .filter((item): item is Record<string, unknown> => !!item && typeof item === 'object' && !Array.isArray(item))
+    .map((item) => ({
+      label: firstString(item.label).trim(),
+      url: firstString(item.url).trim(),
+    }))
+    .filter((item) => item.label && item.url);
+}
+
+function collectStoryButtonsFromSource(source: UnknownRecord): { label: string; url: string }[] {
+  const buffer = new Map<string, { label?: string; url?: string }>();
+
+  for (const [key, rawValue] of Object.entries(source)) {
+    const labelMatch = key.match(/^button(\d+)$/i);
+    const urlMatch = key.match(/^urlbutton(\d+)$/i);
+
+    if (!labelMatch && !urlMatch) {
+      continue;
+    }
+
+    const value = firstString(rawValue).trim();
+    if (!value) {
+      continue;
+    }
+
+    const index = (labelMatch?.[1] ?? urlMatch?.[1] ?? '').padStart(4, '0');
+    const current = buffer.get(index) ?? {};
+
+    if (labelMatch) {
+      current.label = value;
+    }
+    if (urlMatch) {
+      current.url = value;
+    }
+
+    buffer.set(index, current);
+  }
+
+  return [...buffer.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([, item]) => ({ label: String(item.label || '').trim(), url: String(item.url || '').trim() }))
+    .filter((item) => item.label && item.url);
+}
+
+function mergeStoryButtons(primary: { label: string; url: string }[], inferred: { label: string; url: string }[]): { label: string; url: string }[] {
+  const merged: { label: string; url: string }[] = [];
+  const seen = new Set<string>();
+
+  for (const item of [...primary, ...inferred]) {
+    const key = `${item.label.trim()}|${item.url.trim()}`;
+    if (!item.label || !item.url || seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    merged.push({ label: item.label.trim(), url: item.url.trim() });
+  }
+
+  return merged;
+}
+
 function collectCardNamedSpecs(source: UnknownRecord): string[] {
   return Object.entries(source)
     .filter(([key]) => /card/i.test(key))
@@ -349,6 +414,7 @@ export function normalizeStudentWork(
     year: firstString(pick('year')) || undefined,
     isStarred: toBoolean(pick('isStarred')),
     methodologies: ensureStringArray(pick('methodologies')),
+    storyButtons: mergeStoryButtons(ensureStoryButtons(pick('storyButtons')), collectStoryButtonsFromSource(source)),
     dataSpecs: mergeDataSpecs(ensureDataSpecs(pick('dataSpecs')), collectCardNamedSpecs(source)),
     sourceDatabaseId,
     gridLocation: firstString(pick('gridLocation')) || undefined,

@@ -2,7 +2,7 @@ import { runMappingPipeline } from './mappingPipeline';
 import { fetchCourseBySlug, fetchDatabaseSchema, fetchProjectSyncContext, findCourseSlugByPageId, findProjectPageIdBySourceDatabaseId, updatePageProperties } from './notion';
 import { generateCourseWebsite } from './generator';
 import { FieldMapping } from '../../shared/contracts';
-import { mapUiPattern } from '../../shared/notionMapper';
+import { mapUiPattern, parseFieldMapping } from '../../shared/notionMapper';
 
 type PropertySchema = { type?: string } & Record<string, unknown>;
 
@@ -84,6 +84,7 @@ export async function syncProjectMappings(params: {
   projectPageId?: string;
   sourceDatabaseId?: string;
   overwrite?: boolean;
+  forceReinfer?: boolean;
 }) {
   let projectPageId = (params.projectPageId || '').trim();
   const sourceDatabaseIdInput = (params.sourceDatabaseId || '').trim();
@@ -121,9 +122,15 @@ export async function syncProjectMappings(params: {
 
   const nextFieldMapping = serializeFieldMappingToDsl(pipelineResult.fieldMapping);
   const nextUiPattern = pipelineResult.uiPattern;
+  const hasExistingFieldMapping = Boolean(fieldMappingValue);
+  const forceReinfer = Boolean(params.forceReinfer);
 
-  const shouldUpdateFieldMapping = params.overwrite || !fieldMappingValue;
+  // Preserve manual mapping by default; only regenerate FieldMapping when explicitly requested.
+  const shouldUpdateFieldMapping = forceReinfer || !hasExistingFieldMapping;
   const shouldUpdateUiPattern = params.overwrite || !uiPatternValue;
+
+  const existingFieldMapping = parseFieldMapping(fieldMappingValue, [], { projectId: projectPageId, sourceDatabaseId });
+  const effectiveFieldMapping = shouldUpdateFieldMapping ? pipelineResult.fieldMapping : existingFieldMapping;
 
   const propertiesPatch: Record<string, unknown> = {};
 
@@ -150,10 +157,11 @@ export async function syncProjectMappings(params: {
     projectPageId,
     sourceDatabaseId,
     inferredUiPattern: nextUiPattern,
-    inferredFieldMapping: pipelineResult.fieldMapping,
+    inferredFieldMapping: effectiveFieldMapping,
     confidenceReport: pipelineResult.confidenceReport,
     mappingVersion: pipelineResult.mappingRecord.version,
     overwrite: Boolean(params.overwrite),
+    forceReinfer,
   };
 }
 

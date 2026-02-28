@@ -12,6 +12,7 @@ export interface StudentWork {
   year?: string;
   isStarred?: boolean;
   methodologies?: string[];
+  storyButtons?: { label: string; url: string }[];
   dataSpecs?: string[];
   sourceDatabaseId: string;
   gridLocation?: string;

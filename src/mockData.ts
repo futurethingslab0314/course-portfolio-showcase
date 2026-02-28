@@ -124,6 +124,10 @@ export const STUDENT_WORKS: StudentWork[] = [
       'https://picsum.photos/seed/track1-3/800/600'
     ],
     methodologies: ['DEAR DATA [SELF]'],
+    storyButtons: [
+      { label: 'View Full Project', url: 'https://example.com/project-1' },
+      { label: 'Research Notes', url: 'https://example.com/research-1' }
+    ],
     year: '2024',
     sourceDatabaseId: 'db-tracking'
   },
@@ -135,6 +139,9 @@ export const STUDENT_WORKS: StudentWork[] = [
     description: '追蹤一個月內的咖啡攝取量，並將其轉化為視覺化的旋律。',
     mainImage: 'https://picsum.photos/seed/track2/800/600',
     methodologies: ['AUTO-ETHNOGRAPHY'],
+    storyButtons: [
+      { label: 'View Full Project', url: 'https://example.com/project-2' }
+    ],
     year: '2024',
     sourceDatabaseId: 'db-tracking'
   },

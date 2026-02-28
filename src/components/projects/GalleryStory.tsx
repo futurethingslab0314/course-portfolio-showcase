@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronDown, Plus, X, ExternalLink, ArrowRight } from 'lucide-react';
+import { ChevronDown, Plus, X, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { StudentWork } from '../../types';
 import { cn } from '../../lib/utils';
@@ -15,6 +15,7 @@ interface GalleryStoryProps {
 
 export const GalleryStory = ({ work, isExpanded, setIsExpanded, zoomedImage, setZoomedImage }: GalleryStoryProps) => {
   const members = memberRows(work);
+  const storyButtons = (work.storyButtons ?? []).filter((button) => button.label && button.url);
 
   return (
     <div className="gallery-story-container">
@@ -103,29 +104,25 @@ export const GalleryStory = ({ work, isExpanded, setIsExpanded, zoomedImage, set
                   </div>
                 </div>
 
-                <div className="mt-12">
-                  <h4 className="text-[11px] font-bold uppercase tracking-[0.2em] text-black/30 mb-8">Project Links</h4>
-                  <div className="flex flex-col gap-3">
-                    <a 
-                      href={work.url || "https://futurethings.io"} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-between px-4 py-4 bg-white border border-black/10 rounded-xl group hover:border-blue-600 transition-all shadow-sm hover:shadow-blue-600/10"
-                    >
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-black group-hover:text-blue-600">View Full Project</span>
-                      <ExternalLink size={14} className="text-black/20 group-hover:text-blue-600 group-hover:translate-x-1 transition-transform" />
-                    </a>
-                    <a 
-                      href="#" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-between px-4 py-4 bg-white border border-black/10 rounded-xl group hover:border-black transition-all shadow-sm"
-                    >
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-black/60 group-hover:text-black">Research Paper</span>
-                      <ArrowRight size={14} className="text-black/20 group-hover:text-black group-hover:translate-x-1 transition-transform" />
-                    </a>
+                {storyButtons.length > 0 && (
+                  <div className="mt-12">
+                    <h4 className="text-[11px] font-bold uppercase tracking-[0.2em] text-black/30 mb-8">Project Links</h4>
+                    <div className="flex flex-col gap-3">
+                      {storyButtons.map((button, index) => (
+                        <a
+                          key={`${button.label}-${index}`}
+                          href={button.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-between px-4 py-4 bg-white border border-black/10 rounded-xl group hover:border-blue-600 transition-all shadow-sm hover:shadow-blue-600/10"
+                        >
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-black group-hover:text-blue-600">{button.label}</span>
+                          <ExternalLink size={14} className="text-black/20 group-hover:text-blue-600 group-hover:translate-x-1 transition-transform" />
+                        </a>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
               <div className="lg:col-span-2">
