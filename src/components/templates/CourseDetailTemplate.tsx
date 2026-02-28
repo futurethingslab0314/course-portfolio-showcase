@@ -191,7 +191,9 @@ export const CourseDetailTemplate = ({
         ) : (
           <div className={cn(
             "grid gap-12",
-            activeProject?.displayStyle === 'generic-card' ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4" : "grid-cols-1"
+            activeProject?.displayStyle === 'generic-card' || activeProject?.displayStyle === 'blog-post'
+              ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
+              : "grid-cols-1"
           )}>
             {filteredWorks.map(work => (
               <StudentWorkItem 
