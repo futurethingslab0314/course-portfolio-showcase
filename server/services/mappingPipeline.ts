@@ -24,6 +24,9 @@ export type ConfidenceItem = {
   score: number;
   reason: string;
   status: 'auto' | 'review';
+  matchedFrom?: 'exact' | 'history_same_db' | 'history_cross_db' | 'alias' | 'keyword' | 'fallback';
+  needsReview?: boolean;
+  reviewReason?: string;
 };
 
 export type FileMappingRecord = {
@@ -65,6 +68,34 @@ const TEMPLATE_FIELDS_BY_PATTERN: Record<UiPattern, Array<keyof StudentWork>> = 
 };
 
 const mappingStorePath = path.resolve(process.cwd(), 'server/data/filemapping-records.json');
+const DEFAULT_THRESHOLD = 0.85;
+
+const FIELD_ALIASES: Partial<Record<keyof StudentWork, string[]>> = {
+  assignmentName: ['assignmentname', 'title', 'projectname', 'name', 'topic'],
+  members: ['members', 'studentname', 'membername', 'authors', 'team'],
+  studentIds: ['studentid', 'memberid', 'idnumber', '學號'],
+  description: ['description', 'projectintro', 'summary', 'brief', 'overview', 'abstract'],
+  mainImage: ['mainimage', 'cover', 'thumbnail', 'heroimage'],
+  moreImages: ['moreimages', 'gallery', 'slides', 'imageset'],
+  dataSpecs: ['dataspecs', 'datacard', 'card01', 'card02', 'spec', 'metric'],
+  gridLocation: ['gridlocation', 'grid', 'cell', 'matrixlocation'],
+};
+
+const NEGATIVE_FIELD_RULES: Partial<Record<keyof StudentWork, string[]>> = {
+  assignmentName: ['studentname', 'studentid', 'members'],
+  members: ['studentid', 'idnumber'],
+  studentIds: ['studentname', 'members'],
+  gridLocation: ['year', 'tags'],
+};
+
+type MatchSource = 'exact' | 'history_same_db' | 'history_cross_db' | 'alias' | 'keyword' | 'fallback';
+
+type CandidateProposal = {
+  sourceCandidates: string[];
+  score: number;
+  reason: string;
+  matchedFrom: MatchSource;
+};
 
 function detectType(value: unknown): string {
   if (value == null) return 'null';
@@ -202,6 +233,95 @@ function rankCandidatesForField(field: keyof StudentWork, candidates: string[]):
 function scoreStatus(score: number, threshold: number): 'auto' | 'review' {
   if (score >= threshold) return 'auto';
   return 'review';
+}
+
+function normalizeToken(value: string): string {
+  return value.toLowerCase().replace(/[\s_-]/g, '');
+}
+
+function unique(values: string[]): string[] {
+  return [...new Set(values)];
+}
+
+function isNegativeCandidate(field: keyof StudentWork, candidate: string): boolean {
+  const blocklist = NEGATIVE_FIELD_RULES[field] ?? [];
+  const token = normalizeToken(candidate);
+  return blocklist.some((blocked) => token.includes(normalizeToken(blocked)));
+}
+
+function filterNegativeCandidates(field: keyof StudentWork, candidates: string[]): string[] {
+  return candidates.filter((candidate) => !isNegativeCandidate(field, candidate));
+}
+
+function aliasCandidates(field: keyof StudentWork, availableFields: string[]): string[] {
+  const aliases = FIELD_ALIASES[field] ?? [];
+  if (aliases.length === 0) return [];
+  const aliasTokens = aliases.map(normalizeToken);
+  return availableFields.filter((name) => aliasTokens.includes(normalizeToken(name)));
+}
+
+function sortedByUpdatedAtDesc(records: FileMappingRecord[]): FileMappingRecord[] {
+  return [...records].sort((a, b) => {
+    const ta = Date.parse(a.updatedAt || '');
+    const tb = Date.parse(b.updatedAt || '');
+    return (Number.isFinite(tb) ? tb : 0) - (Number.isFinite(ta) ? ta : 0);
+  });
+}
+
+function historicalCandidatesForField(
+  field: keyof StudentWork,
+  sourceDatabaseId: string,
+  historicalMappings: FileMappingRecord[] | undefined,
+  availableLower: Map<string, string>,
+): { sameDb: string[]; crossDb: string[] } {
+  if (!historicalMappings?.length) {
+    return { sameDb: [], crossDb: [] };
+  }
+
+  const sorted = sortedByUpdatedAtDesc(historicalMappings);
+  const sameDb = sorted.filter((record) => record.sourceDatabaseId === sourceDatabaseId);
+  const crossDb = sorted.filter((record) => record.sourceDatabaseId !== sourceDatabaseId);
+
+  const fromSame = sameDb
+    .flatMap((record) => record.fieldMapping[field]?.sourceCandidates ?? [])
+    .map((candidate) => availableLower.get(candidate.toLowerCase()) || candidate);
+  const fromCross = crossDb
+    .flatMap((record) => record.fieldMapping[field]?.sourceCandidates ?? [])
+    .map((candidate) => availableLower.get(candidate.toLowerCase()) || candidate);
+
+  return {
+    sameDb: unique(filterNegativeCandidates(field, fromSame)),
+    crossDb: unique(filterNegativeCandidates(field, fromCross)),
+  };
+}
+
+function maybeReviewReason(
+  field: keyof StudentWork,
+  selected: CandidateProposal,
+  runnerUp: CandidateProposal | undefined,
+  uiPattern: UiPattern,
+): string | undefined {
+  if (selected.score < 0.75) {
+    return 'Low confidence mapping candidate.';
+  }
+
+  if (field === 'assignmentName' && selected.sourceCandidates.some((candidate) => /student|member|author/i.test(candidate))) {
+    return 'assignmentName candidate appears person-related.';
+  }
+
+  if (uiPattern === 'data-matrix' && field === 'gridLocation' && selected.sourceCandidates.length === 0) {
+    return 'gridLocation is required for data-matrix but no candidate found.';
+  }
+
+  if (runnerUp && Math.abs(selected.score - runnerUp.score) < 0.05) {
+    return 'Competing candidates are too close in score.';
+  }
+
+  if (selected.sourceCandidates.some((candidate) => isNegativeCandidate(field, candidate))) {
+    return 'Selected candidate violates negative mapping rule.';
+  }
+
+  return undefined;
 }
 
 function parseDatacardText(text: string, timezone: string): Array<{ label: string; value: string; timestamp: string }> {
@@ -364,10 +484,11 @@ export function inferFieldMapping(params: {
 }): { fieldMapping: FieldMapping; confidenceReport: ConfidenceItem[] } {
   const availableFields = Object.keys(params.schemaProfile.fields);
   const availableLower = new Map(availableFields.map((name) => [name.toLowerCase(), name]));
-  const threshold = params.confidenceThreshold ?? 0.85;
+  const threshold = params.confidenceThreshold ?? DEFAULT_THRESHOLD;
 
   const fieldMapping: FieldMapping = {};
   const confidenceReport: ConfidenceItem[] = [];
+  const selectedPrimaryCandidates: Partial<Record<keyof StudentWork, string>> = {};
 
   for (const fieldNameRaw of params.targetSchemaFields) {
     const fieldName = fieldNameRaw as keyof StudentWork;
@@ -382,42 +503,109 @@ export function inferFieldMapping(params: {
       const lowered = candidate.toLowerCase();
       return keywords.some((kw) => lowered.includes(kw));
     });
-    const rankedFuzzy = rankCandidatesForField(fieldName, fuzzy);
+    const rankedFuzzy = rankCandidatesForField(fieldName, filterNegativeCandidates(fieldName, fuzzy));
+    const alias = rankCandidatesForField(fieldName, filterNegativeCandidates(fieldName, aliasCandidates(fieldName, availableFields)));
+    const history = historicalCandidatesForField(fieldName, params.sourceDatabaseId, params.historicalMappings, availableLower);
 
-    let sourceCandidates: string[] = [];
-    let score = 0.5;
-    let reason = 'No clear source field matched; using default.';
+    const proposals: CandidateProposal[] = [];
 
-    if (exact) {
-      sourceCandidates = [exact];
-      score = 0.95;
-      reason = `Exact field match for ${fieldName}.`;
-    } else if (rankedFuzzy.length > 0) {
-      sourceCandidates = rankedFuzzy;
-      score = 0.86;
-      reason = `Keyword-based match for ${fieldName}.`;
-    } else if (params.historicalMappings?.length) {
-      const history = params.historicalMappings.find((record) => record.sourceDatabaseId === params.sourceDatabaseId);
-      const fromHistory = history?.fieldMapping[fieldName]?.sourceCandidates;
-      if (fromHistory?.length) {
-        sourceCandidates = fromHistory;
-        score = 0.8;
-        reason = `Using historical mapping for ${fieldName}.`;
-      }
+    if (exact && !isNegativeCandidate(fieldName, exact)) {
+      proposals.push({
+        sourceCandidates: [exact],
+        score: 0.95,
+        reason: `Exact field match for ${fieldName}.`,
+        matchedFrom: 'exact',
+      });
+    }
+
+    if (history.sameDb.length > 0) {
+      proposals.push({
+        sourceCandidates: history.sameDb,
+        score: 0.92,
+        reason: `Using same-database historical mapping for ${fieldName}.`,
+        matchedFrom: 'history_same_db',
+      });
+    }
+
+    if (alias.length > 0) {
+      proposals.push({
+        sourceCandidates: alias,
+        score: 0.9,
+        reason: `Alias dictionary match for ${fieldName}.`,
+        matchedFrom: 'alias',
+      });
+    }
+
+    if (rankedFuzzy.length > 0) {
+      proposals.push({
+        sourceCandidates: rankedFuzzy,
+        score: 0.86,
+        reason: `Keyword-based match for ${fieldName}.`,
+        matchedFrom: 'keyword',
+      });
+    }
+
+    if (history.crossDb.length > 0) {
+      proposals.push({
+        sourceCandidates: history.crossDb,
+        score: 0.82,
+        reason: `Using cross-database historical mapping for ${fieldName}.`,
+        matchedFrom: 'history_cross_db',
+      });
+    }
+
+    if (proposals.length === 0) {
+      proposals.push({
+        sourceCandidates: [],
+        score: 0.5,
+        reason: 'No clear source field matched; using default.',
+        matchedFrom: 'fallback',
+      });
+    }
+
+    proposals.sort((a, b) => b.score - a.score);
+    const selected = proposals[0];
+    const runnerUp = proposals[1];
+    const reviewReason = maybeReviewReason(fieldName, selected, runnerUp, params.uiPattern);
+    const needsReview = Boolean(reviewReason) || scoreStatus(selected.score, threshold) === 'review';
+    const status: 'auto' | 'review' = needsReview ? 'review' : 'auto';
+
+    if (selected.sourceCandidates.length > 0) {
+      selectedPrimaryCandidates[fieldName] = selected.sourceCandidates[0];
     }
 
     fieldMapping[fieldName] = {
-      sourceCandidates,
+      sourceCandidates: selected.sourceCandidates,
       transform: inferTransformFromField(fieldName),
       default: defaultValueForField(fieldName),
     };
 
     confidenceReport.push({
       targetField: fieldName,
-      score,
-      reason,
-      status: scoreStatus(score, threshold),
+      score: selected.score,
+      reason: selected.reason,
+      status,
+      matchedFrom: selected.matchedFrom,
+      needsReview,
+      reviewReason,
     });
+  }
+
+  const memberSource = selectedPrimaryCandidates.members;
+  const studentIdSource = selectedPrimaryCandidates.studentIds;
+  if (memberSource && studentIdSource && memberSource.toLowerCase() === studentIdSource.toLowerCase()) {
+    const membersItem = confidenceReport.find((item) => item.targetField === 'members');
+    const studentIdsItem = confidenceReport.find((item) => item.targetField === 'studentIds');
+    if (membersItem) {
+      membersItem.status = 'review';
+      membersItem.needsReview = true;
+      membersItem.reviewReason = 'members and studentIds point to the same source field.';
+    }
+    if (studentIdsItem) {
+      studentIdsItem.status = 'review';
+      studentIdsItem.needsReview = true;
+      studentIdsItem.reviewReason = 'members and studentIds point to the same source field.';
+    }
   }
 
   return { fieldMapping, confidenceReport };
@@ -532,7 +720,7 @@ export function runMappingPipeline(params: {
   const effectiveUiPattern = params.uiPattern || inferredPattern.uiPattern;
 
   const store = loadMappingStore();
-  const historicalMappings = store.filter((item) => item.sourceDatabaseId === params.sourceDatabaseId);
+  const historicalMappings = store;
 
   const { fieldMapping, confidenceReport } = inferFieldMapping({
     sourceDatabaseId: params.sourceDatabaseId,
