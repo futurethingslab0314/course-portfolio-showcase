@@ -6,11 +6,13 @@ import { Footer } from '../Footer';
 
 interface HomePageTemplateProps {
   courses: Course[];
+  onSyncData?: () => void;
+  isSyncing?: boolean;
 }
 
-export const HomePageTemplate = ({ courses }: HomePageTemplateProps) => (
+export const HomePageTemplate = ({ courses, onSyncData, isSyncing }: HomePageTemplateProps) => (
   <div className="min-h-screen bg-[#fcfcfc]">
-    <Header />
+    <Header onSyncData={onSyncData} isSyncing={isSyncing} />
     <main className="max-w-7xl mx-auto px-6 py-20">
       <div className="mb-20">
         <h1 className="text-5xl sm:text-7xl md:text-8xl font-bold tracking-tighter mb-6 leading-[0.85]">

@@ -4,16 +4,19 @@ import { RefreshCw, Menu, X as CloseIcon } from 'lucide-react';
 
 interface HeaderProps {
   title?: string;
+  titleLink?: string;
   showBackButton?: boolean;
   onMenuClick?: () => void;
   isMenuOpen?: boolean;
+  onSyncData?: () => void | Promise<void>;
+  isSyncing?: boolean;
 }
 
-export const Header = ({ title, showBackButton, onMenuClick, isMenuOpen }: HeaderProps) => (
+export const Header = ({ title, titleLink = '/', showBackButton, onMenuClick, isMenuOpen, onSyncData, isSyncing }: HeaderProps) => (
   <header className="sticky top-0 z-[60] bg-white/80 backdrop-blur-md border-b border-black/5 px-4 md:px-6 py-4">
     <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
       <div className="flex flex-col">
-        <Link to="/" className="flex items-baseline gap-2 group">
+        <Link to={titleLink} className="flex items-baseline gap-2 group">
           <span className="font-bold text-xl md:text-2xl tracking-tighter text-black uppercase line-clamp-1 md:line-clamp-none">
             {title || "DESIGN COURSE PORTFOLIO"}
           </span>
@@ -42,9 +45,13 @@ export const Header = ({ title, showBackButton, onMenuClick, isMenuOpen }: Heade
               to other courses
             </Link>
           )}
-          <button className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-full border border-black/10 text-[9px] md:text-[10px] font-bold uppercase tracking-wider hover:bg-black hover:text-white transition-all whitespace-nowrap">
+          <button
+            onClick={onSyncData}
+            disabled={Boolean(isSyncing)}
+            className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-full border border-black/10 text-[9px] md:text-[10px] font-bold uppercase tracking-wider hover:bg-black hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all whitespace-nowrap"
+          >
             <RefreshCw size={12} className="md:w-[14px] md:h-[14px]" />
-            Sync Data
+            {isSyncing ? 'Syncing...' : 'Sync Data'}
           </button>
         </div>
       </div>

@@ -20,7 +20,7 @@ export const GalleryStory = ({ work, isExpanded, setIsExpanded, zoomedImage, set
   return (
     <div className="gallery-story-container">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
-        <div 
+        <div
           className="aspect-[4/3] bg-black/5 rounded-lg overflow-hidden cursor-zoom-in group relative"
           onClick={() => setZoomedImage(work.mainImage)}
         >
@@ -38,7 +38,7 @@ export const GalleryStory = ({ work, isExpanded, setIsExpanded, zoomedImage, set
           </div>
           <h2 className="text-6xl font-bold tracking-tighter mb-6">{work.assignmentName}</h2>
           <p className="text-black/60 text-sm mb-8 line-clamp-3">{work.description}</p>
-          
+
           <div className="mb-8">
             <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-black/30 mb-2">Project Team</h4>
             <div className="flex flex-wrap gap-x-4 gap-y-1">
@@ -54,7 +54,7 @@ export const GalleryStory = ({ work, isExpanded, setIsExpanded, zoomedImage, set
           </div>
 
           <div className="mb-10">
-            <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-black/30 mb-4">Methodologies</h4>
+            <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-black/30 mb-4">Keywords Tag</h4>
             <div className="flex gap-2">
               {work.methodologies?.map(m => (
                 <span key={m} className="text-[10px] font-bold text-purple-600 bg-purple-50 px-3 py-1 uppercase tracking-wider rounded border border-purple-100">
@@ -84,7 +84,7 @@ export const GalleryStory = ({ work, isExpanded, setIsExpanded, zoomedImage, set
             </div>
           )}
 
-          <button 
+          <button
             onClick={() => setIsExpanded(!isExpanded)}
             className="flex items-center gap-3 text-blue-600 text-[11px] font-bold uppercase tracking-[0.2em] group"
           >
@@ -97,7 +97,7 @@ export const GalleryStory = ({ work, isExpanded, setIsExpanded, zoomedImage, set
 
       <AnimatePresence>
         {isExpanded && (
-          <motion.div 
+          <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
@@ -109,7 +109,7 @@ export const GalleryStory = ({ work, isExpanded, setIsExpanded, zoomedImage, set
                 <p className="text-black/70 italic leading-relaxed text-sm whitespace-pre-wrap">
                   {work.description}
                 </p>
-                
+
                 <div className="mt-12">
                   <h4 className="text-[11px] font-bold uppercase tracking-[0.2em] text-black/30 mb-8">Contributors</h4>
                   <div className="space-y-4">
@@ -130,12 +130,12 @@ export const GalleryStory = ({ work, isExpanded, setIsExpanded, zoomedImage, set
                 <h4 className="text-[11px] font-bold uppercase tracking-[0.2em] text-black/30 mb-8">Process Documentation</h4>
                 <div className="grid grid-cols-2 gap-4">
                   {work.moreImages?.map((img, i) => (
-                    <div 
-                      key={i} 
+                    <div
+                      key={i}
                       onClick={() => setZoomedImage(img)}
                       className={cn(
-                        "rounded-lg overflow-hidden bg-black/5 cursor-zoom-in group relative", 
-                        i === 0 && "col-span-2 aspect-video", 
+                        "rounded-lg overflow-hidden bg-black/5 cursor-zoom-in group relative",
+                        i === 0 && "col-span-2 aspect-video",
                         i > 0 && "aspect-square"
                       )}
                     >
@@ -156,26 +156,26 @@ export const GalleryStory = ({ work, isExpanded, setIsExpanded, zoomedImage, set
       <AnimatePresence>
         {zoomedImage && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setZoomedImage(null)}
               className="absolute inset-0 bg-black/90 backdrop-blur-xl"
             />
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               className="relative w-full max-w-6xl max-h-[90vh] rounded-2xl overflow-hidden shadow-2xl flex items-center justify-center bg-black"
             >
-              <img 
-                src={zoomedImage} 
-                alt="" 
-                className="max-w-full max-h-full object-contain" 
-                referrerPolicy="no-referrer" 
+              <img
+                src={zoomedImage}
+                alt=""
+                className="max-w-full max-h-full object-contain"
+                referrerPolicy="no-referrer"
               />
-              <button 
+              <button
                 onClick={() => setZoomedImage(null)}
                 className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full text-white transition-colors"
               >

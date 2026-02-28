@@ -15,6 +15,8 @@ interface CourseDetailTemplateProps {
   setActiveProjectId: (id: string) => void;
   works: StudentWork[];
   StudentWorkItem: React.ComponentType<{ work: StudentWork; style: Project['displayStyle'] }>;
+  onSyncData?: () => void;
+  isSyncing?: boolean;
 }
 
 export const CourseDetailTemplate = ({ 
@@ -23,7 +25,9 @@ export const CourseDetailTemplate = ({
   activeProjectId, 
   setActiveProjectId, 
   works, 
-  StudentWorkItem
+  StudentWorkItem,
+  onSyncData,
+  isSyncing,
 }: CourseDetailTemplateProps) => {
   const activeProject = projects.find(p => p.id === activeProjectId);
   const [selectedYear, setSelectedYear] = useState<string>('ALL');
@@ -50,9 +54,12 @@ export const CourseDetailTemplate = ({
     <div className="min-h-screen bg-white">
       <Header 
         title={course.courseName} 
+        titleLink={`/course/${course.slug || course.id}`}
         showBackButton={true} 
         onMenuClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         isMenuOpen={isMobileMenuOpen}
+        onSyncData={onSyncData}
+        isSyncing={isSyncing}
       />
       
       {/* Sticky Tabs - Positioned right below Header */}

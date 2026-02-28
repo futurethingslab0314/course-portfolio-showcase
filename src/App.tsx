@@ -36,6 +36,7 @@ const StudentWorkItem = ({ work, style }: { work: StudentWork; style: Project['d
 
 const HomePage = () => {
   const [courses, setCourses] = useState<Course[]>(fallbackCourses());
+  const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -47,7 +48,21 @@ const HomePage = () => {
     };
   }, []);
 
-  return <HomePageTemplate courses={courses} />;
+  useEffect(() => {
+    document.title = 'Course Portfolio Showcase';
+  }, []);
+
+  const handleSyncData = async () => {
+    setIsSyncing(true);
+    try {
+      const next = await loadCoursesForHome();
+      setCourses(next);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  return <HomePageTemplate courses={courses} onSyncData={handleSyncData} isSyncing={isSyncing} />;
 };
 
 const CourseDetailPage = () => {
@@ -55,7 +70,19 @@ const CourseDetailPage = () => {
   const [course, setCourse] = useState<Course | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [studentWorks, setStudentWorks] = useState<StudentWork[]>([]);
-  const [activeProjectId, setActiveProjectId] = useState(projects[0]?.id);
+  const [activeProjectId, setActiveProjectId] = useState<string | undefined>(undefined);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const loadCourseData = async (slugOrId: string) => {
+    const payload = await loadCoursePayloadBySlug(slugOrId);
+    setCourse(payload.course);
+    setProjects(payload.projects);
+    setStudentWorks(payload.studentWorks);
+    setActiveProjectId((prev) => {
+      const exists = payload.projects.some((project) => project.id === prev);
+      return exists ? prev : payload.projects[0]?.id;
+    });
+  };
 
   useEffect(() => {
     let active = true;
@@ -74,6 +101,22 @@ const CourseDetailPage = () => {
     };
   }, [id]);
 
+  useEffect(() => {
+    if (course?.courseName) {
+      document.title = course.courseName;
+    }
+  }, [course?.courseName]);
+
+  const handleSyncData = async () => {
+    if (!id) return;
+    setIsSyncing(true);
+    try {
+      await loadCourseData(id);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   const works = useMemo(() => 
     filterWorksForProject(studentWorks, projects, activeProjectId),
     [activeProjectId, projects, studentWorks]
@@ -89,6 +132,8 @@ const CourseDetailPage = () => {
       setActiveProjectId={setActiveProjectId}
       works={works}
       StudentWorkItem={StudentWorkItem}
+      onSyncData={handleSyncData}
+      isSyncing={isSyncing}
     />
   );
 };
