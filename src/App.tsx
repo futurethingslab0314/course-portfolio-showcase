@@ -55,7 +55,7 @@ const HomePage = () => {
   const handleSyncData = async () => {
     setIsSyncing(true);
     try {
-      const next = await loadCoursesForHome();
+      const next = await loadCoursesForHome({ refresh: true });
       setCourses(next);
     } finally {
       setIsSyncing(false);
@@ -73,8 +73,8 @@ const CourseDetailPage = () => {
   const [activeProjectId, setActiveProjectId] = useState<string | undefined>(undefined);
   const [isSyncing, setIsSyncing] = useState(false);
 
-  const loadCourseData = async (slugOrId: string) => {
-    const payload = await loadCoursePayloadBySlug(slugOrId);
+  const loadCourseData = async (slugOrId: string, options?: { refresh?: boolean }) => {
+    const payload = await loadCoursePayloadBySlug(slugOrId, options);
     setCourse(payload.course);
     setProjects(payload.projects);
     setStudentWorks(payload.studentWorks);
@@ -111,7 +111,7 @@ const CourseDetailPage = () => {
     if (!id) return;
     setIsSyncing(true);
     try {
-      await loadCourseData(id);
+      await loadCourseData(id, { refresh: true });
     } finally {
       setIsSyncing(false);
     }

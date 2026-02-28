@@ -6,6 +6,8 @@ import { buildCoursePayloadBySlug, generateCourseWebsite } from './services/gene
 import { executeFunctionTool, listFunctionTools } from './services/mappingPipeline';
 import { fetchAllCourses } from './services/notion';
 import { syncCourseLink, syncProjectMappings, validateSyncSecret } from './services/webhookSync';
+import { CoursePayload } from '../shared/contracts';
+import { Course } from '../src/types';
 
 const app = express();
 app.use(express.json());
@@ -14,6 +16,38 @@ const port = Number(process.env.PORT || 8787);
 const baseUrl = process.env.BASE_URL || `http://localhost:${port}`;
 const distDir = path.resolve(process.cwd(), 'dist');
 const hasFrontendBuild = fs.existsSync(path.join(distDir, 'index.html'));
+const coursePayloadCacheTtlMs = Number(process.env.COURSE_PAYLOAD_CACHE_TTL_MS || 60_000);
+const coursesCacheTtlMs = Number(process.env.COURSES_CACHE_TTL_MS || 60_000);
+
+type CacheEntry<T> = {
+  value: T;
+  expiresAt: number;
+};
+
+const coursePayloadCache = new Map<string, CacheEntry<CoursePayload>>();
+let coursesCache: CacheEntry<Course[]> | null = null;
+
+function nowMs(): number {
+  return Date.now();
+}
+
+function cacheGet<T>(entry: CacheEntry<T> | null | undefined): T | null {
+  if (!entry) return null;
+  if (entry.expiresAt <= nowMs()) return null;
+  return entry.value;
+}
+
+function cacheSet<T>(value: T, ttlMs: number): CacheEntry<T> {
+  return {
+    value,
+    expiresAt: nowMs() + Math.max(0, ttlMs),
+  };
+}
+
+function invalidateAllApiCache() {
+  coursePayloadCache.clear();
+  coursesCache = null;
+}
 
 function readStringCandidate(value: unknown): string {
   if (typeof value === 'string') return value.trim();
@@ -107,7 +141,22 @@ app.get('/health', (_req, res) => {
 
 app.get('/api/course/:slug', async (req, res) => {
   try {
-    const payload = await buildCoursePayloadBySlug(req.params.slug);
+    const slug = String(req.params.slug || '').trim();
+    const forceRefresh = String(req.query.refresh ?? 'false') === 'true';
+    const cacheKey = slug.toLowerCase();
+
+    if (!forceRefresh) {
+      const cached = cacheGet(coursePayloadCache.get(cacheKey));
+      if (cached) {
+        res.set('X-Server-Cache', 'HIT');
+        res.json(cached);
+        return;
+      }
+    }
+
+    const payload = await buildCoursePayloadBySlug(slug);
+    coursePayloadCache.set(cacheKey, cacheSet(payload, coursePayloadCacheTtlMs));
+    res.set('X-Server-Cache', forceRefresh ? 'REFRESH' : 'MISS');
     res.json(payload);
   } catch (error) {
     res.status(500).json({
@@ -118,7 +167,20 @@ app.get('/api/course/:slug', async (req, res) => {
 
 app.get('/api/courses', async (_req, res) => {
   try {
+    const forceRefresh = String(_req.query.refresh ?? 'false') === 'true';
+
+    if (!forceRefresh) {
+      const cached = cacheGet(coursesCache);
+      if (cached) {
+        res.set('X-Server-Cache', 'HIT');
+        res.json({ courses: cached });
+        return;
+      }
+    }
+
     const courses = await fetchAllCourses();
+    coursesCache = cacheSet(courses, coursesCacheTtlMs);
+    res.set('X-Server-Cache', forceRefresh ? 'REFRESH' : 'MISS');
     res.json({ courses });
   } catch (error) {
     const diagnostics = buildCoursesDiagnostics(error);
@@ -186,6 +248,7 @@ app.all('/api/admin/sync-course-link', async (req, res) => {
 
   try {
     const result = await syncCourseLink({ baseUrl, coursePageId, slug });
+    invalidateAllApiCache();
     res.json({ ok: true, ...result });
   } catch (error) {
     res.status(500).json({
@@ -214,6 +277,7 @@ app.all('/api/admin/sync-project-mappings', async (req, res) => {
 
   try {
     const result = await syncProjectMappings({ projectPageId, sourceDatabaseId, overwrite, forceReinfer });
+    invalidateAllApiCache();
     res.json({ ok: true, ...result });
   } catch (error) {
     res.status(500).json({

@@ -27,9 +27,10 @@ async function safeJson<T>(response: Response): Promise<T> {
   return text ? (JSON.parse(text) as T) : ({} as T);
 }
 
-export async function loadCoursePayloadBySlug(slugOrId: string): Promise<CoursePayload> {
+export async function loadCoursePayloadBySlug(slugOrId: string, options?: { refresh?: boolean }): Promise<CoursePayload> {
   try {
-    const response = await fetch(`/api/course/${encodeURIComponent(slugOrId)}`);
+    const refresh = options?.refresh ? '?refresh=true' : '';
+    const response = await fetch(`/api/course/${encodeURIComponent(slugOrId)}${refresh}`);
     if (!response.ok) {
       throw new Error(`Request failed: ${response.status}`);
     }
@@ -45,9 +46,10 @@ export async function loadCoursePayloadBySlug(slugOrId: string): Promise<CourseP
   }
 }
 
-export async function loadCoursesForHome(): Promise<Course[]> {
+export async function loadCoursesForHome(options?: { refresh?: boolean }): Promise<Course[]> {
   try {
-    const response = await fetch('/api/courses');
+    const refresh = options?.refresh ? '?refresh=true' : '';
+    const response = await fetch(`/api/courses${refresh}`);
     if (!response.ok) {
       throw new Error(`Request failed: ${response.status}`);
     }
