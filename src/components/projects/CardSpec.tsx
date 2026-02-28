@@ -3,6 +3,7 @@ import { Plus, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { StudentWork } from '../../types';
 import { TechnicalDataCard } from '../TechnicalDataCard';
+import { memberRows } from '../../lib/memberRows';
 
 interface CardSpecProps {
   work: StudentWork;
@@ -12,6 +13,7 @@ interface CardSpecProps {
 
 export const CardSpec = ({ work, zoomedImage, setZoomedImage }: CardSpecProps) => {
   const specCards = (work.dataSpecs ?? []).filter((card) => Boolean(card?.trim()));
+  const members = memberRows(work);
 
   return (
     <div className="card-spec-grid">
@@ -35,10 +37,12 @@ export const CardSpec = ({ work, zoomedImage, setZoomedImage }: CardSpecProps) =
         </div>
         <h2 className="text-5xl font-bold tracking-tighter mb-4">{work.assignmentName.split('：')[1] || work.assignmentName}</h2>
         <div className="flex flex-wrap gap-x-4 gap-y-1 mb-8">
-          {work.members.map((m, i) => (
-            <div key={m} className="flex gap-2 items-baseline">
-              <span className="text-black/80 text-sm font-medium">{m}</span>
-              <span className="text-[10px] font-mono text-black/20">M1121011{i}</span>
+          {members.map((member, i) => (
+            <div key={`${member.name}-${i}`} className="flex gap-2 items-baseline">
+              <span className="text-black/80 text-sm font-medium">{member.name}</span>
+              {member.studentId ? (
+                <span className="text-[10px] font-mono text-black/20">{member.studentId}</span>
+              ) : null}
             </div>
           ))}
         </div>

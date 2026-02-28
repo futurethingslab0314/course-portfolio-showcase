@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { StudentWork } from '../../types';
+import { memberRows } from '../../lib/memberRows';
 
 interface DataMatrixProps {
   works: StudentWork[];
@@ -16,6 +17,8 @@ export const DataMatrix = ({ works }: DataMatrixProps) => {
       return works.find(w => w.gridLocation === location);
     })
   );
+
+  const selectedMembers = selectedWork ? memberRows(selectedWork) : [];
 
   return (
     <div className="py-12">
@@ -120,10 +123,12 @@ export const DataMatrix = ({ works }: DataMatrixProps) => {
                     <div>
                       <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-black/30 mb-2">Team Members</h4>
                       <div className="space-y-2">
-                        {selectedWork.members.map((m, i) => (
-                          <div key={m} className="flex justify-between items-baseline border-b border-black/5 pb-1">
-                            <p className="text-sm font-medium text-black/80">{m}</p>
-                            <p className="text-[10px] font-mono text-black/20">M1121011{i}</p>
+                        {selectedMembers.map((member, i) => (
+                          <div key={`${member.name}-${i}`} className="flex justify-between items-baseline border-b border-black/5 pb-1">
+                            <p className="text-sm font-medium text-black/80">{member.name}</p>
+                            {member.studentId ? (
+                              <p className="text-[10px] font-mono text-black/20">{member.studentId}</p>
+                            ) : null}
                           </div>
                         ))}
                       </div>

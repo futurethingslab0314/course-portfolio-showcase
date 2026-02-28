@@ -40,6 +40,7 @@ const TARGET_SCHEMA_FIELDS: Array<keyof StudentWork> = [
   'id',
   'assignmentName',
   'members',
+  'studentIds',
   'description',
   'mainImage',
   'moreImages',
@@ -84,7 +85,7 @@ function getSourceValue(record: UnknownRecord, candidates: string[]): unknown {
 }
 
 function inferTransformFromField(field: keyof StudentWork): MappingRule['transform'] {
-  if (['members', 'moreImages', 'tags', 'methodologies'].includes(field)) return 'string[]';
+  if (['members', 'studentIds', 'moreImages', 'tags', 'methodologies'].includes(field)) return 'string[]';
   if (field === 'isStarred') return 'boolean';
   if (field === 'dataSpecs') return 'json';
   return 'string';
@@ -95,6 +96,8 @@ function defaultValueForField(field: keyof StudentWork): unknown {
     case 'assignmentName':
       return 'Untitled';
     case 'members':
+      return [];
+    case 'studentIds':
       return [];
     case 'description':
       return '';
@@ -119,7 +122,9 @@ function keywordCandidates(field: keyof StudentWork): string[] {
     case 'assignmentName':
       return ['assignmentname', 'assignment', 'title', 'name', 'project'];
     case 'members':
-      return ['members', 'member', 'author', 'student', 'team'];
+      return ['studentname', 'student name', 'members', 'member', 'author', 'team'];
+    case 'studentIds':
+      return ['studentid', 'student id', 'memberid', 'member id', 'idnumber', '學號'];
     case 'description':
       return ['description', 'summary', 'content', 'story'];
     case 'mainImage':

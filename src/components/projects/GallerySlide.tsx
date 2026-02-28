@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { StudentWork } from '../../types';
 import { cn } from '../../lib/utils';
+import { memberRows } from '../../lib/memberRows';
 
 interface GallerySlideProps {
   work: StudentWork;
@@ -10,6 +11,7 @@ interface GallerySlideProps {
 
 export const GallerySlide = ({ work }: GallerySlideProps) => {
   const allImages = [work.mainImage, ...(work.moreImages || [])];
+  const members = memberRows(work);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isZoomed, setIsZoomed] = useState(false);
 
@@ -42,10 +44,12 @@ export const GallerySlide = ({ work }: GallerySlideProps) => {
             <div>
               <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-black/30 mb-6">Project Contributors</h4>
               <div className="space-y-3">
-                {work.members.map((m, i) => (
-                  <div key={m} className="flex justify-between items-baseline border-b border-black/5 pb-2">
-                    <span className="text-lg font-medium text-black/80">{m}</span>
-                    <span className="text-xs font-mono text-black/30">M1121011{i + 5}</span>
+                {members.map((member, i) => (
+                  <div key={`${member.name}-${i}`} className="flex justify-between items-baseline border-b border-black/5 pb-2">
+                    <span className="text-lg font-medium text-black/80">{member.name}</span>
+                    {member.studentId ? (
+                      <span className="text-xs font-mono text-black/30">{member.studentId}</span>
+                    ) : null}
                   </div>
                 ))}
               </div>

@@ -2,6 +2,7 @@ export interface StudentWork {
   id: string;
   assignmentName: string;
   members: string[];
+  studentIds?: string[];
   description: string;
   mainImage: string;
   moreImages?: string[];

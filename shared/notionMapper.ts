@@ -106,6 +106,26 @@ function pickByCandidates(source: UnknownRecord, rule?: MappingRule): unknown {
   return undefined;
 }
 
+function allCandidateKeys(rule?: MappingRule): string[] {
+  return (rule?.sourceCandidates ?? []).filter((item) => {
+    const token = String(item || '').trim().toLowerCase();
+    return token && token !== 'null' && token !== 'none' && token !== 'n/a' && token !== '-';
+  });
+}
+
+function pickAllByCandidates(source: UnknownRecord, rule?: MappingRule): unknown[] {
+  const candidates = allCandidateKeys(rule);
+  const values: unknown[] = [];
+
+  for (const key of candidates) {
+    if (key in source && source[key] != null) {
+      values.push(source[key]);
+    }
+  }
+
+  return values;
+}
+
 function parseJsonObject(input: string): Record<string, unknown> | undefined {
   try {
     const parsed = JSON.parse(input);
@@ -227,6 +247,58 @@ function buildFallbackMembers(source: UnknownRecord): string[] {
   return ensureStringArray(source.members ?? source.member ?? source.author ?? source.authors);
 }
 
+function extractMemberData(source: UnknownRecord, fieldMapping: FieldMapping): { memberNames: string[]; studentIds: string[] } {
+  const memberRule = fieldMapping.members;
+  const collectedNames: string[] = [];
+  const collectedIds: string[] = [];
+  const ambiguousValues: string[] = [];
+  const consumedKeys = new Set<string>();
+
+  for (const key of allCandidateKeys(memberRule)) {
+    if (!(key in source) || source[key] == null) {
+      continue;
+    }
+    consumedKeys.add(key);
+    const values = ensureStringArray(source[key]);
+    const token = key.toLowerCase();
+
+    if (token.includes('id')) {
+      collectedIds.push(...values);
+    } else if (token.includes('name') || token.includes('member') || token.includes('student')) {
+      collectedNames.push(...values);
+    } else {
+      ambiguousValues.push(...values);
+    }
+  }
+
+  for (const [key, value] of Object.entries(source)) {
+    if (consumedKeys.has(key) || value == null) {
+      continue;
+    }
+    const token = key.toLowerCase();
+    if (/student[_\s-]*id|member[_\s-]*id|學號/.test(token)) {
+      collectedIds.push(...ensureStringArray(value));
+      consumedKeys.add(key);
+      continue;
+    }
+    if (/student[_\s-]*name|member[_\s-]*name|姓名|名字/.test(token)) {
+      collectedNames.push(...ensureStringArray(value));
+      consumedKeys.add(key);
+    }
+  }
+
+  const memberNames = collectedNames.length
+    ? collectedNames
+    : ambiguousValues.length
+      ? ambiguousValues
+      : buildFallbackMembers(source);
+
+  return {
+    memberNames,
+    studentIds: collectedIds,
+  };
+}
+
 export function normalizeStudentWork(
   source: UnknownRecord,
   sourceDatabaseId: string,
@@ -234,8 +306,30 @@ export function normalizeStudentWork(
   warnings: NormalizationWarning[],
   context: Pick<NormalizationWarning, 'courseId' | 'projectId' | 'sourceDatabaseId'>,
 ): StudentWork {
+  const extractedMemberData = extractMemberData(source, fieldMapping);
+
   const pick = <K extends keyof StudentWork>(field: K): unknown => {
     const rule = fieldMapping[field];
+    if (field === 'members') {
+      if (extractedMemberData.memberNames.length) {
+        return extractedMemberData.memberNames;
+      }
+      const values = pickAllByCandidates(source, rule).flatMap((item) => ensureStringArray(runTransform(item, rule?.transform)));
+      if (values.length) {
+        return values;
+      }
+      return buildFallbackMembers(source);
+    }
+    if (field === 'studentIds') {
+      if (extractedMemberData.studentIds.length) {
+        return extractedMemberData.studentIds;
+      }
+      const values = pickAllByCandidates(source, rule).flatMap((item) => ensureStringArray(runTransform(item, rule?.transform)));
+      if (values.length) {
+        return values;
+      }
+      return [];
+    }
     const fromCandidate = pickByCandidates(source, rule);
     const raw = fromCandidate ?? source[field as string] ?? rule?.default;
     return runTransform(raw, rule?.transform);
@@ -244,7 +338,8 @@ export function normalizeStudentWork(
   const normalized: StudentWork = {
     id: String(source.id ?? source.recordId ?? crypto.randomUUID()),
     assignmentName: firstString(pick('assignmentName')) || firstString(source.title) || 'Untitled',
-    members: ensureStringArray(pick('members')).length ? ensureStringArray(pick('members')) : buildFallbackMembers(source),
+    members: ensureStringArray(pick('members')).length ? ensureStringArray(pick('members')) : extractedMemberData.memberNames,
+    studentIds: ensureStringArray(pick('studentIds')),
     description: firstString(pick('description')) || '',
     mainImage: firstString(pick('mainImage')) || firstString(source.image) || 'https://picsum.photos/seed/fallback/800/600',
     moreImages: ensureStringArray(pick('moreImages')),

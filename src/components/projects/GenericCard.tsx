@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Plus, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { StudentWork } from '../../types';
+import { memberRows } from '../../lib/memberRows';
 
 interface GenericCardProps {
   work: StudentWork;
@@ -9,6 +10,7 @@ interface GenericCardProps {
 
 export const GenericCard = ({ work }: GenericCardProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const members = memberRows(work);
 
   return (
     <>
@@ -26,7 +28,7 @@ export const GenericCard = ({ work }: GenericCardProps) => {
         </div>
         <div className="p-4">
           <h3 className="font-bold text-lg mb-1">{work.assignmentName}</h3>
-          <p className="text-xs text-black/40 font-medium mb-3">{work.members.join(', ')}</p>
+          <p className="text-xs text-black/40 font-medium mb-3">{members.map((m) => m.name).join(', ')}</p>
           <p className="text-sm text-black/60 line-clamp-2">{work.description}</p>
         </div>
       </div>
@@ -89,10 +91,12 @@ export const GenericCard = ({ work }: GenericCardProps) => {
                       <div>
                         <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-black/30 mb-4">Team Members</h4>
                         <div className="space-y-3">
-                          {work.members.map((m, i) => (
-                            <div key={m} className="flex justify-between items-baseline border-b border-black/5 pb-1">
-                              <p className="text-sm font-medium text-black/80">{m}</p>
-                              <p className="text-[10px] font-mono text-black/20">M1121011{i}</p>
+                          {members.map((member, i) => (
+                            <div key={`${member.name}-${i}`} className="flex justify-between items-baseline border-b border-black/5 pb-1">
+                              <p className="text-sm font-medium text-black/80">{member.name}</p>
+                              {member.studentId ? (
+                                <p className="text-[10px] font-mono text-black/20">{member.studentId}</p>
+                              ) : null}
                             </div>
                           ))}
                         </div>

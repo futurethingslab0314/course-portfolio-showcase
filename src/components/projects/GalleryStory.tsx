@@ -3,6 +3,7 @@ import { ChevronDown, Plus, X, ExternalLink, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { StudentWork } from '../../types';
 import { cn } from '../../lib/utils';
+import { memberRows } from '../../lib/memberRows';
 
 interface GalleryStoryProps {
   work: StudentWork;
@@ -13,6 +14,8 @@ interface GalleryStoryProps {
 }
 
 export const GalleryStory = ({ work, isExpanded, setIsExpanded, zoomedImage, setZoomedImage }: GalleryStoryProps) => {
+  const members = memberRows(work);
+
   return (
     <div className="gallery-story-container">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
@@ -38,10 +41,12 @@ export const GalleryStory = ({ work, isExpanded, setIsExpanded, zoomedImage, set
           <div className="mb-8">
             <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-black/30 mb-2">Project Team</h4>
             <div className="flex flex-wrap gap-x-4 gap-y-1">
-              {work.members.map((m, i) => (
-                <div key={m} className="flex gap-2 items-baseline">
-                  <span className="text-black/80 font-medium">{m}</span>
-                  <span className="text-[10px] font-mono text-black/20">M1121011{i}</span>
+              {members.map((member, i) => (
+                <div key={`${member.name}-${i}`} className="flex gap-2 items-baseline">
+                  <span className="text-black/80 font-medium">{member.name}</span>
+                  {member.studentId ? (
+                    <span className="text-[10px] font-mono text-black/20">{member.studentId}</span>
+                  ) : null}
                 </div>
               ))}
             </div>
@@ -80,19 +85,19 @@ export const GalleryStory = ({ work, isExpanded, setIsExpanded, zoomedImage, set
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 mt-16 pt-16 border-t border-black/5">
               <div>
                 <h4 className="text-[11px] font-bold uppercase tracking-[0.2em] text-black/30 mb-8">Insight & Discovery</h4>
-                <ul className="space-y-4 text-black/70 italic leading-relaxed text-sm">
-                  <li>• 是否因為加入紀錄行為，抽菸行為更加可視化，導致愉悅指數下降、身體負荷指數上升？</li>
-                  <li>• 愉悅指數與身體負荷指數變化圖。</li>
-                  <li>• 個人吸菸規律與各情境吸菸佔比。</li>
-                </ul>
+                <p className="text-black/70 italic leading-relaxed text-sm whitespace-pre-wrap">
+                  {work.description}
+                </p>
                 
                 <div className="mt-12">
                   <h4 className="text-[11px] font-bold uppercase tracking-[0.2em] text-black/30 mb-8">Contributors</h4>
                   <div className="space-y-4">
-                    {work.members.map((m, i) => (
-                      <div key={m} className="flex justify-between text-sm font-medium">
-                        <span className="text-black/80">{m}</span>
-                        <span className="text-black/20 font-mono">M1121011{i}</span>
+                    {members.map((member, i) => (
+                      <div key={`${member.name}-expanded-${i}`} className="flex justify-between text-sm font-medium">
+                        <span className="text-black/80">{member.name}</span>
+                        {member.studentId ? (
+                          <span className="text-black/20 font-mono">{member.studentId}</span>
+                        ) : null}
                       </div>
                     ))}
                   </div>

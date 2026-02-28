@@ -19,6 +19,7 @@
   "id": "work-001",
   "assignmentName": "作品名稱",
   "members": ["學生A", "學生B"],
+  "studentIds": ["M11210110", "M11210111"],
   "description": "作品描述",
   "mainImage": "https://example.com/main.jpg",
   "moreImages": ["https://example.com/1.jpg", "https://example.com/2.jpg"],
@@ -44,6 +45,7 @@
 | `id` | string | 是 | 單筆作品唯一值 |
 | `assignmentName` | string | 是 | 作品標題 |
 | `members` | string[] | 是 | 成員名單 |
+| `studentIds` | string[] | 否 | 成員學號（與 `members` 依順序配對） |
 | `description` | string | 是 | 作品敘述 |
 | `mainImage` | string(URL) | 是 | 主圖 |
 | `sourceDatabaseId` | string | 是 | 來源資料庫 ID |
@@ -55,7 +57,7 @@
 | `isStarred` | boolean | 否 | 推薦標記 |
 | `methodologies` | string[] | 否 | 方法標籤 |
 | `dataSpecs` | string[] | 否 | 技術資料卡內容（每個字串 = 一張 spec 卡） |
-| `gridLocation` | string | 否 | 矩陣座標（如 `A1`） |
+| `gridLocation` | string | 否（`data-matrix` 必填） | 矩陣座標（如 `A1`） |
 
 ## 3. 五種 UiPattern JSON 範例與規格
 
@@ -74,6 +76,7 @@ Work 最小可用 JSON：
   "id": "work-generic-001",
   "assignmentName": "Color on the Road",
   "members": ["測試人員", "測試人員2"],
+  "studentIds": ["M11210110", "M11210111"],
   "description": "作品簡介",
   "mainImage": "https://example.com/main.jpg",
   "sourceDatabaseId": "db-color-road"
@@ -99,6 +102,7 @@ Work 最小可用 JSON：
   "id": "work-slide-001",
   "assignmentName": "Visual Narrative Project",
   "members": ["學生A", "學生B"],
+  "studentIds": ["M11210110", "M11210111"],
   "description": "敘事型作品說明",
   "mainImage": "https://example.com/hero.jpg",
   "moreImages": [
@@ -129,6 +133,7 @@ Work 最小可用 JSON：
   "id": "work-story-001",
   "assignmentName": "主題一",
   "members": ["學生A", "學生B"],
+  "studentIds": ["M11210110", "M11210111"],
   "description": "故事型專案摘要",
   "mainImage": "https://example.com/story-main.jpg",
   "moreImages": [
@@ -161,6 +166,7 @@ Work 最小可用 JSON：
   "id": "work-spec-001",
   "assignmentName": "Data Card: Door Sensor",
   "members": ["學生A", "學生B"],
+  "studentIds": ["M11210110", "M11210111"],
   "description": "技術導向作品摘要",
   "mainImage": "https://example.com/spec-main.jpg",
   "tags": ["Sensor", "IoT"],
@@ -195,6 +201,7 @@ Work 最小可用 JSON：
   "id": "work-matrix-001",
   "assignmentName": "Matrix Item 01",
   "members": ["學生A"],
+  "studentIds": ["M11210110"],
   "description": "矩陣格點資料",
   "mainImage": "https://example.com/matrix.jpg",
   "gridLocation": "C12",
@@ -204,9 +211,9 @@ Work 最小可用 JSON：
 ```
 
 欄位重點：
-- 必填：`assignmentName`, `members`, `description`, `mainImage`
+- 必填：`assignmentName`, `members`, `studentIds`, `description`, `mainImage`, `year`, `gridLocation`
 - 強制需求：`gridLocation`（`data-matrix` pattern）
-- 建議：`year`
+- 建議：`tags`
 
 ## 4. Pattern 驗證規則（建議給 AI + Skill 使用）
 
@@ -214,7 +221,8 @@ Work 最小可用 JSON：
   - `assignmentName` 不可為空
   - `mainImage` 不可為空
 - `data-matrix`：
-  - 需有 `gridLocation`（格式建議 `A1` 到 `P30`）
+  - 需有 `assignmentName`, `members`, `studentIds`, `description`, `mainImage`, `year`, `gridLocation`
+  - `gridLocation` 格式建議 `A1` 到 `P30`
 - `card-spec`：
   - 建議 `dataSpecs.length > 0`
 - 其他 pattern：
@@ -224,7 +232,7 @@ Work 最小可用 JSON：
 
 - 先把來源 DB 欄位映射到上述通用基底，再交給 `displayStyle` 決定渲染 pattern。
 - `FieldMapping` 建議至少覆蓋：
-  - `assignmentName`, `members`, `description`, `mainImage`
+  - `assignmentName`, `members`, `studentIds`, `description`, `mainImage`
 - 依 pattern 補充：
   - `data-matrix` 補 `gridLocation`
   - `card-spec` 補 `dataSpecs`
