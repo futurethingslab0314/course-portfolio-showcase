@@ -11,6 +11,7 @@ import { GalleryStory } from './components/projects/GalleryStory';
 import { GallerySlide } from './components/projects/GallerySlide';
 import { GenericCard } from './components/projects/GenericCard';
 import { DataMatrix } from './components/projects/DataMatrix';
+import { BlogPost } from './components/projects/BlogPost';
 
 // Templates
 import { HomePageTemplate } from './components/templates/HomePageTemplate';
@@ -29,6 +30,8 @@ const StudentWorkItem = ({ work, style }: { work: StudentWork; style: Project['d
       return <GallerySlide work={work} />;
     case 'generic-card':
       return <GenericCard work={work} />;
+    case 'blog-post':
+      return <BlogPost work={work} />;
     default:
       return <GenericCard work={work} />;
   }

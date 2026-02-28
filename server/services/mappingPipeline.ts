@@ -38,7 +38,7 @@ export type FileMappingRecord = {
   updatedAt: string;
 };
 
-const UI_PATTERNS: UiPattern[] = ['card-spec', 'data-matrix', 'gallery-slide', 'gallery-story', 'generic-card'];
+const UI_PATTERNS: UiPattern[] = ['card-spec', 'data-matrix', 'gallery-slide', 'gallery-story', 'generic-card', 'blog-post'];
 const TARGET_SCHEMA_FIELDS: Array<keyof StudentWork> = [
   'id',
   'assignmentName',
@@ -65,6 +65,7 @@ const TEMPLATE_FIELDS_BY_PATTERN: Record<UiPattern, Array<keyof StudentWork>> = 
   'gallery-story': [...BASE_TEMPLATE_FIELDS, 'moreImages', 'methodologies', 'storyButtons', 'url', 'year', 'tags'],
   'card-spec': [...BASE_TEMPLATE_FIELDS, 'dataSpecs', 'tags', 'year'],
   'data-matrix': [...BASE_TEMPLATE_FIELDS, 'gridLocation', 'year', 'tags'],
+  'blog-post': [...BASE_TEMPLATE_FIELDS, 'url', 'tags', 'year', 'isStarred'],
 };
 
 const mappingStorePath = path.resolve(process.cwd(), 'server/data/filemapping-records.json');

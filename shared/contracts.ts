@@ -1,6 +1,6 @@
 import { Course, Project, StudentWork } from '../src/types';
 
-export type UiPattern = 'card-spec' | 'data-matrix' | 'gallery-slide' | 'gallery-story' | 'generic-card';
+export type UiPattern = 'card-spec' | 'data-matrix' | 'gallery-slide' | 'gallery-story' | 'generic-card' | 'blog-post';
 
 export const UI_PATTERN_FALLBACK: UiPattern = 'generic-card';
 
@@ -15,6 +15,9 @@ export const UI_PATTERN_MAP: Record<string, UiPattern> = {
   GalleryStory: 'gallery-story',
   'generic-card': 'generic-card',
   GenericCard: 'generic-card',
+  'blog-post': 'blog-post',
+  BlogPost: 'blog-post',
+  blogpost: 'blog-post',
 };
 
 export interface MappingRule {

@@ -1,4 +1,4 @@
-import { Course, Project } from '../../src/types';
+import { Course, Project, StudentWork } from '../../src/types';
 import { FieldMapping, NormalizationWarning } from '../../shared/contracts';
 import { mapUiPattern, normalizeStudentWork, parseFieldMapping } from '../../shared/notionMapper';
 
@@ -6,6 +6,13 @@ export interface NotionPage {
   id: string;
   cover?: { type: 'external' | 'file'; external?: { url: string }; file?: { url: string } };
   properties: Record<string, any>;
+}
+
+interface NotionBlock {
+  id: string;
+  type: string;
+  has_children?: boolean;
+  [key: string]: any;
 }
 
 interface FetchContext {
@@ -145,6 +152,92 @@ async function queryDatabase(databaseId: string, body: Record<string, unknown> =
   }
 
   return results;
+}
+
+async function fetchBlockChildren(blockId: string): Promise<NotionBlock[]> {
+  const results: NotionBlock[] = [];
+  let hasMore = true;
+  let cursor: string | undefined;
+
+  while (hasMore) {
+    const query = cursor ? `?start_cursor=${encodeURIComponent(cursor)}` : '';
+    const data = await notionRequest<{ results: NotionBlock[]; has_more: boolean; next_cursor?: string }>(
+      `/blocks/${normalizeNotionId(blockId)}/children${query}`,
+      {
+        method: 'GET',
+        headers: notionHeaders(),
+      },
+    );
+    results.push(...(data.results || []));
+    hasMore = data.has_more;
+    cursor = data.next_cursor;
+  }
+
+  return results;
+}
+
+function richTextToPlainText(richText: any[] | undefined): string {
+  if (!Array.isArray(richText)) {
+    return '';
+  }
+  return richText.map((item) => item?.plain_text || '').join('').trim();
+}
+
+function asImageUrlFromBlock(block: NotionBlock): string {
+  const image = block.image;
+  if (!image) return '';
+  if (image.type === 'external') return image.external?.url || '';
+  if (image.type === 'file') return image.file?.url || '';
+  return '';
+}
+
+function blockToBlogSection(block: NotionBlock): StudentWork['blogContent'][number] | null {
+  if (block.type === 'paragraph') {
+    const text = richTextToPlainText(block.paragraph?.rich_text);
+    if (!text) return null;
+    return { type: 'text', content: text };
+  }
+
+  if (block.type === 'heading_1' || block.type === 'heading_2' || block.type === 'heading_3') {
+    const heading = richTextToPlainText(block[block.type]?.rich_text);
+    if (!heading) return null;
+    return { type: 'text', content: heading };
+  }
+
+  if (block.type === 'quote' || block.type === 'callout') {
+    const text = richTextToPlainText(block[block.type]?.rich_text);
+    if (!text) return null;
+    return { type: 'text', content: text };
+  }
+
+  if (block.type === 'bulleted_list_item' || block.type === 'numbered_list_item') {
+    const text = richTextToPlainText(block[block.type]?.rich_text);
+    if (!text) return null;
+    return { type: 'text', content: `- ${text}` };
+  }
+
+  if (block.type === 'image') {
+    const url = asImageUrlFromBlock(block);
+    if (!url) return null;
+    const caption = richTextToPlainText(block.image?.caption);
+    return { type: 'image', content: url, caption: caption || undefined };
+  }
+
+  return null;
+}
+
+async function fetchBlogContentFromPageBlocks(pageId: string): Promise<NonNullable<StudentWork['blogContent']>> {
+  const sections: NonNullable<StudentWork['blogContent']> = [];
+  const blocks = await fetchBlockChildren(pageId);
+
+  for (const block of blocks) {
+    const section = blockToBlogSection(block);
+    if (section) {
+      sections.push(section);
+    }
+  }
+
+  return sections;
 }
 
 export async function fetchPageById(pageId: string): Promise<NotionPage> {
@@ -328,7 +421,7 @@ export async function fetchStudentWorksForProject(
   project: Project,
   fieldMapping: FieldMapping,
   warnings: NormalizationWarning[],
-): Promise<any[]> {
+): Promise<StudentWork[]> {
   if (!project.sourceDatabaseId) {
     return [];
   }
@@ -336,13 +429,38 @@ export async function fetchStudentWorksForProject(
   const sourceDatabaseId = normalizeNotionId(project.sourceDatabaseId);
 
   const pages = await queryDatabase(sourceDatabaseId);
-  return pages.map((page) =>
-    normalizeStudentWork(normalizeSourceRecord(page), project.sourceDatabaseId, fieldMapping, warnings, {
+  const works: StudentWork[] = [];
+
+  for (const page of pages) {
+    const normalized = normalizeStudentWork(normalizeSourceRecord(page), project.sourceDatabaseId, fieldMapping, warnings, {
       courseId: project.courseId,
       projectId: project.id,
       sourceDatabaseId: project.sourceDatabaseId,
-    }),
-  );
+    });
+
+    if (project.displayStyle === 'blog-post') {
+      try {
+        const sections = await fetchBlogContentFromPageBlocks(page.id);
+        if (sections.length) {
+          normalized.blogContent = sections;
+        }
+      } catch (error) {
+        warnings.push({
+          level: 'warning',
+          code: 'BLOG_BLOCKS_FETCH_FAILED',
+          message: error instanceof Error ? error.message : 'Failed to fetch Notion page blocks for blog content.',
+          courseId: project.courseId,
+          projectId: project.id,
+          sourceDatabaseId: project.sourceDatabaseId,
+          workId: normalized.id,
+        });
+      }
+    }
+
+    works.push(normalized);
+  }
+
+  return works;
 }
 
 export async function updateCourseGenerationStatus(coursePageId: string, status: 'generated' | 'failed', courseLink?: string) {

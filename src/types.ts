@@ -14,6 +14,11 @@ export interface StudentWork {
   methodologies?: string[];
   storyButtons?: { label: string; url: string }[];
   dataSpecs?: string[];
+  blogContent?: Array<{
+    type: 'text' | 'image';
+    content: string;
+    caption?: string;
+  }>;
   sourceDatabaseId: string;
   gridLocation?: string;
 }
@@ -26,7 +31,7 @@ export interface Project {
   tabName: string;
   order: number;
   sourceDatabaseId: string; // Used to filter student works
-  displayStyle: 'gallery-story' | 'generic-card' | 'gallery-slide' | 'card-spec' | 'data-matrix';
+  displayStyle: 'gallery-story' | 'generic-card' | 'gallery-slide' | 'card-spec' | 'data-matrix' | 'blog-post';
 }
 
 export interface Course {

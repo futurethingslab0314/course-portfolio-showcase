@@ -11,6 +11,7 @@ Enum lock:
 - `gallery-slide -> GallerySlide`
 - `gallery-story -> GalleryStory`
 - `generic-card -> GenericCard`
+- `blog-post -> BlogPost`
 
 Reliability rules:
 - Relation conflicts prioritize Notion relations (`Courses.Projects`, `Projects.Course`).
