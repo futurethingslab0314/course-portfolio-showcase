@@ -1,5 +1,5 @@
 import { runMappingPipeline } from './mappingPipeline';
-import { fetchCourseBySlug, fetchDatabaseSchema, fetchProjectSyncContext, findCourseSlugByPageId, updatePageProperties } from './notion';
+import { fetchCourseBySlug, fetchDatabaseSchema, fetchProjectSyncContext, findCourseSlugByPageId, findProjectPageIdBySourceDatabaseId, updatePageProperties } from './notion';
 import { generateCourseWebsite } from './generator';
 import { FieldMapping } from '../../shared/contracts';
 import { mapUiPattern } from '../../shared/notionMapper';
@@ -33,9 +33,9 @@ function serializeFieldMappingToDsl(fieldMapping: FieldMapping): string {
   const lines: string[] = [];
   for (const [targetField, rule] of Object.entries(fieldMapping)) {
     if (!rule) continue;
-    const candidates = (rule.sourceCandidates || []).slice(0, 3).join(',');
+    const candidatesList = (rule.sourceCandidates || []).slice(0, 3);
+    const candidates = candidatesList.length ? candidatesList.join(',') : 'null';
     const transform = rule.transform || 'string';
-    if (!candidates) continue;
     lines.push(`${targetField}=${candidates}|${transform}`);
   }
   return lines.join('\n');
@@ -82,11 +82,22 @@ export async function syncCourseLink(params: {
 
 export async function syncProjectMappings(params: {
   projectPageId?: string;
+  sourceDatabaseId?: string;
   overwrite?: boolean;
 }) {
-  const projectPageId = (params.projectPageId || '').trim();
+  let projectPageId = (params.projectPageId || '').trim();
+  const sourceDatabaseIdInput = (params.sourceDatabaseId || '').trim();
+
+  if (!projectPageId && sourceDatabaseIdInput) {
+    const resolvedPageId = await findProjectPageIdBySourceDatabaseId(sourceDatabaseIdInput);
+    if (!resolvedPageId) {
+      throw new Error(`Cannot find project by SourceDatabaseId: ${sourceDatabaseIdInput}`);
+    }
+    projectPageId = resolvedPageId;
+  }
+
   if (!projectPageId) {
-    throw new Error('Missing target project identifier (projectPageId).');
+    throw new Error('Missing target project identifier (projectPageId or sourceDatabaseId).');
   }
 
   const { page, sourceDatabaseId, fieldMappingValue, uiPatternValue } = await fetchProjectSyncContext(projectPageId);

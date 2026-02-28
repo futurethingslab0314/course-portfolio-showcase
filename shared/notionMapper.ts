@@ -94,7 +94,10 @@ function runTransform(value: unknown, transform: string | undefined): unknown {
 }
 
 function pickByCandidates(source: UnknownRecord, rule?: MappingRule): unknown {
-  const candidates = rule?.sourceCandidates ?? [];
+  const candidates = (rule?.sourceCandidates ?? []).filter((item) => {
+    const token = String(item || '').trim().toLowerCase();
+    return token && token !== 'null' && token !== 'none' && token !== 'n/a' && token !== '-';
+  });
   for (const key of candidates) {
     if (key in source && source[key] != null) {
       return source[key];
@@ -153,7 +156,13 @@ export function parseFieldMapping(raw: unknown, warnings: NormalizationWarning[]
 
     const [sourceCandidatesPart, transform = 'string'] = sourcePart.split('|').map((part) => part.trim());
     map[targetPart as keyof StudentWork] = {
-      sourceCandidates: sourceCandidatesPart.split(',').map((item) => item.trim()).filter(Boolean),
+      sourceCandidates: sourceCandidatesPart
+        .split(',')
+        .map((item) => item.trim())
+        .filter((item) => {
+          const token = item.toLowerCase();
+          return Boolean(item) && token !== 'null' && token !== 'none' && token !== 'n/a' && token !== '-';
+        }),
       transform,
     };
   }

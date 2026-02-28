@@ -252,7 +252,7 @@ export async function fetchProjectsByCourse(coursePageId: string, courseRelation
   return [...byId.values()]
     .map((page) => {
       const context: FetchContext = { projectId: page.id };
-      const sourceDbIdRaw = asText(property(page, 'SourceDatabaseId', 'Source Database Id', 'SourceDB'));
+      const sourceDbIdRaw = asText(property(page, 'SourceDatabaseId', 'SourceDatabaseID', 'Source Database Id', 'SourceDB'));
       const sourceDatabaseId = sourceDbIdRaw || asStringArray(property(page, 'SourceDatabase'))[0] || '';
       const uiPatternRaw = asText(property(page, 'UiPattern', 'DisplayStyle', 'Pattern'));
       const project: Project = {
@@ -373,7 +373,7 @@ export async function fetchProjectSyncContext(projectPageId: string): Promise<{
   uiPatternValue: string;
 }> {
   const page = await fetchPageById(projectPageId);
-  const sourceDbIdRaw = asText(property(page, 'SourceDatabaseId', 'Source Database Id', 'SourceDB'));
+  const sourceDbIdRaw = asText(property(page, 'SourceDatabaseId', 'SourceDatabaseID', 'Source Database Id', 'SourceDB'));
   const sourceDatabaseId = sourceDbIdRaw || asStringArray(property(page, 'SourceDatabase'))[0] || '';
   if (!sourceDatabaseId) {
     throw new Error(`SourceDatabaseId is missing on project ${projectPageId}`);
@@ -385,4 +385,22 @@ export async function fetchProjectSyncContext(projectPageId: string): Promise<{
     fieldMappingValue: asText(property(page, 'FieldMapping')).trim(),
     uiPatternValue: asText(property(page, 'UiPattern', 'DisplayStyle', 'Pattern')).trim(),
   };
+}
+
+export async function findProjectPageIdBySourceDatabaseId(sourceDatabaseIdInput: string): Promise<string | undefined> {
+  const sourceDatabaseId = stripNotionId(sourceDatabaseIdInput);
+  if (!sourceDatabaseId) return undefined;
+
+  const projectsDb = getEnv('NOTION_DB_PROJECTS_ID');
+  const pages = await queryDatabase(projectsDb);
+
+  for (const page of pages) {
+    const sourceDbIdRaw = asText(property(page, 'SourceDatabaseId', 'SourceDatabaseID', 'Source Database Id', 'SourceDB'));
+    const sourceDbId = stripNotionId(sourceDbIdRaw);
+    if (sourceDbId && sourceDbId === sourceDatabaseId) {
+      return page.id;
+    }
+  }
+
+  return undefined;
 }
