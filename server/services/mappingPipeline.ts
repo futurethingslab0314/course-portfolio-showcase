@@ -592,22 +592,4 @@ export function executeFunctionTool(toolName: string, args: Record<string, unkno
       return upsertFileMappingRecord({
         sourceDatabaseId: String(args.sourceDatabaseId || ''),
         uiPattern: ((args.uiPattern as UiPattern) || UI_PATTERN_FALLBACK),
-        version: String(args.version || '1.0.0'),
-        fieldMapping: (args.fieldMapping as FieldMapping) || {},
-        confidenceReport: (args.confidenceReport as ConfidenceItem[]) || [],
-        updatedAt: String(args.updatedAt || new Date().toISOString()),
-      });
-    case 'run_mapping_pipeline':
-      return runMappingPipeline({
-        sourceDatabaseId: String(args.sourceDatabaseId || ''),
-        records: (args.records as UnknownRecord[]) || [],
-        overwrite: Boolean(args.overwrite),
-        confidenceThreshold: typeof args.confidenceThreshold === 'number' ? args.confidenceThreshold : undefined,
-        timezone: typeof args.timezone === 'string' ? args.timezone : undefined,
-        propertyMeta: (args.propertyMeta as Array<Record<string, unknown>>) || undefined,
-        uiPattern: (args.uiPattern as UiPattern) || undefined,
-      });
-    default:
-      throw new Error(`Unknown tool name: ${toolName}`);
-  }
-}
+ 
