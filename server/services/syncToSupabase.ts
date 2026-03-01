@@ -14,7 +14,7 @@ function logWithContext(message: string, context: Record<string, unknown>) {
   console.log(JSON.stringify({ message, ...context }));
 }
 
-async function rewriteMainImagesToR2(payload: CoursePayload, runId: string): Promise<{ uploaded: number; skipped: number }> {
+async function rewriteWorkImagesToR2(payload: CoursePayload, runId: string): Promise<{ uploaded: number; skipped: number }> {
   if (!isR2ImageSyncEnabled()) {
     return { uploaded: 0, skipped: payload.studentWorks.length };
   }
@@ -23,55 +23,71 @@ async function rewriteMainImagesToR2(payload: CoursePayload, runId: string): Pro
   let skipped = 0;
 
   for (const work of payload.studentWorks) {
-    const imageUrl = String(work.mainImage || '').trim();
-    if (!imageUrl) {
-      skipped += 1;
-      continue;
-    }
-
     const project = payload.projects.find((item) => item.sourceDatabaseId === work.sourceDatabaseId);
     if (!project) {
-      skipped += 1;
+      const imageCount = 1 + (Array.isArray(work.moreImages) ? work.moreImages.length : 0);
+      skipped += imageCount;
       payload.warnings.push({
         level: 'warning',
         code: 'R2_PROJECT_NOT_FOUND',
-        message: `Cannot resolve project for sourceDatabaseId (${work.sourceDatabaseId}), image upload skipped.`,
+        message: `Cannot resolve project for sourceDatabaseId (${work.sourceDatabaseId}), image uploads skipped.`,
         sourceDatabaseId: work.sourceDatabaseId,
         workId: work.id,
       });
       continue;
     }
 
-    try {
-      const result = await uploadImageUrlToR2({
-        sourceUrl: imageUrl,
-        courseSlug: payload.course.slug || payload.course.id,
-        projectNotionId: project.id,
-        workNotionId: work.id,
-      });
-      if (result.uploaded) {
-        uploaded += 1;
-      } else {
+    const rewriteOne = async (sourceUrl: string, label: 'mainImage' | 'moreImage', index?: number): Promise<string> => {
+      const trimmed = String(sourceUrl || '').trim();
+      if (!trimmed) {
         skipped += 1;
+        return trimmed;
       }
-      work.mainImage = result.publicUrl;
-    } catch (error) {
-      skipped += 1;
-      payload.warnings.push({
-        level: 'warning',
-        code: 'R2_IMAGE_UPLOAD_FAILED',
-        message: error instanceof Error ? error.message : 'Unknown R2 upload failure',
-        sourceDatabaseId: work.sourceDatabaseId,
-        workId: work.id,
-      });
 
-      await appendSyncLog({
-        runId,
-        entityType: 'image',
-        entityNotionId: work.id,
-        status: 'failed',
-        message: error instanceof Error ? error.message : 'Unknown R2 upload failure',
-      }).catch(() => undefined);
+      try {
+        const result = await uploadImageUrlToR2({
+          sourceUrl: trimmed,
+          courseSlug: payload.course.slug || payload.course.id,
+          projectNotionId: project.id,
+          workNotionId: work.id,
+        });
+        if (result.uploaded) {
+          uploaded += 1;
+        } else {
+          skipped += 1;
+        }
+        return result.publicUrl;
+      } catch (error) {
+        skipped += 1;
+        payload.warnings.push({
+          level: 'warning',
+          code: 'R2_IMAGE_UPLOAD_FAILED',
+          message: error instanceof Error ? error.message : 'Unknown R2 upload failure',
+          sourceDatabaseId: work.sourceDatabaseId,
+          workId: work.id,
+        });
+
+        await appendSyncLog({
+          runId,
+          entityType: 'image',
+          entityNotionId: work.id,
+          status: 'failed',
+          message: `${label}${typeof index === 'number' ? `[${index}]` : ''}: ${
+            error instanceof Error ? error.message : 'Unknown R2 upload failure'
+          }`,
+        }).catch(() => undefined);
+        return trimmed;
+      }
+    };
+
+    work.mainImage = await rewriteOne(work.mainImage, 'mainImage');
+
+    if (Array.isArray(work.moreImages) && work.moreImages.length > 0) {
+      const next: string[] = [];
+      for (let i = 0; i < work.moreImages.length; i += 1) {
+        next.push(await rewriteOne(work.moreImages[i], 'moreImage', i));
+      }
+      work.moreImages = next.filter((item) => item.trim().length > 0);
     }
   }
 
@@ -114,7 +130,7 @@ export async function syncCourseToSupabase(params: {
 
   const payload = await buildCoursePayloadBySlug(slug);
 
-  const imageResult = await rewriteMainImagesToR2(payload, runId);
+  const imageResult = await rewriteWorkImagesToR2(payload, runId);
 
   const courseRow = await upsertCourseToSupabase(payload.course);
   const projectRows = await upsertProjectsToSupabase(payload.projects, courseRow.id);
