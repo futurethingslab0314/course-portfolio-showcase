@@ -5,6 +5,8 @@ import path from 'node:path';
 import { buildCoursePayloadBySlug, generateCourseWebsite } from './services/generator';
 import { executeFunctionTool, listFunctionTools } from './services/mappingPipeline';
 import { fetchAllCourses } from './services/notion';
+import { fetchCoursePayloadBySlugFromSupabase, fetchCoursesFromSupabase, shouldReadFromSupabase } from './services/supabase';
+import { syncCourseToSupabase } from './services/syncToSupabase';
 import { syncCourseLink, syncProjectMappings, validateSyncSecret } from './services/webhookSync';
 import { CoursePayload } from '../shared/contracts';
 import { Course } from '../src/types';
@@ -154,7 +156,23 @@ app.get('/api/course/:slug', async (req, res) => {
       }
     }
 
-    const payload = await buildCoursePayloadBySlug(slug);
+    let payload: CoursePayload;
+    if (shouldReadFromSupabase()) {
+      try {
+        payload = await fetchCoursePayloadBySlugFromSupabase(slug);
+      } catch (supabaseError) {
+        payload = await buildCoursePayloadBySlug(slug);
+        payload.warnings.push({
+          level: 'warning',
+          code: 'SUPABASE_READ_FALLBACK_TO_NOTION',
+          message: supabaseError instanceof Error ? supabaseError.message : 'Supabase read failed; fallback to Notion.',
+          courseId: payload.course.id,
+        });
+      }
+    } else {
+      payload = await buildCoursePayloadBySlug(slug);
+    }
+
     coursePayloadCache.set(cacheKey, cacheSet(payload, coursePayloadCacheTtlMs));
     res.set('X-Server-Cache', forceRefresh ? 'REFRESH' : 'MISS');
     res.json(payload);
@@ -178,7 +196,17 @@ app.get('/api/courses', async (_req, res) => {
       }
     }
 
-    const courses = await fetchAllCourses();
+    let courses: Course[];
+    if (shouldReadFromSupabase()) {
+      try {
+        courses = await fetchCoursesFromSupabase();
+      } catch {
+        courses = await fetchAllCourses();
+      }
+    } else {
+      courses = await fetchAllCourses();
+    }
+
     coursesCache = cacheSet(courses, coursesCacheTtlMs);
     res.set('X-Server-Cache', forceRefresh ? 'REFRESH' : 'MISS');
     res.json({ courses });
@@ -282,6 +310,33 @@ app.all('/api/admin/sync-project-mappings', async (req, res) => {
   } catch (error) {
     res.status(500).json({
       error: 'Failed to sync project mappings',
+      detail: error instanceof Error ? error.message : String(error),
+    });
+  }
+});
+
+app.all('/api/admin/sync-course-supabase', async (req, res) => {
+  const incomingSecret = String(req.get('x-sync-secret') || req.body?.secret || req.query?.secret || '').trim();
+  const auth = validateSyncSecret(incomingSecret);
+  if (!auth.ok) {
+    res.status(401).json({ error: auth.message });
+    return;
+  }
+
+  const slug = pickFromRequest(req, ['slug', 'Slug']);
+  const coursePageId = pickFromRequest(req, ['coursePageId', 'pageId', 'page_id', 'id', 'Page ID']);
+  if (!slug && !coursePageId) {
+    res.status(400).json({ error: 'Missing target course identifier (slug or coursePageId).' });
+    return;
+  }
+
+  try {
+    const result = await syncCourseToSupabase({ slug, coursePageId });
+    invalidateAllApiCache();
+    res.json({ ok: true, ...result });
+  } catch (error) {
+    res.status(500).json({
+      error: 'Failed to sync course to Supabase',
       detail: error instanceof Error ? error.message : String(error),
     });
   }
