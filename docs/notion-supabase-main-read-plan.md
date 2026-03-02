@@ -293,8 +293,15 @@ curl -X POST "https://course-portfolio-showcase-production.up.railway.app/api/ad
 
 ## H.1 先上 Railway Cron（單課程）
 
-1. 建 cron service。
-2. 排程 command 呼叫 `sync-course-supabase`。
+1. 建立 empty service
+2. Settings/ Deploy 找到Cron Schedule
+3. 設定時間
+4. 至Deploy/ Custom Start Command: 
+
+node -e "fetch('https://course-portfolio-showcase-production.up.railway.app/api/admin/sync-all-courses-supabase',{method:'POST',headers:{'Content-Type':'application/json','x-sync-secret':process.env.COURSE_LINK_SYNC_SECRET},body:JSON.stringify({updated_only:true,publish:true,deactivate:true})}).then(async r=>{const t=await r.text();console.log(t);if(!r.ok)process.exit(1)}).catch(e=>{console.error(e);process.exit(1)})"
+
+5. 至Variables / 設定 COURSE_LINK_SYNC_SECRET / value與原本相同
+
 
 ## H.2 進階：sync-all（由 AI 後端實作）
 
@@ -303,6 +310,59 @@ curl -X POST "https://course-portfolio-showcase-production.up.railway.app/api/ad
 1. `updated_only=true`
 2. `publish=true`（讀 `PublishedStatus`）
 3. `deactivate=true`（`is_active=false`）
+
+## H.3 較安全版 Notion Button（立即同步，不暴露主 secret）
+
+這一節是「按下 Notion button 就立即同步」，且比直接把主 secret 放 URL 更安全。
+
+### H.3.1 新增欄位（Notion）
+
+在 `Courses` DB 新增：
+
+1. `SyncToken`（Text）
+2. `Sync Now`（Button）
+
+`Slug` 欄位沿用既有欄位，不需新增。
+
+### H.3.2 新增資料表（Supabase）
+
+在 `SQL Editor -> New query` 執行：
+
+```sql
+create table if not exists public.course_sync_tokens (
+  id uuid primary key default gen_random_uuid(),
+  course_slug text not null unique,
+  token text not null unique,
+  is_active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+```
+
+### H.3.3 建立與填入 token（人要做）
+
+1. 每門課生成一組高強度 token（建議 32 字元以上）。
+2. 在 Notion 該課程列填入 `SyncToken`。
+3. 同時寫入 Supabase `course_sync_tokens`：
+   1. `course_slug` = 該課程 `Slug`
+   2. `token` = 相同 token
+   3. `is_active` = `true`
+
+### H.3.4 設定 Button URL
+
+`Sync Now` 按鈕 action 選 `Open URL`，URL 使用該列欄位值：
+
+```text
+https://course-portfolio-showcase-production.up.railway.app/api/admin/sync-course-button?slug={{Slug}}&token={{SyncToken}}
+```
+
+若 Notion button 無法插欄位變數，改用 Formula 先組 URL，再由按鈕開啟。
+
+### H.3.5 為什麼更安全
+
+1. 不再把全域 `COURSE_LINK_SYNC_SECRET` 放在 Notion URL。
+2. 每門課各自 token，洩漏只影響單一課程。
+3. 可以單獨停用某課程 token（`is_active=false`）。
 
 ---
 

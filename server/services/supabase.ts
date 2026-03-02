@@ -431,3 +431,28 @@ export async function getLastSyncAllCheckpoint(): Promise<string | null> {
   const checkpoint = payload.checkpointTo;
   return typeof checkpoint === 'string' && checkpoint.trim() ? checkpoint : null;
 }
+
+export async function validateCourseSyncToken(courseSlug: string, token: string): Promise<boolean> {
+  const slug = String(courseSlug || '').trim();
+  const rawToken = String(token || '').trim();
+  if (!slug || !rawToken) return false;
+
+  try {
+    const rows = await supabaseRequest<Array<{ id: string }>>(
+      `/rest/v1/course_sync_tokens?select=id&course_slug=eq.${encodeURIComponent(slug)}&token=eq.${encodeURIComponent(rawToken)}&is_active=eq.true&limit=1`,
+      {
+        method: 'GET',
+        headers: supabaseHeaders(),
+      },
+    );
+    return rows.length > 0;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (message.includes('course_sync_tokens')) {
+      throw new Error(
+        'course_sync_tokens table is missing. Please run the Human prerequisite SQL in docs/notion-supabase-main-read-plan.md (H.3.2).',
+      );
+    }
+    throw error;
+  }
+}

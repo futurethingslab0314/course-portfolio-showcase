@@ -169,6 +169,44 @@ Student Works：
 
 1. `POST/GET /api/admin/sync-all-courses-supabase`
 
+## 5.4 較安全版 Notion Button（course token 驗證）
+
+目標：支援 Notion button 即時同步，但不把全域 secret 放 URL。
+
+### 5.4.1 新增資料表（Supabase）
+
+責任歸屬：`Human prerequisite`（人類先在 Supabase SQL Editor 執行，不是 AI 在程式內建立）
+
+```sql
+create table if not exists public.course_sync_tokens (
+  id uuid primary key default gen_random_uuid(),
+  course_slug text not null unique,
+  token text not null unique,
+  is_active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+```
+
+### 5.4.2 `server/services/supabase.ts` 新增
+
+1. `validateCourseSyncToken(slug: string, token: string)`：
+   1. 讀 `course_sync_tokens`
+   2. 驗證 `course_slug` + `token` + `is_active=true`
+2. 驗證通過回傳 `true`，否則 `false`
+3. 若資料表不存在，回傳可讀錯誤訊息，提示需先完成 Human prerequisite（5.4.1）
+
+### 5.4.3 `server/index.ts` 新增路由
+
+1. `GET /api/admin/sync-course-button`
+2. query 參數：
+   1. `slug`
+   2. `token`
+3. 流程：
+   1. validateCourseSyncToken
+   2. 成功 -> `syncCourseToSupabase({ slug })`
+   3. 失敗 -> `401`
+
 ---
 
 ## 6. Phase 5：環境變數與文件同步
@@ -198,6 +236,7 @@ Student Works：
 
 1. 單課程同步：`/api/admin/sync-course-supabase`
 2. 全課程同步：`/api/admin/sync-all-courses-supabase`
+3. Notion button 同步：`/api/admin/sync-course-button?slug=...&token=...`
 
 ## 7.3 DoD
 
@@ -207,6 +246,7 @@ Student Works：
 4. `deactivate=true` 時，課程會標記 `is_active=false`（不硬刪）。
 5. 前台在 `READ_FROM_SUPABASE=true` 正常顯示。
 6. `mainImage` + `moreImages` 皆為 R2 URL。
+7. secure button route 可正確驗證單課程 token。
 
 ---
 
@@ -225,6 +265,7 @@ Student Works：
 3. Phase 2 基礎服務補齊
 4. Phase 3 路由與讀取切換
 5. Phase 4 sync-all + 三策略
-6. Phase 5 env 與文件同步
-7. Phase 7 測試驗收
-8. 提供 curl 測試指令與變更檔案列表
+6. Phase 4.5 secure button token 驗證
+7. Phase 5 env 與文件同步
+8. Phase 7 測試驗收
+9. 提供 curl 測試指令與變更檔案列表
