@@ -16,6 +16,46 @@ function logWithContext(message: string, context: Record<string, unknown>) {
   console.log(JSON.stringify({ message, ...context }));
 }
 
+async function rewriteCourseCoverToR2(payload: CoursePayload, runId: string): Promise<{ uploaded: number; skipped: number }> {
+  if (!isR2ImageSyncEnabled()) {
+    return { uploaded: 0, skipped: 1 };
+  }
+
+  const sourceUrl = String(payload.course.coverImage || '').trim();
+  if (!sourceUrl) {
+    return { uploaded: 0, skipped: 1 };
+  }
+
+  try {
+    // Course cover has no dedicated project row, use a stable pseudo path segment.
+    const result = await uploadImageUrlToR2({
+      sourceUrl,
+      courseSlug: payload.course.slug || payload.course.id,
+      projectNotionId: 'course-cover',
+      workNotionId: `${payload.course.id}-cover`,
+    });
+    payload.course.coverImage = result.publicUrl;
+    return { uploaded: result.uploaded ? 1 : 0, skipped: result.uploaded ? 0 : 1 };
+  } catch (error) {
+    payload.warnings.push({
+      level: 'warning',
+      code: 'R2_COURSE_COVER_UPLOAD_FAILED',
+      message: error instanceof Error ? error.message : 'Unknown R2 course cover upload failure',
+      courseId: payload.course.id,
+    });
+
+    await appendSyncLog({
+      runId,
+      entityType: 'course_cover',
+      entityNotionId: payload.course.id,
+      status: 'failed',
+      message: error instanceof Error ? error.message : 'Unknown R2 course cover upload failure',
+    }).catch(() => undefined);
+
+    return { uploaded: 0, skipped: 1 };
+  }
+}
+
 async function rewriteWorkImagesToR2(payload: CoursePayload, runId: string): Promise<{ uploaded: number; skipped: number }> {
   if (!isR2ImageSyncEnabled()) {
     return { uploaded: 0, skipped: payload.studentWorks.length };
@@ -146,6 +186,7 @@ export async function syncCourseToSupabase(params: {
 
   const payload = await buildCoursePayloadBySlug(slug);
 
+  const coverResult = await rewriteCourseCoverToR2(payload, runId);
   const imageResult = await rewriteWorkImagesToR2(payload, runId);
 
   const courseRow = await upsertCourseToSupabase(payload.course, {
@@ -176,8 +217,8 @@ export async function syncCourseToSupabase(params: {
       workCount: payload.studentWorks.length,
       workUpserted: workResult.upserted,
       workSkipped: workResult.skipped,
-      imageUploaded: imageResult.uploaded,
-      imageSkipped: imageResult.skipped,
+      imageUploaded: coverResult.uploaded + imageResult.uploaded,
+      imageSkipped: coverResult.skipped + imageResult.skipped,
       warningCount: warnings.length,
     },
   });
@@ -190,8 +231,8 @@ export async function syncCourseToSupabase(params: {
     workCount: payload.studentWorks.length,
     workUpserted: workResult.upserted,
     workSkipped: workResult.skipped,
-    imageUploaded: imageResult.uploaded,
-    imageSkipped: imageResult.skipped,
+    imageUploaded: coverResult.uploaded + imageResult.uploaded,
+    imageSkipped: coverResult.skipped + imageResult.skipped,
     warningCount: warnings.length,
   });
 
@@ -203,8 +244,8 @@ export async function syncCourseToSupabase(params: {
     workCount: payload.studentWorks.length,
     workUpserted: workResult.upserted,
     workSkipped: workResult.skipped,
-    imageUploaded: imageResult.uploaded,
-    imageSkipped: imageResult.skipped,
+    imageUploaded: coverResult.uploaded + imageResult.uploaded,
+    imageSkipped: coverResult.skipped + imageResult.skipped,
     warnings,
   };
 }
