@@ -9,6 +9,9 @@ interface SupabaseCourseRow {
   course_name: string;
   course_summary: string | null;
   cover_image_url: string | null;
+  is_active?: boolean | null;
+  is_published?: boolean | null;
+  notion_last_edited_time?: string | null;
 }
 
 interface SupabaseProjectRow {
@@ -178,13 +181,17 @@ function buildInFilter(values: string[]): string {
   return `in.(${values.map((value) => `"${value}"`).join(',')})`;
 }
 
+function buildNotInFilter(values: string[]): string {
+  return `not.in.(${values.map((value) => `"${value}"`).join(',')})`;
+}
+
 export function shouldReadFromSupabase(): boolean {
   return String(process.env.READ_FROM_SUPABASE || 'false').toLowerCase() === 'true';
 }
 
 export async function fetchCoursesFromSupabase(): Promise<Course[]> {
   const rows = await supabaseRequest<SupabaseCourseRow[]>(
-    '/rest/v1/courses?select=id,notion_page_id,slug,course_name,course_summary,cover_image_url&order=created_at.desc',
+    '/rest/v1/courses?select=id,notion_page_id,slug,course_name,course_summary,cover_image_url,is_active&is_active=neq.false&order=created_at.desc',
     {
       method: 'GET',
       headers: supabaseHeaders(),
@@ -197,7 +204,7 @@ export async function fetchCoursesFromSupabase(): Promise<Course[]> {
 export async function fetchCoursePayloadBySlugFromSupabase(slug: string): Promise<CoursePayload> {
   const encodedSlug = encodeURIComponent(slug);
   const courses = await supabaseRequest<SupabaseCourseRow[]>(
-    `/rest/v1/courses?select=id,notion_page_id,slug,course_name,course_summary,cover_image_url&slug=eq.${encodedSlug}&limit=1`,
+    `/rest/v1/courses?select=id,notion_page_id,slug,course_name,course_summary,cover_image_url,is_active&slug=eq.${encodedSlug}&is_active=neq.false&limit=1`,
     {
       method: 'GET',
       headers: supabaseHeaders(),
@@ -242,9 +249,12 @@ export async function fetchCoursePayloadBySlugFromSupabase(slug: string): Promis
   };
 }
 
-export async function upsertCourseToSupabase(course: Course): Promise<SupabaseCourseRow> {
+export async function upsertCourseToSupabase(
+  course: Course,
+  options?: { isPublished?: boolean; notionLastEditedTime?: string | null; isActive?: boolean },
+): Promise<SupabaseCourseRow> {
   const timestamp = nowIso();
-  const payload = [{
+  const row: Record<string, unknown> = {
     notion_page_id: course.id,
     slug: course.slug || course.id,
     course_name: course.courseName,
@@ -252,7 +262,17 @@ export async function upsertCourseToSupabase(course: Course): Promise<SupabaseCo
     cover_image_url: course.coverImage || null,
     last_synced_at: timestamp,
     updated_at: timestamp,
-  }];
+  };
+  if (typeof options?.isActive === 'boolean') {
+    row.is_active = options.isActive;
+  }
+  if (typeof options?.isPublished === 'boolean') {
+    row.is_published = options.isPublished;
+  }
+  if (typeof options?.notionLastEditedTime === 'string') {
+    row.notion_last_edited_time = options.notionLastEditedTime || null;
+  }
+  const payload = [row];
 
   const rows = await supabaseRequest<SupabaseCourseRow[]>(
     '/rest/v1/courses?on_conflict=notion_page_id',
@@ -374,4 +394,40 @@ export async function appendSyncLog(params: {
       }]),
     },
   );
+}
+
+export async function setCoursesInactiveByNotionIds(activeNotionIds: string[]): Promise<number> {
+  const timestamp = nowIso();
+  const where = activeNotionIds.length
+    ? `?is_active=eq.true&notion_page_id=${encodeURIComponent(buildNotInFilter(activeNotionIds))}`
+    : '?is_active=eq.true';
+
+  const updated = await supabaseRequest<Array<{ id: string }>>(
+    `/rest/v1/courses${where}`,
+    {
+      method: 'PATCH',
+      headers: supabaseHeaders({ Prefer: 'return=representation' }),
+      body: JSON.stringify({
+        is_active: false,
+        updated_at: timestamp,
+      }),
+    },
+  );
+
+  return updated.length;
+}
+
+export async function getLastSyncAllCheckpoint(): Promise<string | null> {
+  const rows = await supabaseRequest<Array<{ payload: Record<string, unknown> | null }>>(
+    '/rest/v1/sync_logs?select=payload&entity_type=eq.sync_all&status=eq.success&order=created_at.desc&limit=1',
+    {
+      method: 'GET',
+      headers: supabaseHeaders(),
+    },
+  );
+
+  const payload = rows[0]?.payload;
+  if (!payload || typeof payload !== 'object') return null;
+  const checkpoint = payload.checkpointTo;
+  return typeof checkpoint === 'string' && checkpoint.trim() ? checkpoint : null;
 }

@@ -6,7 +6,7 @@ import { buildCoursePayloadBySlug, generateCourseWebsite } from './services/gene
 import { executeFunctionTool, listFunctionTools } from './services/mappingPipeline';
 import { fetchAllCourses } from './services/notion';
 import { fetchCoursePayloadBySlugFromSupabase, fetchCoursesFromSupabase, shouldReadFromSupabase } from './services/supabase';
-import { syncCourseToSupabase } from './services/syncToSupabase';
+import { syncAllCoursesToSupabase, syncCourseToSupabase } from './services/syncToSupabase';
 import { syncCourseLink, syncProjectMappings, validateSyncSecret } from './services/webhookSync';
 import { CoursePayload } from '../shared/contracts';
 import { Course } from '../src/types';
@@ -88,6 +88,17 @@ function pickFromRequest(req: express.Request, keys: string[]): string {
   if (fromProperties) return fromProperties;
 
   return '';
+}
+
+function parseBooleanLike(value: unknown, defaultValue = false): boolean {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'number') return value !== 0;
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (['true', '1', 'yes', 'y', 'on'].includes(normalized)) return true;
+    if (['false', '0', 'no', 'n', 'off'].includes(normalized)) return false;
+  }
+  return defaultValue;
 }
 
 function parseNotionStatusCode(message: string): number | null {
@@ -337,6 +348,31 @@ app.all('/api/admin/sync-course-supabase', async (req, res) => {
   } catch (error) {
     res.status(500).json({
       error: 'Failed to sync course to Supabase',
+      detail: error instanceof Error ? error.message : String(error),
+    });
+  }
+});
+
+app.all('/api/admin/sync-all-courses-supabase', async (req, res) => {
+  const incomingSecret = String(req.get('x-sync-secret') || req.body?.secret || req.query?.secret || '').trim();
+  const auth = validateSyncSecret(incomingSecret);
+  if (!auth.ok) {
+    res.status(401).json({ error: auth.message });
+    return;
+  }
+
+  const updatedOnly = parseBooleanLike(req.body?.updated_only ?? req.query?.updated_only ?? process.env.SYNC_UPDATED_ONLY, false);
+  const publishOnly = parseBooleanLike(req.body?.publish ?? req.query?.publish ?? process.env.SYNC_PUBLISH_ONLY, false);
+  const deactivate = parseBooleanLike(req.body?.deactivate ?? req.query?.deactivate ?? process.env.SYNC_DEACTIVATE, false);
+  const dryRun = parseBooleanLike(req.body?.dry_run ?? req.query?.dry_run, false);
+
+  try {
+    const result = await syncAllCoursesToSupabase({ updatedOnly, publishOnly, deactivate, dryRun });
+    invalidateAllApiCache();
+    res.json({ ok: true, ...result });
+  } catch (error) {
+    res.status(500).json({
+      error: 'Failed to sync all courses to Supabase',
       detail: error instanceof Error ? error.message : String(error),
     });
   }

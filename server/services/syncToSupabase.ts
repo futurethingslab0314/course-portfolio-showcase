@@ -1,10 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import { CoursePayload, NormalizationWarning } from '../../shared/contracts';
 import { buildCoursePayloadBySlug } from './generator';
-import { findCourseSlugByPageId } from './notion';
+import { fetchAllCoursesWithMeta, findCourseSlugByPageId, NotionCourseMeta } from './notion';
 import { isR2ImageSyncEnabled, uploadImageUrlToR2 } from './imageStoreR2';
 import {
   appendSyncLog,
+  getLastSyncAllCheckpoint,
+  setCoursesInactiveByNotionIds,
   upsertCourseToSupabase,
   upsertProjectsToSupabase,
   upsertStudentWorksToSupabase,
@@ -104,9 +106,23 @@ function buildProjectLookup(rows: Array<{ id: string; notion_page_id: string; so
   return map;
 }
 
+function toMs(value: string | null | undefined): number | null {
+  if (!value) return null;
+  const ms = Date.parse(value);
+  return Number.isFinite(ms) ? ms : null;
+}
+
+function byUpdatedDesc(a: NotionCourseMeta, b: NotionCourseMeta): number {
+  const mb = toMs(b.lastEditedTime) || 0;
+  const ma = toMs(a.lastEditedTime) || 0;
+  return mb - ma;
+}
+
 export async function syncCourseToSupabase(params: {
   slug?: string;
   coursePageId?: string;
+  publishedStatus?: boolean;
+  notionLastEditedTime?: string;
 }): Promise<{
   runId: string;
   slug: string;
@@ -132,7 +148,11 @@ export async function syncCourseToSupabase(params: {
 
   const imageResult = await rewriteWorkImagesToR2(payload, runId);
 
-  const courseRow = await upsertCourseToSupabase(payload.course);
+  const courseRow = await upsertCourseToSupabase(payload.course, {
+    isPublished: typeof params.publishedStatus === 'boolean' ? params.publishedStatus : undefined,
+    notionLastEditedTime: typeof params.notionLastEditedTime === 'string' ? params.notionLastEditedTime : undefined,
+    isActive: true,
+  });
   const projectRows = await upsertProjectsToSupabase(payload.projects, courseRow.id);
   const projectLookup = buildProjectLookup(projectRows);
 
@@ -185,6 +205,133 @@ export async function syncCourseToSupabase(params: {
     workSkipped: workResult.skipped,
     imageUploaded: imageResult.uploaded,
     imageSkipped: imageResult.skipped,
+    warnings,
+  };
+}
+
+export async function syncAllCoursesToSupabase(options?: {
+  updatedOnly?: boolean;
+  publishOnly?: boolean;
+  deactivate?: boolean;
+  dryRun?: boolean;
+}): Promise<{
+  runId: string;
+  totalCoursesInNotion: number;
+  selectedCourses: number;
+  syncedCourses: number;
+  failedCourses: number;
+  deactivatedCourses: number;
+  checkpointFrom: string | null;
+  checkpointTo: string | null;
+  warnings: NormalizationWarning[];
+}> {
+  const runId = `syncall-${Date.now()}-${randomUUID().slice(0, 8)}`;
+  const updatedOnly = Boolean(options?.updatedOnly);
+  const publishOnly = Boolean(options?.publishOnly);
+  const deactivate = Boolean(options?.deactivate);
+  const dryRun = Boolean(options?.dryRun);
+
+  const allCourses = await fetchAllCoursesWithMeta();
+  const totalCoursesInNotion = allCourses.length;
+  const checkpointFrom = updatedOnly ? await getLastSyncAllCheckpoint() : null;
+  const checkpointMs = toMs(checkpointFrom);
+  const warnings: NormalizationWarning[] = [];
+
+  let effective = publishOnly ? allCourses.filter((item) => item.publishedStatus) : allCourses.slice();
+  effective = effective.sort(byUpdatedDesc);
+
+  if (publishOnly) {
+    const unpublishedCount = allCourses.length - effective.length;
+    if (unpublishedCount > 0) {
+      warnings.push({
+        level: 'warning',
+        code: 'SYNC_ALL_PUBLISH_FILTERED_OUT',
+        message: `${unpublishedCount} course(s) skipped by PublishedStatus filter.`,
+      });
+    }
+  }
+
+  const selected = updatedOnly
+    ? effective.filter((item) => {
+        if (!checkpointMs) return true;
+        const editedMs = toMs(item.lastEditedTime);
+        if (!editedMs) return true;
+        return editedMs > checkpointMs;
+      })
+    : effective;
+
+  let syncedCourses = 0;
+  let failedCourses = 0;
+  let checkpointTo: string | null = checkpointFrom;
+
+  if (!dryRun) {
+    for (const course of selected) {
+      try {
+        const result = await syncCourseToSupabase({
+          slug: course.slug,
+          coursePageId: course.pageId,
+          publishedStatus: course.publishedStatus,
+          notionLastEditedTime: course.lastEditedTime,
+        });
+        warnings.push(...result.warnings);
+        syncedCourses += 1;
+        if (course.lastEditedTime && (!checkpointTo || (toMs(course.lastEditedTime) || 0) > (toMs(checkpointTo) || 0))) {
+          checkpointTo = course.lastEditedTime;
+        }
+      } catch (error) {
+        failedCourses += 1;
+        warnings.push({
+          level: 'error',
+          code: 'SYNC_ALL_COURSE_FAILED',
+          message: error instanceof Error ? error.message : 'Unknown course sync failure',
+          courseId: course.pageId,
+        });
+      }
+    }
+  } else {
+    syncedCourses = selected.length;
+    checkpointTo = selected
+      .map((item) => item.lastEditedTime)
+      .filter(Boolean)
+      .sort((a, b) => (toMs(b) || 0) - (toMs(a) || 0))[0] || checkpointFrom;
+  }
+
+  let deactivatedCourses = 0;
+  if (deactivate && !dryRun) {
+    const activeIds = effective.map((item) => item.pageId);
+    deactivatedCourses = await setCoursesInactiveByNotionIds(activeIds);
+  }
+
+  await appendSyncLog({
+    runId,
+    entityType: 'sync_all',
+    status: 'success',
+    message: dryRun ? 'Sync-all dry run completed' : 'Sync-all completed',
+    payload: {
+      updatedOnly,
+      publishOnly,
+      deactivate,
+      dryRun,
+      totalCoursesInNotion,
+      selectedCourses: selected.length,
+      syncedCourses,
+      failedCourses,
+      deactivatedCourses,
+      checkpointFrom,
+      checkpointTo,
+      warningCount: warnings.length,
+    },
+  });
+
+  return {
+    runId,
+    totalCoursesInNotion,
+    selectedCourses: selected.length,
+    syncedCourses,
+    failedCourses,
+    deactivatedCourses,
+    checkpointFrom,
+    checkpointTo,
     warnings,
   };
 }

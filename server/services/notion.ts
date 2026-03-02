@@ -5,7 +5,15 @@ import { mapUiPattern, normalizeStudentWork, parseFieldMapping } from '../../sha
 export interface NotionPage {
   id: string;
   cover?: { type: 'external' | 'file'; external?: { url: string }; file?: { url: string } };
+  last_edited_time?: string;
   properties: Record<string, any>;
+}
+
+export interface NotionCourseMeta {
+  pageId: string;
+  slug: string;
+  lastEditedTime: string;
+  publishedStatus: boolean;
 }
 
 interface NotionBlock {
@@ -313,6 +321,27 @@ export async function fetchAllCourses(): Promise<Course[]> {
       projectIds: asStringArray(property(page, 'Projects')),
     };
   });
+}
+
+export async function fetchAllCoursesWithMeta(): Promise<NotionCourseMeta[]> {
+  const coursesDb = getEnv('NOTION_DB_COURSES_ID');
+  const pages = await queryDatabase(coursesDb);
+  const rows: NotionCourseMeta[] = [];
+
+  for (const page of pages) {
+    const slug = asText(property(page, 'Slug')).trim();
+    if (!slug) {
+      continue;
+    }
+    rows.push({
+      pageId: page.id,
+      slug,
+      lastEditedTime: String(page.last_edited_time || ''),
+      publishedStatus: asBoolean(property(page, 'PublishedStatus', 'Published', 'Publish')),
+    });
+  }
+
+  return rows;
 }
 
 export async function fetchProjectsByCourse(coursePageId: string, courseRelationIds: string[], warnings: NormalizationWarning[]): Promise<Array<{ project: Project; fieldMapping: FieldMapping }>> {
