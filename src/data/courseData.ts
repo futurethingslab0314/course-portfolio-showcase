@@ -1,26 +1,5 @@
 import { Course, Project, StudentWork } from '../types';
-import { COURSES, PROJECTS, STUDENT_WORKS } from '../mockData';
 import { CoursePayload } from '../../shared/contracts';
-
-function fallbackPayloadBySlug(slugOrId: string): CoursePayload {
-  const course = COURSES.find((item) => item.id === slugOrId || item.slug === slugOrId) || COURSES[0];
-  const projects = PROJECTS.filter((item) => item.courseId === course.id).sort((a, b) => a.order - b.order);
-  const sourceIds = new Set(projects.map((item) => item.sourceDatabaseId));
-  const studentWorks = STUDENT_WORKS.filter((item) => sourceIds.has(item.sourceDatabaseId));
-
-  return {
-    course,
-    projects,
-    studentWorks,
-    warnings: [
-      {
-        level: 'warning',
-        code: 'FALLBACK_TO_MOCK_DATA',
-        message: 'API unavailable. Using mockData fallback.',
-      },
-    ],
-  };
-}
 
 async function safeJson<T>(response: Response): Promise<T> {
   const text = await response.text();
@@ -41,8 +20,9 @@ export async function loadCoursePayloadBySlug(slugOrId: string, options?: { refr
     }
 
     return payload;
-  } catch {
-    return fallbackPayloadBySlug(slugOrId);
+  } catch (error) {
+    if (error instanceof Error) throw error;
+    throw new Error('Failed to load course payload');
   }
 }
 
@@ -58,13 +38,10 @@ export async function loadCoursesForHome(options?: { refresh?: boolean }): Promi
       throw new Error('No courses from API');
     }
     return payload.courses;
-  } catch {
-    return COURSES;
+  } catch (error) {
+    if (error instanceof Error) throw error;
+    throw new Error('Failed to load courses');
   }
-}
-
-export function fallbackCourses(): Course[] {
-  return COURSES;
 }
 
 export function filterWorksForProject(studentWorks: StudentWork[], projects: Project[], activeProjectId?: string): StudentWork[] {

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, useParams } from 'react-router-dom';
 import { Project, StudentWork, Course } from './types';
-import { fallbackCourses, filterWorksForProject, loadCoursePayloadBySlug, loadCoursesForHome } from './data/courseData';
+import { filterWorksForProject, loadCoursePayloadBySlug, loadCoursesForHome } from './data/courseData';
 
 // Components
 import { Header } from './components/Header';
@@ -38,14 +38,23 @@ const StudentWorkItem = ({ work, style }: { work: StudentWork; style: Project['d
 };
 
 const HomePage = () => {
-  const [courses, setCourses] = useState<Course[]>(fallbackCourses());
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
     let active = true;
-    loadCoursesForHome().then((next) => {
-      if (active) setCourses(next);
-    });
+    loadCoursesForHome()
+      .then((next) => {
+        if (!active) return;
+        setCourses(next);
+        setLoadError(null);
+      })
+      .catch((error) => {
+        if (!active) return;
+        setCourses([]);
+        setLoadError(error instanceof Error ? error.message : 'Failed to load courses.');
+      });
     return () => {
       active = false;
     };
@@ -60,12 +69,25 @@ const HomePage = () => {
     try {
       const next = await loadCoursesForHome({ refresh: true });
       setCourses(next);
+      setLoadError(null);
+    } catch (error) {
+      setCourses([]);
+      setLoadError(error instanceof Error ? error.message : 'Failed to refresh courses.');
     } finally {
       setIsSyncing(false);
     }
   };
 
-  return <HomePageTemplate courses={courses} onSyncData={handleSyncData} isSyncing={isSyncing} />;
+  return (
+    <>
+      {loadError ? (
+        <div className="bg-red-50 border-b border-red-200 px-6 py-3 text-sm text-red-700">
+          Failed to load latest data: {loadError}
+        </div>
+      ) : null}
+      <HomePageTemplate courses={courses} onSyncData={handleSyncData} isSyncing={isSyncing} />
+    </>
+  );
 };
 
 const CourseDetailPage = () => {
@@ -74,6 +96,7 @@ const CourseDetailPage = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [studentWorks, setStudentWorks] = useState<StudentWork[]>([]);
   const [activeProjectId, setActiveProjectId] = useState<string | undefined>(undefined);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
 
   const loadCourseData = async (slugOrId: string, options?: { refresh?: boolean }) => {
@@ -81,6 +104,7 @@ const CourseDetailPage = () => {
     setCourse(payload.course);
     setProjects(payload.projects);
     setStudentWorks(payload.studentWorks);
+    setLoadError(null);
     setActiveProjectId((prev) => {
       const exists = payload.projects.some((project) => project.id === prev);
       return exists ? prev : payload.projects[0]?.id;
@@ -91,13 +115,22 @@ const CourseDetailPage = () => {
     let active = true;
     if (!id) return;
 
-    loadCoursePayloadBySlug(id).then((payload) => {
-      if (!active) return;
-      setCourse(payload.course);
-      setProjects(payload.projects);
-      setStudentWorks(payload.studentWorks);
-      setActiveProjectId(payload.projects[0]?.id);
-    });
+    loadCoursePayloadBySlug(id)
+      .then((payload) => {
+        if (!active) return;
+        setCourse(payload.course);
+        setProjects(payload.projects);
+        setStudentWorks(payload.studentWorks);
+        setLoadError(null);
+        setActiveProjectId(payload.projects[0]?.id);
+      })
+      .catch((error) => {
+        if (!active) return;
+        setCourse(null);
+        setProjects([]);
+        setStudentWorks([]);
+        setLoadError(error instanceof Error ? error.message : 'Failed to load course.');
+      });
 
     return () => {
       active = false;
@@ -115,6 +148,8 @@ const CourseDetailPage = () => {
     setIsSyncing(true);
     try {
       await loadCourseData(id, { refresh: true });
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : 'Failed to refresh course.');
     } finally {
       setIsSyncing(false);
     }
@@ -124,6 +159,10 @@ const CourseDetailPage = () => {
     filterWorksForProject(studentWorks, projects, activeProjectId),
     [activeProjectId, projects, studentWorks]
   );
+
+  if (loadError) {
+    return <div className="p-6 text-red-700">Failed to load course data: {loadError}</div>;
+  }
 
   if (!course) return <div>Loading course...</div>;
 
