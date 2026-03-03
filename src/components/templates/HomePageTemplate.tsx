@@ -19,7 +19,7 @@ export const HomePageTemplate = ({ courses, onSyncData, isSyncing }: HomePageTem
           COURSE<br />PORTFOLIO<br />SHOWCASE
         </h1>
         <p className="text-lg md:text-xl text-black/40 max-w-2xl font-medium">
-          A curated collection of design excellence and data-driven innovation from our students.
+          A curated collection of student projects from Dr. Yu-Ting Cheng's courses.
         </p>
       </div>
 
