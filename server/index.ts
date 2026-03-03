@@ -8,6 +8,7 @@ import { fetchAllCourses } from './services/notion';
 import { fetchCoursePayloadBySlugFromSupabase, fetchCoursesFromSupabase, shouldReadFromSupabase, validateCourseSyncToken } from './services/supabase';
 import { syncAllCoursesToSupabase, syncCourseToSupabase } from './services/syncToSupabase';
 import { syncCourseLink, syncProjectMappings, validateSyncSecret } from './services/webhookSync';
+import { resolveSyncButtonAuth } from './services/syncButtonAuth';
 import { CoursePayload } from '../shared/contracts';
 import { Course } from '../src/types';
 
@@ -381,22 +382,33 @@ app.all('/api/admin/sync-all-courses-supabase', async (req, res) => {
 app.get('/api/admin/sync-course-button', async (req, res) => {
   const slug = pickFromRequest(req, ['slug', 'Slug']);
   const token = pickFromRequest(req, ['token', 'Token', 'syncToken', 'SyncToken']);
+  const secret = String(req.get('x-sync-secret') || req.query?.secret || req.query?.sync_secret || '').trim();
 
-  if (!slug || !token) {
-    res.status(400).json({ error: 'Missing required query params: slug, token' });
+  if (!slug) {
+    res.status(400).json({ error: 'Missing required query param: slug' });
     return;
   }
 
   try {
-    const authorized = await validateCourseSyncToken(slug, token);
-    if (!authorized) {
-      res.status(401).json({ error: 'Unauthorized: invalid course sync token' });
+    const auth = await resolveSyncButtonAuth({
+      slug,
+      token,
+      secret,
+      validateCourseToken: validateCourseSyncToken,
+      validateGlobalSecret: validateSyncSecret,
+    });
+
+    if (!auth.ok) {
+      res.status(401).json({
+        error: auth.message || 'Unauthorized',
+        hint: 'Provide `token` (preferred) or legacy `secret` query param.',
+      });
       return;
     }
 
     const result = await syncCourseToSupabase({ slug });
     invalidateAllApiCache();
-    res.json({ ok: true, ...result });
+    res.json({ ok: true, authMethod: auth.method, ...result });
   } catch (error) {
     res.status(500).json({
       error: 'Failed to sync course by button token',
