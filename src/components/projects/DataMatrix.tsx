@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { X, Plus, Grid, LayoutGrid } from 'lucide-react';
+import { X, Plus, Grid, LayoutGrid, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { StudentWork } from '../../types';
 import { memberRows } from '../../lib/memberRows';
@@ -13,6 +13,18 @@ type ViewMode = 'coordinate' | 'categorized';
 
 const ROW_COUNT = 16;
 const COLUMN_COUNT = 30;
+
+const getYearValue = (year?: string): number => {
+  if (!year) {
+    return 0;
+  }
+  const yearMatch = year.match(/\d{4}/);
+  if (yearMatch) {
+    return Number(yearMatch[0]);
+  }
+  const fallback = Number(year);
+  return Number.isNaN(fallback) ? 0 : fallback;
+};
 
 export const DataMatrix = ({ works }: DataMatrixProps) => {
   const [selectedWork, setSelectedWork] = useState<StudentWork | null>(null);
@@ -35,11 +47,25 @@ export const DataMatrix = ({ works }: DataMatrixProps) => {
   }, [works, selectedTag]);
 
   const worksByLocation = useMemo(() => {
-    const locationMap = new Map<string, StudentWork>();
+    const locationMap = new Map<string, StudentWork[]>();
     filteredWorks.forEach((work) => {
       if (work.gridLocation) {
-        locationMap.set(work.gridLocation, work);
+        const existingWorks = locationMap.get(work.gridLocation) || [];
+        existingWorks.push(work);
+        locationMap.set(work.gridLocation, existingWorks);
       }
+    });
+    locationMap.forEach((locationWorks, location) => {
+      locationMap.set(
+        location,
+        [...locationWorks].sort((a, b) => {
+          const yearDiff = getYearValue(b.year) - getYearValue(a.year);
+          if (yearDiff !== 0) {
+            return yearDiff;
+          }
+          return a.id.localeCompare(b.id);
+        })
+      );
     });
     return locationMap;
   }, [filteredWorks]);
@@ -49,7 +75,8 @@ export const DataMatrix = ({ works }: DataMatrixProps) => {
       Array.from({ length: ROW_COUNT }, (_, rowIndex) =>
         Array.from({ length: COLUMN_COUNT }, (_, colIndex) => {
           const location = `${String.fromCharCode(65 + rowIndex)}${colIndex + 1}`;
-          return worksByLocation.get(location);
+          const locationWorks = worksByLocation.get(location);
+          return locationWorks?.[0];
         })
       ),
     [worksByLocation]
@@ -78,6 +105,24 @@ export const DataMatrix = ({ works }: DataMatrixProps) => {
   }, [filteredWorks, selectedWork]);
 
   const selectedMembers = selectedWork ? memberRows(selectedWork) : [];
+  const selectedLocationWorks = useMemo(() => {
+    if (!selectedWork) {
+      return [];
+    }
+    if (!selectedWork.gridLocation) {
+      return [selectedWork];
+    }
+    return worksByLocation.get(selectedWork.gridLocation) || [selectedWork];
+  }, [selectedWork, worksByLocation]);
+  const selectedLocationIndex = selectedWork
+    ? Math.max(
+        0,
+        selectedLocationWorks.findIndex((work) => work.id === selectedWork.id)
+      )
+    : 0;
+  const hasMultiplePages = selectedLocationWorks.length > 1;
+  const canGoPrev = hasMultiplePages && selectedLocationIndex > 0;
+  const canGoNext = hasMultiplePages && selectedLocationIndex < selectedLocationWorks.length - 1;
 
   return (
     <div className="py-12">
@@ -280,6 +325,41 @@ export const DataMatrix = ({ works }: DataMatrixProps) => {
                     </span>
                     <span className="text-black/20 font-mono text-xs">{selectedWork.year || '2026'}</span>
                   </div>
+                  {hasMultiplePages ? (
+                    <div className="flex items-center justify-between mb-4">
+                      <button
+                        type="button"
+                        disabled={!canGoPrev}
+                        onClick={() => canGoPrev && setSelectedWork(selectedLocationWorks[selectedLocationIndex - 1])}
+                        className={cn(
+                          'inline-flex items-center gap-1 px-2 py-1 text-[10px] font-bold uppercase tracking-wider border transition-colors',
+                          canGoPrev
+                            ? 'border-black/20 text-black/60 hover:border-black/40 hover:text-black'
+                            : 'border-black/10 text-black/20 cursor-not-allowed'
+                        )}
+                      >
+                        <ChevronLeft size={12} />
+                        Prev
+                      </button>
+                      <span className="text-[10px] font-mono uppercase tracking-widest text-black/30">
+                        Page {selectedLocationIndex + 1}/{selectedLocationWorks.length}
+                      </span>
+                      <button
+                        type="button"
+                        disabled={!canGoNext}
+                        onClick={() => canGoNext && setSelectedWork(selectedLocationWorks[selectedLocationIndex + 1])}
+                        className={cn(
+                          'inline-flex items-center gap-1 px-2 py-1 text-[10px] font-bold uppercase tracking-wider border transition-colors',
+                          canGoNext
+                            ? 'border-black/20 text-black/60 hover:border-black/40 hover:text-black'
+                            : 'border-black/10 text-black/20 cursor-not-allowed'
+                        )}
+                      >
+                        Next
+                        <ChevronRight size={12} />
+                      </button>
+                    </div>
+                  ) : null}
 
                   <h2 className="text-3xl font-bold tracking-tighter mb-4">{selectedWork.assignmentName}</h2>
 
