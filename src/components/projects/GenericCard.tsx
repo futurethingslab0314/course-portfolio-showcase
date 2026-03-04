@@ -63,7 +63,7 @@ export const GenericCard = ({ work }: GenericCardProps) => {
   return (
     <>
       <div onClick={openModal} className="generic-card-container group">
-        <div className="aspect-square overflow-hidden relative">
+        <div className="aspect-[297/210] overflow-hidden relative">
           <img
             src={work.mainImage}
             alt={work.assignmentName}
@@ -127,7 +127,7 @@ export const GenericCard = ({ work }: GenericCardProps) => {
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.9 }}
                         transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-contain"
                         referrerPolicy="no-referrer"
                       />
                     </AnimatePresence>
