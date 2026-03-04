@@ -1,99 +1,268 @@
-import React, { useState } from 'react';
-import { X, Plus } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { X, Plus, Grid, LayoutGrid } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { StudentWork } from '../../types';
 import { memberRows } from '../../lib/memberRows';
+import { cn } from '../../lib/utils';
 
 interface DataMatrixProps {
   works: StudentWork[];
 }
 
+type ViewMode = 'coordinate' | 'categorized';
+
+const ROW_COUNT = 16;
+const COLUMN_COUNT = 30;
+
 export const DataMatrix = ({ works }: DataMatrixProps) => {
   const [selectedWork, setSelectedWork] = useState<StudentWork | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>('coordinate');
+  const [selectedTag, setSelectedTag] = useState<string>('ALL');
 
-  const grid = Array.from({ length: 16 }, (_, r) => 
-    Array.from({ length: 30 }, (_, c) => {
-      const location = `${String.fromCharCode(65 + r)}${c + 1}`;
-      return works.find(w => w.gridLocation === location);
-    })
+  const allTags = useMemo(() => {
+    const tagSet = new Set<string>();
+    works.forEach((work) => {
+      work.tags?.forEach((tag) => tagSet.add(tag));
+    });
+    return ['ALL', ...Array.from(tagSet).sort((a, b) => a.localeCompare(b))];
+  }, [works]);
+
+  const filteredWorks = useMemo(() => {
+    if (selectedTag === 'ALL') {
+      return works;
+    }
+    return works.filter((work) => work.tags?.includes(selectedTag));
+  }, [works, selectedTag]);
+
+  const worksByLocation = useMemo(() => {
+    const locationMap = new Map<string, StudentWork>();
+    filteredWorks.forEach((work) => {
+      if (work.gridLocation) {
+        locationMap.set(work.gridLocation, work);
+      }
+    });
+    return locationMap;
+  }, [filteredWorks]);
+
+  const coordinateGrid = useMemo(
+    () =>
+      Array.from({ length: ROW_COUNT }, (_, rowIndex) =>
+        Array.from({ length: COLUMN_COUNT }, (_, colIndex) => {
+          const location = `${String.fromCharCode(65 + rowIndex)}${colIndex + 1}`;
+          return worksByLocation.get(location);
+        })
+      ),
+    [worksByLocation]
   );
+
+  const categorizedWorks = useMemo(() => {
+    const groups: Record<string, StudentWork[]> = {};
+    filteredWorks.forEach((work) => {
+      const primaryTag = work.tags?.[0] || 'Uncategorized';
+      if (!groups[primaryTag]) {
+        groups[primaryTag] = [];
+      }
+      groups[primaryTag].push(work);
+    });
+    return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
+  }, [filteredWorks]);
+
+  useEffect(() => {
+    if (!selectedWork) {
+      return;
+    }
+    const stillVisible = filteredWorks.some((work) => work.id === selectedWork.id);
+    if (!stillVisible) {
+      setSelectedWork(null);
+    }
+  }, [filteredWorks, selectedWork]);
 
   const selectedMembers = selectedWork ? memberRows(selectedWork) : [];
 
   return (
     <div className="py-12">
-      <div className="mb-12 flex justify-between items-end">
+      <div className="mb-8 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h3 className="text-4xl font-bold tracking-tighter mb-2">Data Matrix</h3>
           <p className="text-black/40 font-mono text-xs uppercase tracking-widest">Coordinate System: A-P x 1-30</p>
         </div>
-        <div className="flex gap-8 text-[10px] font-bold uppercase tracking-widest text-black/30">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-black/5" />
-            <span>Empty</span>
+
+        <div className="flex items-center gap-4 self-start lg:self-auto">
+          <div className="flex bg-black/5 p-1 rounded-lg">
+            <button
+              type="button"
+              onClick={() => setViewMode('coordinate')}
+              className={cn(
+                'p-1.5 rounded-md transition-all',
+                viewMode === 'coordinate' ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black/60'
+              )}
+              aria-label="Coordinate view"
+            >
+              <Grid size={16} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('categorized')}
+              className={cn(
+                'p-1.5 rounded-md transition-all',
+                viewMode === 'categorized' ? 'bg-white text-black shadow-sm' : 'text-black/40 hover:text-black/60'
+              )}
+              aria-label="Categorized view"
+            >
+              <LayoutGrid size={16} />
+            </button>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-blue-600" />
-            <span>Active</span>
+
+          <div className="flex gap-6 text-[10px] font-bold uppercase tracking-widest text-black/30">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-black/5" />
+              <span>Empty</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-black" />
+              <span>Active</span>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="overflow-x-auto pb-8">
-        <div className="inline-block min-w-full border-t border-l border-black/5">
-          {grid.map((row, r) => (
-            <div key={r} className="flex">
-              <div className="w-8 h-8 flex items-center justify-center bg-black/[0.02] border-r border-b border-black/5 text-[10px] font-mono text-black/20 shrink-0">
-                {String.fromCharCode(65 + r)}
-              </div>
-              {row.map((work, c) => (
-                <div 
-                  key={c} 
-                  className="data-matrix-cell border-r border-b group"
-                  onClick={() => work && setSelectedWork(work)}
-                >
-                  {work ? (
-                    <>
-                      <img src={work.mainImage} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" referrerPolicy="no-referrer" />
-                      <div className="absolute inset-0 bg-blue-600/0 group-hover:bg-blue-600/20 transition-colors flex items-center justify-center">
-                        <Plus size={12} className="text-white opacity-0 group-hover:opacity-100" />
-                      </div>
-                    </>
-                  ) : (
-                    <div className="w-full h-full bg-black/[0.01]" />
-                  )}
-                </div>
-              ))}
-            </div>
+      <div className="mb-10 overflow-x-auto pb-2">
+        <div className="flex min-w-max gap-2">
+          {allTags.map((tag) => (
+            <button
+              key={tag}
+              type="button"
+              onClick={() => setSelectedTag(tag)}
+              className={cn(
+                'px-4 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] border transition-colors whitespace-nowrap',
+                selectedTag === tag
+                  ? 'bg-black text-white border-black'
+                  : 'bg-white text-black/50 border-black/10 hover:text-black hover:border-black/30'
+              )}
+            >
+              {tag}
+            </button>
           ))}
-          <div className="flex">
-            <div className="w-8 h-8 shrink-0" />
-            {Array.from({ length: 30 }).map((_, i) => (
-              <div key={i} className="w-8 h-8 flex items-center justify-center text-[10px] font-mono text-black/20">
-                {i + 1}
-              </div>
-            ))}
-          </div>
         </div>
       </div>
+
+      <AnimatePresence mode="wait">
+        {viewMode === 'coordinate' ? (
+          <motion.div
+            key="coordinate-view"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="overflow-x-auto pb-8"
+          >
+            <div className="inline-block min-w-full border-t border-l border-black/5">
+              {coordinateGrid.map((row, rowIndex) => (
+                <div key={rowIndex} className="flex">
+                  <div className="w-8 h-8 flex items-center justify-center bg-black/[0.02] border-r border-b border-black/5 text-[10px] font-mono text-black/20 shrink-0">
+                    {String.fromCharCode(65 + rowIndex)}
+                  </div>
+                  {row.map((work, colIndex) => (
+                    <div
+                      key={colIndex}
+                      className="data-matrix-cell border-r border-b group"
+                      onClick={() => work && setSelectedWork(work)}
+                    >
+                      {work ? (
+                        <motion.div layoutId={`matrix-${work.id}`} className="relative w-full h-full">
+                          <img
+                            src={work.mainImage}
+                            alt=""
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                            referrerPolicy="no-referrer"
+                          />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                            <Plus size={12} className="text-white opacity-0 group-hover:opacity-100" />
+                          </div>
+                        </motion.div>
+                      ) : (
+                        <div className="w-full h-full bg-black/[0.01]" />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ))}
+              <div className="flex">
+                <div className="w-8 h-8 shrink-0" />
+                {Array.from({ length: COLUMN_COUNT }).map((_, index) => (
+                  <div key={index} className="w-8 h-8 flex items-center justify-center text-[10px] font-mono text-black/20">
+                    {index + 1}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="categorized-view"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="space-y-12"
+          >
+            {categorizedWorks.length > 0 ? (
+              categorizedWorks.map(([tag, tagWorks]) => (
+                <section key={tag} className="space-y-4">
+                  <div className="border-b border-black/10 pb-3 flex items-center justify-between gap-4">
+                    <h4 className="text-xs font-bold uppercase tracking-[0.3em] text-black/70">{tag}</h4>
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-black/30">
+                      {tagWorks.length} works
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
+                    {tagWorks.map((work) => (
+                      <motion.button
+                        key={work.id}
+                        type="button"
+                        layoutId={`matrix-${work.id}`}
+                        onClick={() => setSelectedWork(work)}
+                        className="aspect-square relative group cursor-pointer overflow-hidden bg-black/5 text-left"
+                      >
+                        <img
+                          src={work.mainImage}
+                          alt=""
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                          referrerPolicy="no-referrer"
+                        />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex flex-col items-center justify-center p-4">
+                          <Plus size={20} className="text-white opacity-0 group-hover:opacity-100 mb-2" />
+                          <p className="text-[10px] font-bold text-white opacity-0 group-hover:opacity-100 uppercase tracking-widest text-center leading-tight">
+                            {work.assignmentName}
+                          </p>
+                        </div>
+                      </motion.button>
+                    ))}
+                  </div>
+                </section>
+              ))
+            ) : (
+              <div className="py-16 text-center text-black/40 text-sm">No works found for the selected filter.</div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {selectedWork && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setSelectedWork(null)}
               className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             />
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               className="relative w-full max-w-xl bg-white rounded-2xl overflow-hidden shadow-2xl flex flex-col"
             >
-              <button 
+              <button
                 onClick={() => setSelectedWork(null)}
                 className="absolute top-4 right-4 z-10 p-2 bg-white/80 backdrop-blur-md rounded-full hover:bg-white transition-colors"
               >
@@ -106,29 +275,27 @@ export const DataMatrix = ({ works }: DataMatrixProps) => {
                 </div>
                 <div className="p-8">
                   <div className="flex items-center gap-4 mb-4">
-                    <span className="bg-blue-600 text-white text-[10px] font-bold px-3 py-1 uppercase tracking-wider">
-                      Matrix Entry: {selectedWork.gridLocation}
+                    <span className="bg-black text-white text-[10px] font-bold px-3 py-1 uppercase tracking-wider">
+                      Matrix Entry: {selectedWork.gridLocation || 'N/A'}
                     </span>
                     <span className="text-black/20 font-mono text-xs">{selectedWork.year || '2026'}</span>
                   </div>
-                  
+
                   <h2 className="text-3xl font-bold tracking-tighter mb-4">{selectedWork.assignmentName}</h2>
-                  
+
                   <div className="space-y-6">
                     <div>
                       <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-black/30 mb-2">Description</h4>
                       <p className="text-black/70 leading-relaxed text-base">{selectedWork.description}</p>
                     </div>
-                    
+
                     <div>
                       <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-black/30 mb-2">Team Members</h4>
                       <div className="space-y-2">
-                        {selectedMembers.map((member, i) => (
-                          <div key={`${member.name}-${i}`} className="flex justify-between items-baseline border-b border-black/5 pb-1">
+                        {selectedMembers.map((member, index) => (
+                          <div key={`${member.name}-${index}`} className="flex justify-between items-baseline border-b border-black/5 pb-1">
                             <p className="text-sm font-medium text-black/80">{member.name}</p>
-                            {member.studentId ? (
-                              <p className="text-[10px] font-mono text-black/20">{member.studentId}</p>
-                            ) : null}
+                            {member.studentId ? <p className="text-[10px] font-mono text-black/20">{member.studentId}</p> : null}
                           </div>
                         ))}
                       </div>
