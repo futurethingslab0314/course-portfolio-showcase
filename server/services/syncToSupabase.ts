@@ -5,6 +5,7 @@ import { fetchAllCoursesWithMeta, findCourseSlugByPageId, NotionCourseMeta } fro
 import { isR2ImageSyncEnabled, uploadImageUrlToR2 } from './imageStoreR2';
 import {
   appendSyncLog,
+  deleteStudentWorksNotInProjects,
   getLastSyncAllCheckpoint,
   setCoursesInactiveByNotionIds,
   upsertCourseToSupabase,
@@ -171,6 +172,7 @@ export async function syncCourseToSupabase(params: {
   workCount: number;
   workUpserted: number;
   workSkipped: number;
+  workDeleted: number;
   imageUploaded: number;
   imageSkipped: number;
   warnings: NormalizationWarning[];
@@ -202,6 +204,10 @@ export async function syncCourseToSupabase(params: {
     projectIdBySourceDb: projectLookup,
     warnings: payload.warnings,
   });
+  const workDeleted = await deleteStudentWorksNotInProjects({
+    projectIds: projectRows.map((row) => row.id),
+    activeWorkNotionIds: payload.studentWorks.map((work) => work.id),
+  });
 
   const warnings = payload.warnings;
 
@@ -217,6 +223,7 @@ export async function syncCourseToSupabase(params: {
       workCount: payload.studentWorks.length,
       workUpserted: workResult.upserted,
       workSkipped: workResult.skipped,
+      workDeleted,
       imageUploaded: coverResult.uploaded + imageResult.uploaded,
       imageSkipped: coverResult.skipped + imageResult.skipped,
       warningCount: warnings.length,
@@ -231,6 +238,7 @@ export async function syncCourseToSupabase(params: {
     workCount: payload.studentWorks.length,
     workUpserted: workResult.upserted,
     workSkipped: workResult.skipped,
+    workDeleted,
     imageUploaded: coverResult.uploaded + imageResult.uploaded,
     imageSkipped: coverResult.skipped + imageResult.skipped,
     warningCount: warnings.length,
@@ -244,6 +252,7 @@ export async function syncCourseToSupabase(params: {
     workCount: payload.studentWorks.length,
     workUpserted: workResult.upserted,
     workSkipped: workResult.skipped,
+    workDeleted,
     imageUploaded: coverResult.uploaded + imageResult.uploaded,
     imageSkipped: coverResult.skipped + imageResult.skipped,
     warnings,

@@ -371,6 +371,30 @@ export async function upsertStudentWorksToSupabase(params: {
   return { upserted: upserted.length, skipped };
 }
 
+export async function deleteStudentWorksNotInProjects(params: {
+  projectIds: string[];
+  activeWorkNotionIds: string[];
+}): Promise<number> {
+  const projectIds = params.projectIds.map((value) => String(value || '').trim()).filter(Boolean);
+  if (!projectIds.length) return 0;
+
+  const activeWorkNotionIds = params.activeWorkNotionIds.map((value) => String(value || '').trim()).filter(Boolean);
+  const projectScope = `project_id=${encodeURIComponent(buildInFilter(projectIds))}`;
+  const staleFilter = activeWorkNotionIds.length
+    ? `&notion_page_id=${encodeURIComponent(buildNotInFilter(activeWorkNotionIds))}`
+    : '';
+
+  const deleted = await supabaseRequest<Array<{ id: string }>>(
+    `/rest/v1/student_works?${projectScope}${staleFilter}`,
+    {
+      method: 'DELETE',
+      headers: supabaseHeaders({ Prefer: 'return=representation' }),
+    },
+  );
+
+  return deleted.length;
+}
+
 export async function appendSyncLog(params: {
   runId: string;
   entityType: string;
