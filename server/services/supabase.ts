@@ -170,6 +170,7 @@ function mapProjectRowToProject(row: SupabaseProjectRow, courseNotionPageId: str
     order: Number.isFinite(row.order) ? row.order : 0,
     sourceDatabaseId: row.source_database_id || '',
     displayStyle: normalizeDisplayStyle(row.ui_pattern),
+    visibility: 'published',
   };
 }
 

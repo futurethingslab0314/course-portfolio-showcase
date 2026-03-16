@@ -403,6 +403,7 @@ export async function fetchProjectsByCourse(coursePageId: string, courseRelation
       const sourceDbIdRaw = asText(property(page, 'SourceDatabaseId', 'SourceDatabaseID', 'Source Database Id', 'SourceDB'));
       const sourceDatabaseId = sourceDbIdRaw || asStringArray(property(page, 'SourceDatabase'))[0] || '';
       const uiPatternRaw = asText(property(page, 'UiPattern', 'DisplayStyle', 'Pattern'));
+      const visibilityRaw = asText(property(page, 'Visibility')).trim().toLowerCase();
       const project: Project = {
         id: page.id,
         projectName: asText(property(page, 'ProjectName', 'Name', 'Title')) || 'Untitled Project',
@@ -416,6 +417,7 @@ export async function fetchProjectsByCourse(coursePageId: string, courseRelation
           projectId: page.id,
           sourceDatabaseId,
         }),
+        visibility: visibilityRaw === 'draft' ? 'draft' : 'published',
       };
 
       const fieldMappingRaw = asText(property(page, 'FieldMapping')) || undefined;

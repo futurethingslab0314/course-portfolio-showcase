@@ -1,15 +1,23 @@
 import { CoursePayload, GenerationResult, NormalizationWarning } from '../../shared/contracts';
 import { fetchCourseBySlug, fetchProjectsByCourse, fetchStudentWorksForProject, updateCourseGenerationStatus } from './notion';
 
+type ProjectPayloadRow = Awaited<ReturnType<typeof fetchProjectsByCourse>>[number];
+
 function logWithContext(message: string, context: Record<string, unknown>) {
   console.log(JSON.stringify({ message, ...context }));
+}
+
+export function filterVisibleProjectRowsForPayload(projectRows: ProjectPayloadRow[]): ProjectPayloadRow[] {
+  return projectRows.filter((row) => row.project.visibility === 'published');
 }
 
 export async function buildCoursePayloadBySlug(slug: string): Promise<CoursePayload> {
   const warnings: NormalizationWarning[] = [];
 
   const { course, pageId: coursePageId } = await fetchCourseBySlug(slug, warnings);
-  const projectRows = await fetchProjectsByCourse(coursePageId, course.projectIds, warnings);
+  const projectRows = filterVisibleProjectRowsForPayload(
+    await fetchProjectsByCourse(coursePageId, course.projectIds, warnings),
+  );
 
   const projects = projectRows.map((row) => row.project);
   const studentWorks = [];

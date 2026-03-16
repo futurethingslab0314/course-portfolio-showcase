@@ -28,7 +28,8 @@ export const PROJECTS: Project[] = [
     tabName: 'SEEING LIKE A THING',
     order: 1,
     sourceDatabaseId: 'db-seeing',
-    displayStyle: 'card-spec'
+    displayStyle: 'card-spec',
+    visibility: 'published',
   },
   {
     id: 'p2',
@@ -38,7 +39,8 @@ export const PROJECTS: Project[] = [
     tabName: 'EVERYDAY TRACKING',
     order: 2,
     sourceDatabaseId: 'db-tracking',
-    displayStyle: 'gallery-story'
+    displayStyle: 'gallery-story',
+    visibility: 'published',
   },
   {
     id: 'p3',
@@ -48,7 +50,8 @@ export const PROJECTS: Project[] = [
     tabName: 'VISUAL NARRATIVES',
     order: 3,
     sourceDatabaseId: 'db-narratives',
-    displayStyle: 'gallery-slide'
+    displayStyle: 'gallery-slide',
+    visibility: 'published',
   },
   {
     id: 'p4',
@@ -58,7 +61,8 @@ export const PROJECTS: Project[] = [
     tabName: 'QUICK PROTOTYPES',
     order: 4,
     sourceDatabaseId: 'db-prototypes',
-    displayStyle: 'generic-card'
+    displayStyle: 'generic-card',
+    visibility: 'published',
   },
   {
     id: 'p5',
@@ -68,7 +72,8 @@ export const PROJECTS: Project[] = [
     tabName: 'DATA MATRIX',
     order: 5,
     sourceDatabaseId: 'db-matrix',
-    displayStyle: 'data-matrix'
+    displayStyle: 'data-matrix',
+    visibility: 'published',
   }
 ];
 

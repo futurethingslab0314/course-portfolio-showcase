@@ -48,6 +48,7 @@ export interface Project {
   order: number;
   sourceDatabaseId: string; // Used to filter student works
   displayStyle: 'gallery-story' | 'generic-card' | 'gallery-slide' | 'card-spec' | 'data-matrix' | 'blog-post';
+  visibility: 'published' | 'draft';
 }
 
 export interface Course {
