@@ -3,12 +3,13 @@ import { AnimatePresence, motion } from 'motion/react';
 import { ExternalLink, Plus, User, X } from 'lucide-react';
 import { StudentWork } from '../../types';
 import { memberRows } from '../../lib/memberRows';
+import { renderBlogSection } from './BlogPostContent';
 
 interface BlogPostProps {
   work: StudentWork;
 }
 
-function BlogPostArticle({ work }: { work: StudentWork }) {
+export function BlogPostArticle({ work }: { work: StudentWork }) {
   const members = memberRows(work);
   const storyButtons = work.storyButtons?.filter((button) => button.label && button.url) ?? [];
 
@@ -65,35 +66,7 @@ function BlogPostArticle({ work }: { work: StudentWork }) {
         </p>
 
         <div className="space-y-12 mb-16">
-          {work.blogContent?.map((section, index) => (
-            <div key={index} className="blog-section">
-              {section.type === 'text' ? (
-                <div className="prose prose-lg max-w-none text-black/80 leading-relaxed">
-                  {section.content.split('\n').map((para, i) => (
-                    <p key={i} className="mb-4">
-                      {para}
-                    </p>
-                  ))}
-                </div>
-              ) : (
-                <figure className="my-8">
-                  <div className="overflow-hidden bg-black/5">
-                    <img
-                      src={section.content}
-                      alt={section.caption || ''}
-                      className="w-full h-auto"
-                      referrerPolicy="no-referrer"
-                    />
-                  </div>
-                  {section.caption && (
-                    <figcaption className="mt-4 text-center text-sm text-black/40 font-medium italic">
-                      - {section.caption}
-                    </figcaption>
-                  )}
-                </figure>
-              )}
-            </div>
-          ))}
+          {work.blogContent?.map((section, index) => renderBlogSection(section, index))}
         </div>
 
         <div className="pt-12 border-t border-black/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-8">

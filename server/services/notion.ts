@@ -199,7 +199,17 @@ function asImageUrlFromBlock(block: NotionBlock): string {
   return '';
 }
 
-function blockToBlogSection(block: NotionBlock): StudentWork['blogContent'][number] | null {
+function asTableRows(blocks: NotionBlock[]): string[][] {
+  return blocks
+    .filter((block) => block.type === 'table_row')
+    .map((block) => {
+      const cells = Array.isArray(block.table_row?.cells) ? block.table_row.cells : [];
+      return cells.map((cell: any[] | undefined) => richTextToPlainText(cell));
+    })
+    .filter((row) => row.some((cell) => cell.trim().length > 0));
+}
+
+async function blockToBlogSection(block: NotionBlock): Promise<StudentWork['blogContent'][number] | null> {
   if (block.type === 'paragraph') {
     const text = richTextToPlainText(block.paragraph?.rich_text);
     if (!text) return null;
@@ -231,7 +241,23 @@ function blockToBlogSection(block: NotionBlock): StudentWork['blogContent'][numb
     return { type: 'image', content: url, caption: caption || undefined };
   }
 
+  if (block.type === 'table') {
+    const childBlocks = Array.isArray(block.children) ? block.children : await fetchBlockChildren(block.id);
+    const rows = asTableRows(childBlocks);
+    if (!rows.length) return null;
+    return {
+      type: 'table',
+      rows,
+      hasColumnHeader: Boolean(block.table?.has_column_header),
+      hasRowHeader: Boolean(block.table?.has_row_header),
+    };
+  }
+
   return null;
+}
+
+export async function blockToBlogSectionForTest(block: NotionBlock): Promise<StudentWork['blogContent'][number] | null> {
+  return blockToBlogSection(block);
 }
 
 async function fetchBlogContentFromPageBlocks(pageId: string): Promise<NonNullable<StudentWork['blogContent']>> {
@@ -239,7 +265,7 @@ async function fetchBlogContentFromPageBlocks(pageId: string): Promise<NonNullab
   const blocks = await fetchBlockChildren(pageId);
 
   for (const block of blocks) {
-    const section = blockToBlogSection(block);
+    const section = await blockToBlogSection(block);
     if (section) {
       sections.push(section);
     }

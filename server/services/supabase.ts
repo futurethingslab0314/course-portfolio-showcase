@@ -108,6 +108,26 @@ function parseMaybeBlogContent(value: unknown): StudentWork['blogContent'] {
         content: content.trim(),
         caption: typeof (item as any).caption === 'string' ? (item as any).caption : undefined,
       });
+      continue;
+    }
+
+    if (type === 'table' && Array.isArray((item as any).rows)) {
+      const parsedRows = (item as any).rows
+        .filter((row: unknown) => Array.isArray(row))
+        .map((row: unknown) =>
+          (row as unknown[])
+            .map((cell) => (typeof cell === 'string' ? cell.trim() : ''))
+        )
+        .filter((row: string[]) => row.some((cell) => cell.length > 0));
+
+      if (parsedRows.length) {
+        rows.push({
+          type: 'table',
+          rows: parsedRows,
+          hasColumnHeader: Boolean((item as any).hasColumnHeader),
+          hasRowHeader: Boolean((item as any).hasRowHeader),
+        });
+      }
     }
   }
   return rows.length ? rows : undefined;

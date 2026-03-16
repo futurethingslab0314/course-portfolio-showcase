@@ -1,3 +1,23 @@
+export interface BlogTextSection {
+  type: 'text';
+  content: string;
+}
+
+export interface BlogImageSection {
+  type: 'image';
+  content: string;
+  caption?: string;
+}
+
+export interface BlogTableSection {
+  type: 'table';
+  rows: string[][];
+  hasColumnHeader?: boolean;
+  hasRowHeader?: boolean;
+}
+
+export type BlogContentSection = BlogTextSection | BlogImageSection | BlogTableSection;
+
 export interface StudentWork {
   id: string;
   assignmentName: string;
@@ -14,11 +34,7 @@ export interface StudentWork {
   methodologies?: string[];
   storyButtons?: { label: string; url: string }[];
   dataSpecs?: string[];
-  blogContent?: Array<{
-    type: 'text' | 'image';
-    content: string;
-    caption?: string;
-  }>;
+  blogContent?: BlogContentSection[];
   sourceDatabaseId: string;
   gridLocation?: string;
 }
