@@ -11,13 +11,15 @@ export function filterVisibleProjectRowsForPayload(projectRows: ProjectPayloadRo
   return projectRows.filter((row) => row.project.visibility === 'published');
 }
 
-export async function buildCoursePayloadBySlug(slug: string): Promise<CoursePayload> {
+async function buildCoursePayloadBySlugWithOptions(
+  slug: string,
+  options?: { includeDraftProjects?: boolean },
+): Promise<CoursePayload> {
   const warnings: NormalizationWarning[] = [];
 
   const { course, pageId: coursePageId } = await fetchCourseBySlug(slug, warnings);
-  const projectRows = filterVisibleProjectRowsForPayload(
-    await fetchProjectsByCourse(coursePageId, course.projectIds, warnings),
-  );
+  const allProjectRows = await fetchProjectsByCourse(coursePageId, course.projectIds, warnings);
+  const projectRows = options?.includeDraftProjects ? allProjectRows : filterVisibleProjectRowsForPayload(allProjectRows);
 
   const projects = projectRows.map((row) => row.project);
   const studentWorks = [];
@@ -50,6 +52,14 @@ export async function buildCoursePayloadBySlug(slug: string): Promise<CoursePayl
     studentWorks,
     warnings,
   };
+}
+
+export async function buildCoursePayloadBySlug(slug: string): Promise<CoursePayload> {
+  return buildCoursePayloadBySlugWithOptions(slug);
+}
+
+export async function buildCourseSyncPayloadBySlug(slug: string): Promise<CoursePayload> {
+  return buildCoursePayloadBySlugWithOptions(slug, { includeDraftProjects: true });
 }
 
 export async function generateCourseWebsite(slug: string, baseUrl: string): Promise<GenerationResult> {

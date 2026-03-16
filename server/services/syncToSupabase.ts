@@ -1,10 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import { CoursePayload, NormalizationWarning } from '../../shared/contracts';
-import { buildCoursePayloadBySlug } from './generator';
+import { buildCourseSyncPayloadBySlug } from './generator';
 import { fetchAllCoursesWithMeta, findCourseSlugByPageId, NotionCourseMeta } from './notion';
 import { isR2ImageSyncEnabled, uploadImageUrlToR2 } from './imageStoreR2';
 import {
   appendSyncLog,
+  deleteProjectsNotInCourse,
   deleteStudentWorksNotInProjects,
   getLastSyncAllCheckpoint,
   setCoursesInactiveByNotionIds,
@@ -186,7 +187,7 @@ export async function syncCourseToSupabase(params: {
 
   logWithContext('Sync to Supabase started', { runId, slug });
 
-  const payload = await buildCoursePayloadBySlug(slug);
+  const payload = await buildCourseSyncPayloadBySlug(slug);
 
   const coverResult = await rewriteCourseCoverToR2(payload, runId);
   const imageResult = await rewriteWorkImagesToR2(payload, runId);
@@ -197,6 +198,10 @@ export async function syncCourseToSupabase(params: {
     isActive: true,
   });
   const projectRows = await upsertProjectsToSupabase(payload.projects, courseRow.id);
+  await deleteProjectsNotInCourse({
+    courseId: courseRow.id,
+    activeProjectNotionIds: payload.projects.map((project) => project.id),
+  });
   const projectLookup = buildProjectLookup(projectRows);
 
   const workResult = await upsertStudentWorksToSupabase({

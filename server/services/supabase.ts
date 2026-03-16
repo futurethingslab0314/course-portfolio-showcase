@@ -25,6 +25,7 @@ interface SupabaseProjectRow {
   source_database_id: string | null;
   ui_pattern: string | null;
   field_mapping: Record<string, unknown> | null;
+  is_published?: boolean | null;
 }
 
 interface SupabaseStudentWorkRow {
@@ -170,7 +171,7 @@ function mapProjectRowToProject(row: SupabaseProjectRow, courseNotionPageId: str
     order: Number.isFinite(row.order) ? row.order : 0,
     sourceDatabaseId: row.source_database_id || '',
     displayStyle: normalizeDisplayStyle(row.ui_pattern),
-    visibility: 'published',
+    visibility: row.is_published === false ? 'draft' : 'published',
   };
 }
 
@@ -238,14 +239,15 @@ export async function fetchCoursePayloadBySlugFromSupabase(slug: string): Promis
   }
 
   const projectRows = await supabaseRequest<SupabaseProjectRow[]>(
-    `/rest/v1/projects?select=id,notion_page_id,course_id,project_name,project_description,tab_name,order,source_database_id,ui_pattern,field_mapping&course_id=eq.${encodeURIComponent(courseRow.id)}&order=order.asc`,
+    `/rest/v1/projects?select=id,notion_page_id,course_id,project_name,project_description,tab_name,order,source_database_id,ui_pattern,field_mapping,is_published&course_id=eq.${encodeURIComponent(courseRow.id)}&order=order.asc`,
     {
       method: 'GET',
       headers: supabaseHeaders(),
     },
   );
 
-  const projectIdList = projectRows.map((row) => row.id);
+  const visibleProjectRows = projectRows.filter((row) => row.is_published !== false);
+  const projectIdList = visibleProjectRows.map((row) => row.id);
   const studentWorkRows = projectIdList.length
     ? await supabaseRequest<SupabaseStudentWorkRow[]>(
         `/rest/v1/student_works?select=id,notion_page_id,project_id,source_database_id,assignment_name,members,description,main_image_url,blog_content,metadata&project_id=${encodeURIComponent(buildInFilter(projectIdList))}`,
@@ -257,10 +259,13 @@ export async function fetchCoursePayloadBySlugFromSupabase(slug: string): Promis
     : [];
 
   const course = mapCourseRowToCourse(courseRow);
-  const projects = projectRows.map((row) => mapProjectRowToProject(row, courseRow.notion_page_id));
+  const projects = visibleProjectRows.map((row) => mapProjectRowToProject(row, courseRow.notion_page_id));
   course.projectIds = projects.map((project) => project.id);
 
-  const studentWorks = studentWorkRows.map((row) => mapWorkRowToStudentWork(row));
+  const visibleProjectIdSet = new Set(projectIdList);
+  const studentWorks = studentWorkRows
+    .filter((row) => visibleProjectIdSet.has(row.project_id))
+    .map((row) => mapWorkRowToStudentWork(row));
 
   return {
     course,
@@ -324,6 +329,7 @@ export async function upsertProjectsToSupabase(projects: Project[], courseId: st
     source_database_id: project.sourceDatabaseId || null,
     ui_pattern: project.displayStyle,
     field_mapping: {},
+    is_published: project.visibility === 'published',
     last_synced_at: timestamp,
     updated_at: timestamp,
   }));
@@ -336,6 +342,30 @@ export async function upsertProjectsToSupabase(projects: Project[], courseId: st
       body: JSON.stringify(payload),
     },
   );
+}
+
+export async function deleteProjectsNotInCourse(params: {
+  courseId: string;
+  activeProjectNotionIds: string[];
+}): Promise<number> {
+  const courseId = String(params.courseId || '').trim();
+  if (!courseId) return 0;
+
+  const activeProjectNotionIds = params.activeProjectNotionIds.map((value) => String(value || '').trim()).filter(Boolean);
+  const courseScope = `course_id=eq.${encodeURIComponent(courseId)}`;
+  const staleFilter = activeProjectNotionIds.length
+    ? `&notion_page_id=${encodeURIComponent(buildNotInFilter(activeProjectNotionIds))}`
+    : '';
+
+  const deleted = await supabaseRequest<Array<{ id: string }>>(
+    `/rest/v1/projects?${courseScope}${staleFilter}`,
+    {
+      method: 'DELETE',
+      headers: supabaseHeaders({ Prefer: 'return=representation' }),
+    },
+  );
+
+  return deleted.length;
 }
 
 export async function upsertStudentWorksToSupabase(params: {

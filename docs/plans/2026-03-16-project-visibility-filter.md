@@ -2,9 +2,9 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Exclude projects marked as `Visibility = draft` from the course payload returned to the website.
+**Goal:** Store both draft and published projects in Supabase while returning only published projects to the website.
 
-**Architecture:** Read each project's `Visibility` value from Notion, keep it in the server-side project model, and filter out draft projects while building the course payload. Because student works are fetched from the filtered project list, the frontend will only receive published tabs and their works.
+**Architecture:** Read each project's `Visibility` value from Notion and keep it on the server-side project model. The website payload path filters draft projects before returning tabs and works, while the sync path writes all projects to Supabase and marks whether each row is published so draft entries can be promoted later without rebuilding from scratch.
 
 **Tech Stack:** TypeScript, Node.js `node:test`, Express/Vite app server, Notion API, Supabase sync layer
 
@@ -40,11 +40,30 @@ Extend the `Project` type with a `visibility` field that can represent `publishe
 
 Parse the `Visibility` property in the project fetcher, defaulting missing values to `published` for backward compatibility.
 
-**Step 3: Filter draft projects out of the payload**
+**Step 3: Split website and sync payload behavior**
 
-Add a helper in `generator.ts` and use it before fetching student works so only published projects contribute to the response.
+Keep a website helper in `generator.ts` that filters draft projects before returning payloads, but add a sync path that keeps all projects for Supabase persistence.
 
-### Task 3: Verify behavior
+### Task 3: Persist visibility in Supabase
+
+**Files:**
+- Modify: `server/services/supabase.ts`
+- Modify: `server/services/syncToSupabase.ts`
+- Test: `server/services/supabase.test.ts`
+
+**Step 1: Write the failing test**
+
+Add tests that verify project upserts include a publication flag and that reading website payloads from Supabase only returns published projects and works.
+
+**Step 2: Store project visibility**
+
+Write the project visibility flag into Supabase and map it back into `Project` when reading.
+
+**Step 3: Keep all projects during sync**
+
+Update the sync service to build its payload from all projects so draft rows stay stored in Supabase.
+
+### Task 4: Verify behavior
 
 **Files:**
 - Test: `server/services/generator.test.ts`
