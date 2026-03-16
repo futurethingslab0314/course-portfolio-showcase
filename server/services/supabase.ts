@@ -99,6 +99,34 @@ function parseMaybeStringArray(value: unknown): string[] {
 function parseMaybeBlogContent(value: unknown): StudentWork['blogContent'] {
   if (!Array.isArray(value)) return undefined;
   const rows: NonNullable<StudentWork['blogContent']> = [];
+
+  const parseRichText = (value: unknown) => {
+    if (!Array.isArray(value)) return undefined;
+    const spans = value
+      .filter((item) => item && typeof item === 'object')
+      .map((item) => {
+        const text = typeof (item as any).text === 'string' ? (item as any).text : '';
+        const href = typeof (item as any).href === 'string' ? (item as any).href.trim() : undefined;
+        if (!text) return null;
+        return href ? { text, href } : { text };
+      })
+      .filter((item): item is { text: string; href?: string } => Boolean(item));
+    return spans.length ? spans : undefined;
+  };
+
+  const parseRichRows = (value: unknown) => {
+    if (!Array.isArray(value)) return undefined;
+    const richRows = value
+      .filter((row) => Array.isArray(row))
+      .map((row) =>
+        (row as unknown[])
+          .filter((cell) => Array.isArray(cell))
+          .map((cell) => parseRichText(cell) || [])
+      )
+      .filter((row) => row.some((cell) => cell.length > 0));
+    return richRows.length ? richRows : undefined;
+  };
+
   for (const item of value) {
     if (!item || typeof item !== 'object') continue;
     const type = (item as any).type;
@@ -108,6 +136,7 @@ function parseMaybeBlogContent(value: unknown): StudentWork['blogContent'] {
         type,
         content: content.trim(),
         caption: typeof (item as any).caption === 'string' ? (item as any).caption : undefined,
+        richText: type === 'text' ? parseRichText((item as any).richText) : undefined,
       });
       continue;
     }
@@ -125,6 +154,7 @@ function parseMaybeBlogContent(value: unknown): StudentWork['blogContent'] {
         rows.push({
           type: 'table',
           rows: parsedRows,
+          richRows: parseRichRows((item as any).richRows),
           hasColumnHeader: Boolean((item as any).hasColumnHeader),
           hasRowHeader: Boolean((item as any).hasRowHeader),
         });

@@ -191,6 +191,23 @@ function richTextToPlainText(richText: any[] | undefined): string {
   return richText.map((item) => item?.plain_text || '').join('').trim();
 }
 
+function richTextToSpans(richText: any[] | undefined): Array<{ text: string; href?: string }> | undefined {
+  if (!Array.isArray(richText)) {
+    return undefined;
+  }
+
+  const spans = richText
+    .map((item) => {
+      const text = String(item?.plain_text || '');
+      const href = typeof item?.href === 'string' && item.href.trim() ? item.href.trim() : undefined;
+      if (!text) return null;
+      return href ? { text, href } : { text };
+    })
+    .filter((item): item is { text: string; href?: string } => Boolean(item));
+
+  return spans.length ? spans : undefined;
+}
+
 function asImageUrlFromBlock(block: NotionBlock): string {
   const image = block.image;
   if (!image) return '';
@@ -209,29 +226,44 @@ function asTableRows(blocks: NotionBlock[]): string[][] {
     .filter((row) => row.some((cell) => cell.trim().length > 0));
 }
 
+function asTableRichRows(blocks: NotionBlock[]): Array<Array<Array<{ text: string; href?: string }>>> {
+  return blocks
+    .filter((block) => block.type === 'table_row')
+    .map((block) => {
+      const cells = Array.isArray(block.table_row?.cells) ? block.table_row.cells : [];
+      return cells.map((cell: any[] | undefined) => richTextToSpans(cell) || []);
+    })
+    .filter((row) => row.some((cell) => cell.some((span) => span.text.trim().length > 0)));
+}
+
 async function blockToBlogSection(block: NotionBlock): Promise<StudentWork['blogContent'][number] | null> {
   if (block.type === 'paragraph') {
     const text = richTextToPlainText(block.paragraph?.rich_text);
     if (!text) return null;
-    return { type: 'text', content: text };
+    return { type: 'text', content: text, richText: richTextToSpans(block.paragraph?.rich_text) };
   }
 
   if (block.type === 'heading_1' || block.type === 'heading_2' || block.type === 'heading_3') {
     const heading = richTextToPlainText(block[block.type]?.rich_text);
     if (!heading) return null;
-    return { type: 'text', content: heading };
+    return { type: 'text', content: heading, richText: richTextToSpans(block[block.type]?.rich_text) };
   }
 
   if (block.type === 'quote' || block.type === 'callout') {
     const text = richTextToPlainText(block[block.type]?.rich_text);
     if (!text) return null;
-    return { type: 'text', content: text };
+    return { type: 'text', content: text, richText: richTextToSpans(block[block.type]?.rich_text) };
   }
 
   if (block.type === 'bulleted_list_item' || block.type === 'numbered_list_item') {
     const text = richTextToPlainText(block[block.type]?.rich_text);
     if (!text) return null;
-    return { type: 'text', content: `- ${text}` };
+    const spans = richTextToSpans(block[block.type]?.rich_text);
+    return {
+      type: 'text',
+      content: `- ${text}`,
+      richText: spans ? [{ text: '- ' }, ...spans] : undefined,
+    };
   }
 
   if (block.type === 'image') {
@@ -244,10 +276,12 @@ async function blockToBlogSection(block: NotionBlock): Promise<StudentWork['blog
   if (block.type === 'table') {
     const childBlocks = Array.isArray(block.children) ? block.children : await fetchBlockChildren(block.id);
     const rows = asTableRows(childBlocks);
+    const richRows = asTableRichRows(childBlocks);
     if (!rows.length) return null;
     return {
       type: 'table',
       rows,
+      richRows: richRows.length ? richRows : undefined,
       hasColumnHeader: Boolean(block.table?.has_column_header),
       hasRowHeader: Boolean(block.table?.has_row_header),
     };

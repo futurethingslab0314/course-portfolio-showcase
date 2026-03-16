@@ -1,14 +1,38 @@
 import React from 'react';
-import { BlogContentSection } from '../../types';
+import { BlogContentSection, BlogRichTextSpan } from '../../types';
+
+function renderRichText(spans: BlogRichTextSpan[] | undefined, fallback: string) {
+  if (!spans?.length) {
+    return fallback;
+  }
+
+  return spans.map((span, index) => {
+    if (!span.href) {
+      return <React.Fragment key={index}>{span.text}</React.Fragment>;
+    }
+
+    return (
+      <a
+        key={index}
+        href={span.href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="font-medium underline decoration-black/30 underline-offset-4 transition-colors hover:text-black"
+      >
+        {span.text}
+      </a>
+    );
+  });
+}
 
 export function renderBlogSection(section: BlogContentSection, index: number) {
   if (section.type === 'text') {
     return (
       <div key={index} className="blog-section">
         <div className="prose prose-lg max-w-none text-black/80 leading-relaxed">
-          {section.content.split('\n').map((para, i) => (
+          {(section.richText?.length ? [section.content] : section.content.split('\n')).map((para, i) => (
             <p key={i} className="mb-4">
-              {para}
+              {section.richText?.length ? renderRichText(section.richText, para) : para}
             </p>
           ))}
         </div>
@@ -51,13 +75,14 @@ export function renderBlogSection(section: BlogContentSection, index: number) {
                     {row.map((cell, cellIndex) => {
                       const isHeaderCell = isHeaderRow || (Boolean(section.hasRowHeader) && cellIndex === 0);
                       const CellTag = isHeaderCell ? 'th' : 'td';
+                      const richCell = section.richRows?.[rowIndex]?.[cellIndex];
                       return (
                         <CellTag
                           key={cellIndex}
                           className="min-w-[160px] border-b border-r border-black/10 px-4 py-3 align-top text-sm last:border-r-0"
                           scope={isHeaderRow ? 'col' : isHeaderCell ? 'row' : undefined}
                         >
-                          {cell}
+                          {renderRichText(richCell, cell)}
                         </CellTag>
                       );
                     })}

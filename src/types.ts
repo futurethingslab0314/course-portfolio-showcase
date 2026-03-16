@@ -1,6 +1,12 @@
+export interface BlogRichTextSpan {
+  text: string;
+  href?: string;
+}
+
 export interface BlogTextSection {
   type: 'text';
   content: string;
+  richText?: BlogRichTextSpan[];
 }
 
 export interface BlogImageSection {
@@ -12,6 +18,7 @@ export interface BlogImageSection {
 export interface BlogTableSection {
   type: 'table';
   rows: string[][];
+  richRows?: BlogRichTextSpan[][][];
   hasColumnHeader?: boolean;
   hasRowHeader?: boolean;
 }
