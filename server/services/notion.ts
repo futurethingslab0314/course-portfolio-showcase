@@ -200,8 +200,18 @@ function richTextToSpans(richText: any[] | undefined): Array<{ text: string; hre
     .map((item) => {
       const text = String(item?.plain_text || '');
       const href = typeof item?.href === 'string' && item.href.trim() ? item.href.trim() : undefined;
+      const annotations = item?.annotations || {};
       if (!text) return null;
-      return href ? { text, href } : { text };
+      const span = {
+        text,
+        href,
+        bold: Boolean(annotations.bold) || undefined,
+        italic: Boolean(annotations.italic) || undefined,
+        underline: Boolean(annotations.underline) || undefined,
+        strikethrough: Boolean(annotations.strikethrough) || undefined,
+        code: Boolean(annotations.code) || undefined,
+      };
+      return Object.fromEntries(Object.entries(span).filter(([, value]) => value !== undefined));
     })
     .filter((item): item is { text: string; href?: string } => Boolean(item));
 
@@ -240,19 +250,19 @@ async function blockToBlogSection(block: NotionBlock): Promise<StudentWork['blog
   if (block.type === 'paragraph') {
     const text = richTextToPlainText(block.paragraph?.rich_text);
     if (!text) return null;
-    return { type: 'text', content: text, richText: richTextToSpans(block.paragraph?.rich_text) };
+    return { type: 'text', blockType: 'paragraph', content: text, richText: richTextToSpans(block.paragraph?.rich_text) };
   }
 
   if (block.type === 'heading_1' || block.type === 'heading_2' || block.type === 'heading_3') {
     const heading = richTextToPlainText(block[block.type]?.rich_text);
     if (!heading) return null;
-    return { type: 'text', content: heading, richText: richTextToSpans(block[block.type]?.rich_text) };
+    return { type: 'text', blockType: block.type, content: heading, richText: richTextToSpans(block[block.type]?.rich_text) };
   }
 
   if (block.type === 'quote' || block.type === 'callout') {
     const text = richTextToPlainText(block[block.type]?.rich_text);
     if (!text) return null;
-    return { type: 'text', content: text, richText: richTextToSpans(block[block.type]?.rich_text) };
+    return { type: 'text', blockType: block.type, content: text, richText: richTextToSpans(block[block.type]?.rich_text) };
   }
 
   if (block.type === 'bulleted_list_item' || block.type === 'numbered_list_item') {
@@ -261,6 +271,7 @@ async function blockToBlogSection(block: NotionBlock): Promise<StudentWork['blog
     const spans = richTextToSpans(block[block.type]?.rich_text);
     return {
       type: 'text',
+      blockType: block.type,
       content: `- ${text}`,
       richText: spans ? [{ text: '- ' }, ...spans] : undefined,
     };
@@ -284,6 +295,25 @@ async function blockToBlogSection(block: NotionBlock): Promise<StudentWork['blog
       richRows: richRows.length ? richRows : undefined,
       hasColumnHeader: Boolean(block.table?.has_column_header),
       hasRowHeader: Boolean(block.table?.has_row_header),
+    };
+  }
+
+  if (block.type === 'toggle') {
+    const text = richTextToPlainText(block.toggle?.rich_text);
+    if (!text) return null;
+    const childBlocks = Array.isArray(block.children) ? block.children : await fetchBlockChildren(block.id);
+    const children: NonNullable<StudentWork['blogContent']> = [];
+    for (const childBlock of childBlocks) {
+      const section = await blockToBlogSection(childBlock);
+      if (section) {
+        children.push(section);
+      }
+    }
+    return {
+      type: 'toggle',
+      content: text,
+      richText: richTextToSpans(block.toggle?.rich_text),
+      children,
     };
   }
 

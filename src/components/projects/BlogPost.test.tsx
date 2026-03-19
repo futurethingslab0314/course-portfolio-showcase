@@ -60,3 +60,52 @@ test('renderBlogSection renders rich-text links in paragraphs and table cells as
   assert.match(tableHtml, /href="https:\/\/example\.com\/resource"/);
   assert.match(tableHtml, /rel="noopener noreferrer"/);
 });
+
+test('renderBlogSection renders headings and inline annotations', () => {
+  const html = renderToStaticMarkup(
+    renderBlogSection(
+      {
+        type: 'text',
+        blockType: 'heading_2',
+        content: 'Important note',
+        richText: [
+          { text: 'Important', bold: true },
+          { text: ' note', italic: true, underline: true, strikethrough: true, code: true },
+        ],
+      },
+      0,
+    ),
+  );
+
+  assert.match(html, /<h2/);
+  assert.match(html, /<strong[^>]*>Important<\/strong>/);
+  assert.match(html, /<em[^>]*>/);
+  assert.match(html, /text-decoration-line:underline line-through|underline/);
+  assert.match(html, /<code[^>]*>/);
+});
+
+test('renderBlogSection renders toggle sections with nested content', () => {
+  const html = renderToStaticMarkup(
+    renderBlogSection(
+      {
+        type: 'toggle',
+        content: 'Read more',
+        richText: [{ text: 'Read more' }],
+        children: [
+          {
+            type: 'text',
+            blockType: 'paragraph',
+            content: 'Nested detail',
+            richText: [{ text: 'Nested detail', bold: true }],
+          },
+        ],
+      },
+      1,
+    ),
+  );
+
+  assert.match(html, /<details/);
+  assert.match(html, /<summary/);
+  assert.match(html, /Read more/);
+  assert.match(html, /Nested detail/);
+});

@@ -16,6 +16,7 @@ test('blockToBlogSectionForTest preserves rich-text links in paragraph blocks', 
 
   assert.deepEqual(section, {
     type: 'text',
+    blockType: 'paragraph',
     content: 'See project docs',
     richText: [
       { text: 'See ' },
@@ -74,5 +75,92 @@ test('blockToBlogSectionForTest maps Notion table blocks into blog table section
     ],
     hasColumnHeader: true,
     hasRowHeader: false,
+  });
+});
+
+test('blockToBlogSectionForTest preserves heading metadata and annotations', async () => {
+  const section = await blockToBlogSectionForTest({
+    id: 'heading-block',
+    type: 'heading_2',
+    heading_2: {
+      rich_text: [
+        {
+          plain_text: 'Important',
+          annotations: {
+            bold: true,
+            italic: false,
+            underline: false,
+            strikethrough: false,
+            code: false,
+          },
+        },
+        {
+          plain_text: ' note',
+          annotations: {
+            bold: false,
+            italic: true,
+            underline: true,
+            strikethrough: false,
+            code: false,
+          },
+        },
+      ],
+    },
+  } as any);
+
+  assert.deepEqual(section, {
+    type: 'text',
+    blockType: 'heading_2',
+    content: 'Important note',
+    richText: [
+      { text: 'Important', bold: true },
+      { text: ' note', italic: true, underline: true },
+    ],
+  });
+});
+
+test('blockToBlogSectionForTest maps toggle blocks with nested children', async () => {
+  const section = await blockToBlogSectionForTest({
+    id: 'toggle-block',
+    type: 'toggle',
+    toggle: {
+      rich_text: [
+        { plain_text: 'Read more' },
+      ],
+    },
+    children: [
+      {
+        id: 'child-paragraph',
+        type: 'paragraph',
+        paragraph: {
+          rich_text: [
+            {
+              plain_text: 'Nested detail',
+              annotations: {
+                bold: false,
+                italic: false,
+                underline: false,
+                strikethrough: false,
+                code: true,
+              },
+            },
+          ],
+        },
+      },
+    ],
+  } as any);
+
+  assert.deepEqual(section, {
+    type: 'toggle',
+    content: 'Read more',
+    richText: [{ text: 'Read more' }],
+    children: [
+      {
+        type: 'text',
+        blockType: 'paragraph',
+        content: 'Nested detail',
+        richText: [{ text: 'Nested detail', code: true }],
+      },
+    ],
   });
 });

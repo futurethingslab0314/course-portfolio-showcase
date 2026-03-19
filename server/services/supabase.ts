@@ -107,8 +107,15 @@ function parseMaybeBlogContent(value: unknown): StudentWork['blogContent'] {
       .map((item) => {
         const text = typeof (item as any).text === 'string' ? (item as any).text : '';
         const href = typeof (item as any).href === 'string' ? (item as any).href.trim() : undefined;
+        const bold = typeof (item as any).bold === 'boolean' ? (item as any).bold : undefined;
+        const italic = typeof (item as any).italic === 'boolean' ? (item as any).italic : undefined;
+        const underline = typeof (item as any).underline === 'boolean' ? (item as any).underline : undefined;
+        const strikethrough = typeof (item as any).strikethrough === 'boolean' ? (item as any).strikethrough : undefined;
+        const code = typeof (item as any).code === 'boolean' ? (item as any).code : undefined;
         if (!text) return null;
-        return href ? { text, href } : { text };
+        return Object.fromEntries(
+          Object.entries({ text, href, bold, italic, underline, strikethrough, code }).filter(([, value]) => value !== undefined),
+        );
       })
       .filter((item): item is { text: string; href?: string } => Boolean(item));
     return spans.length ? spans : undefined;
@@ -127,6 +134,10 @@ function parseMaybeBlogContent(value: unknown): StudentWork['blogContent'] {
     return richRows.length ? richRows : undefined;
   };
 
+  const parseChildren = (value: unknown): StudentWork['blogContent'] => {
+    return parseMaybeBlogContent(value);
+  };
+
   for (const item of value) {
     if (!item || typeof item !== 'object') continue;
     const type = (item as any).type;
@@ -135,6 +146,7 @@ function parseMaybeBlogContent(value: unknown): StudentWork['blogContent'] {
       rows.push({
         type,
         content: content.trim(),
+        blockType: type === 'text' && typeof (item as any).blockType === 'string' ? (item as any).blockType : undefined,
         caption: typeof (item as any).caption === 'string' ? (item as any).caption : undefined,
         richText: type === 'text' ? parseRichText((item as any).richText) : undefined,
       });
@@ -159,6 +171,16 @@ function parseMaybeBlogContent(value: unknown): StudentWork['blogContent'] {
           hasRowHeader: Boolean((item as any).hasRowHeader),
         });
       }
+      continue;
+    }
+
+    if (type === 'toggle' && typeof content === 'string' && content.trim()) {
+      rows.push({
+        type: 'toggle',
+        content: content.trim(),
+        richText: parseRichText((item as any).richText),
+        children: parseChildren((item as any).children) || [],
+      });
     }
   }
   return rows.length ? rows : undefined;

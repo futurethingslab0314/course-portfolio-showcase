@@ -1,11 +1,17 @@
 export interface BlogRichTextSpan {
   text: string;
   href?: string;
+  bold?: boolean;
+  italic?: boolean;
+  underline?: boolean;
+  strikethrough?: boolean;
+  code?: boolean;
 }
 
 export interface BlogTextSection {
   type: 'text';
   content: string;
+  blockType?: 'paragraph' | 'heading_1' | 'heading_2' | 'heading_3' | 'quote' | 'callout' | 'bulleted_list_item' | 'numbered_list_item';
   richText?: BlogRichTextSpan[];
 }
 
@@ -23,7 +29,14 @@ export interface BlogTableSection {
   hasRowHeader?: boolean;
 }
 
-export type BlogContentSection = BlogTextSection | BlogImageSection | BlogTableSection;
+export interface BlogToggleSection {
+  type: 'toggle';
+  content: string;
+  richText?: BlogRichTextSpan[];
+  children: BlogContentSection[];
+}
+
+export type BlogContentSection = BlogTextSection | BlogImageSection | BlogTableSection | BlogToggleSection;
 
 export interface StudentWork {
   id: string;
