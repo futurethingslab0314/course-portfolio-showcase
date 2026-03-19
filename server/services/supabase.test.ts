@@ -146,7 +146,7 @@ test('fetchCoursePayloadBySlugFromSupabase returns only published projects and t
             tab_name: 'Published',
             order: 1,
             source_database_id: 'db-published',
-            ui_pattern: 'generic-card',
+            ui_pattern: 'activity-event',
             field_mapping: {},
             is_published: true,
           },
@@ -176,11 +176,21 @@ test('fetchCoursePayloadBySlugFromSupabase returns only published projects and t
           project_id: 'project-row-1',
           source_database_id: 'db-published',
           assignment_name: 'Published Work',
-          members: [],
+          members: ['Author A', 'Author B'],
           description: '',
           main_image_url: '',
           blog_content: null,
-          metadata: {},
+          metadata: {
+            themeTag: 'Conference',
+            startDate: '2026-03-01',
+            endDate: '2026-03-03',
+            country: 'Taiwan',
+            city: 'Taipei',
+            grant: 'NSTC',
+            publicationName: 'CHI 2026',
+            moreImages: ['https://example.com/2.jpg'],
+            year: '2026',
+          },
         },
         {
           id: 'work-row-2',
@@ -203,8 +213,19 @@ test('fetchCoursePayloadBySlugFromSupabase returns only published projects and t
 
   assert.equal(payload.projects.length, 1);
   assert.equal(payload.projects[0]?.id, 'project-1');
+  assert.equal(payload.projects[0]?.displayStyle, 'activity-event');
   assert.equal(payload.studentWorks.length, 1);
   assert.equal(payload.studentWorks[0]?.id, 'work-1');
+  assert.equal(payload.studentWorks[0]?.themeTag, 'Conference');
+  assert.equal(payload.studentWorks[0]?.startDate, '2026-03-01');
+  assert.equal(payload.studentWorks[0]?.endDate, '2026-03-03');
+  assert.equal(payload.studentWorks[0]?.country, 'Taiwan');
+  assert.equal(payload.studentWorks[0]?.city, 'Taipei');
+  assert.equal(payload.studentWorks[0]?.grant, 'NSTC');
+  assert.equal(payload.studentWorks[0]?.publicationName, 'CHI 2026');
+  assert.deepEqual(payload.studentWorks[0]?.members, ['Author A', 'Author B']);
+  assert.deepEqual(payload.studentWorks[0]?.moreImages, ['https://example.com/2.jpg']);
+  assert.equal(payload.studentWorks[0]?.year, '2026');
 });
 
 test('deleteProjectsNotInCourse deletes stale projects for a course', async () => {

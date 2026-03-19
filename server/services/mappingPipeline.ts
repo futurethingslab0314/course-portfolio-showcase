@@ -38,7 +38,7 @@ export type FileMappingRecord = {
   updatedAt: string;
 };
 
-const UI_PATTERNS: UiPattern[] = ['card-spec', 'data-matrix', 'gallery-slide', 'gallery-story', 'generic-card', 'blog-post'];
+const UI_PATTERNS: UiPattern[] = ['card-spec', 'data-matrix', 'gallery-slide', 'gallery-story', 'generic-card', 'blog-post', 'activity-event'];
 const TARGET_SCHEMA_FIELDS: Array<keyof StudentWork> = [
   'id',
   'assignmentName',
@@ -55,6 +55,13 @@ const TARGET_SCHEMA_FIELDS: Array<keyof StudentWork> = [
   'methodologies',
   'storyButtons',
   'dataSpecs',
+  'themeTag',
+  'startDate',
+  'endDate',
+  'country',
+  'city',
+  'grant',
+  'publicationName',
   'sourceDatabaseId',
   'gridLocation',
 ];
@@ -66,6 +73,7 @@ const TEMPLATE_FIELDS_BY_PATTERN: Record<UiPattern, Array<keyof StudentWork>> = 
   'card-spec': [...BASE_TEMPLATE_FIELDS, 'dataSpecs', 'tags', 'year'],
   'data-matrix': [...BASE_TEMPLATE_FIELDS, 'gridLocation', 'year', 'tags'],
   'blog-post': [...BASE_TEMPLATE_FIELDS, 'url', 'tags', 'year', 'isStarred'],
+  'activity-event': [...BASE_TEMPLATE_FIELDS, 'moreImages', 'year', 'tags', 'themeTag', 'startDate', 'endDate', 'country', 'city', 'grant', 'publicationName', 'url'],
 };
 
 const mappingStorePath = path.resolve(process.cwd(), 'server/data/filemapping-records.json');
@@ -78,6 +86,13 @@ const FIELD_ALIASES: Partial<Record<keyof StudentWork, string[]>> = {
   description: ['description', 'projectintro', 'summary', 'brief', 'overview', 'abstract'],
   mainImage: ['mainimage', 'cover', 'thumbnail', 'heroimage'],
   moreImages: ['moreimages', 'gallery', 'slides', 'imageset'],
+  themeTag: ['themetag', 'theme tag', 'activitytype'],
+  startDate: ['startdate', 'start date'],
+  endDate: ['enddate', 'end date'],
+  country: ['country'],
+  city: ['city'],
+  grant: ['grant', 'sponsor'],
+  publicationName: ['publicationname', 'publication name', 'conference'],
   dataSpecs: ['dataspecs', 'datacard', 'card01', 'card02', 'spec', 'metric'],
   gridLocation: ['gridlocation', 'grid', 'cell', 'matrixlocation'],
 };
@@ -172,8 +187,22 @@ function keywordCandidates(field: keyof StudentWork): string[] {
       return ['video', 'youtube', 'vimeo'];
     case 'tags':
       return ['tag', 'category', 'topic'];
+    case 'themeTag':
+      return ['theme tag', 'themetag', 'activity type', 'category'];
     case 'year':
       return ['year', 'semester', 'date'];
+    case 'startDate':
+      return ['start date', 'startdate', 'date start'];
+    case 'endDate':
+      return ['end date', 'enddate', 'date end'];
+    case 'country':
+      return ['country', 'nation'];
+    case 'city':
+      return ['city', 'location city'];
+    case 'grant':
+      return ['grant', 'sponsor', 'funding'];
+    case 'publicationName':
+      return ['publication name', 'publicationname', 'conference', 'journal'];
     case 'isStarred':
       return ['star', 'featured', 'recommend'];
     case 'methodologies':

@@ -55,6 +55,13 @@ export interface StudentWork {
   storyButtons?: { label: string; url: string }[];
   dataSpecs?: string[];
   blogContent?: BlogContentSection[];
+  themeTag?: string;
+  startDate?: string;
+  endDate?: string;
+  country?: string;
+  city?: string;
+  grant?: string;
+  publicationName?: string;
   sourceDatabaseId: string;
   gridLocation?: string;
 }
@@ -67,7 +74,7 @@ export interface Project {
   tabName: string;
   order: number;
   sourceDatabaseId: string; // Used to filter student works
-  displayStyle: 'gallery-story' | 'generic-card' | 'gallery-slide' | 'card-spec' | 'data-matrix' | 'blog-post';
+  displayStyle: 'gallery-story' | 'generic-card' | 'gallery-slide' | 'card-spec' | 'data-matrix' | 'blog-post' | 'activity-event';
   visibility: 'published' | 'draft';
 }
 

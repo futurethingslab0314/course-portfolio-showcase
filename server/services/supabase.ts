@@ -198,6 +198,13 @@ function buildStudentWorkMetadata(work: StudentWork): Record<string, unknown> {
     methodologies: work.methodologies || null,
     storyButtons: work.storyButtons || null,
     dataSpecs: work.dataSpecs || null,
+    themeTag: work.themeTag || null,
+    startDate: work.startDate || null,
+    endDate: work.endDate || null,
+    country: work.country || null,
+    city: work.city || null,
+    grant: work.grant || null,
+    publicationName: work.publicationName || null,
     gridLocation: work.gridLocation || null,
   };
 }
@@ -247,6 +254,13 @@ function mapWorkRowToStudentWork(row: SupabaseStudentWorkRow): StudentWork {
     methodologies: parseMaybeStringArray(metadata.methodologies),
     storyButtons: Array.isArray(metadata.storyButtons) ? (metadata.storyButtons as any) : undefined,
     dataSpecs: parseMaybeStringArray(metadata.dataSpecs),
+    themeTag: typeof metadata.themeTag === 'string' ? metadata.themeTag : undefined,
+    startDate: typeof metadata.startDate === 'string' ? metadata.startDate : undefined,
+    endDate: typeof metadata.endDate === 'string' ? metadata.endDate : undefined,
+    country: typeof metadata.country === 'string' ? metadata.country : undefined,
+    city: typeof metadata.city === 'string' ? metadata.city : undefined,
+    grant: typeof metadata.grant === 'string' ? metadata.grant : undefined,
+    publicationName: typeof metadata.publicationName === 'string' ? metadata.publicationName : undefined,
     gridLocation: typeof metadata.gridLocation === 'string' ? metadata.gridLocation : undefined,
   };
 }

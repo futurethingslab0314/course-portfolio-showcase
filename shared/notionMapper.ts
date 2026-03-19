@@ -326,6 +326,27 @@ function buildFallbackMembers(source: UnknownRecord): string[] {
   return ensureStringArray(source.members ?? source.member ?? source.author ?? source.authors);
 }
 
+function pickFirstAlias(source: UnknownRecord, aliases: string[]): unknown {
+  for (const alias of aliases) {
+    if (alias in source && source[alias] != null) {
+      return source[alias];
+    }
+  }
+  return undefined;
+}
+
+function pickAliasString(source: UnknownRecord, aliases: string[]): string {
+  return firstString(pickFirstAlias(source, aliases));
+}
+
+function pickAliasStringArray(source: UnknownRecord, aliases: string[]): string[] {
+  return ensureStringArray(pickFirstAlias(source, aliases));
+}
+
+function pickActivityImageUrls(source: UnknownRecord): string[] {
+  return pickAliasStringArray(source, ['Files & media', 'Files and media', 'files & media', 'files and media']);
+}
+
 function extractMemberData(source: UnknownRecord, fieldMapping: FieldMapping): { memberNames: string[]; studentIds: string[] } {
   const memberRule = fieldMapping.members;
   const collectedNames: string[] = [];
@@ -386,6 +407,16 @@ export function normalizeStudentWork(
   context: Pick<NormalizationWarning, 'courseId' | 'projectId' | 'sourceDatabaseId'>,
 ): StudentWork {
   const extractedMemberData = extractMemberData(source, fieldMapping);
+  const activityImages = pickActivityImageUrls(source);
+  const themeTagAlias = pickAliasString(source, ['theme tag', 'Theme Tag', 'themeTag', 'ThemeTag']);
+  const assignmentNameAlias = pickAliasString(source, ['Activity Name', 'activity name', 'ActivityName']);
+  const startDateAlias = pickAliasString(source, ['start date', 'Start Date', 'startDate', 'StartDate']);
+  const endDateAlias = pickAliasString(source, ['end date', 'End Date', 'endDate', 'EndDate']);
+  const publicationNameAlias = pickAliasString(source, ['publication name', 'Publication Name', 'publicationName', 'PublicationName']);
+  const grantAlias = pickAliasString(source, ['grant', 'Grant', 'sponsor', 'Sponsor']);
+  const countryAlias = pickAliasString(source, ['country', 'Country']);
+  const cityAlias = pickAliasString(source, ['city', 'City']);
+  const yearAlias = pickAliasString(source, ['year', 'Year']);
 
   const pick = <K extends keyof StudentWork>(field: K): unknown => {
     const rule = fieldMapping[field];
@@ -416,23 +447,33 @@ export function normalizeStudentWork(
 
   const normalized: StudentWork = {
     id: String(source.id ?? source.recordId ?? crypto.randomUUID()),
-    assignmentName: firstString(pick('assignmentName')) || firstString(source.title) || 'Untitled',
+    assignmentName: firstString(pick('assignmentName')) || assignmentNameAlias || firstString(source.title) || 'Untitled',
     members: ensureStringArray(pick('members')).length ? ensureStringArray(pick('members')) : extractedMemberData.memberNames,
     studentIds: ensureStringArray(pick('studentIds')),
     description: firstString(pick('description')) || '',
-    mainImage: firstString(pick('mainImage')) || firstString(source.image) || 'https://picsum.photos/seed/fallback/800/600',
-    moreImages: ensureStringArray(pick('moreImages')),
+    mainImage: firstString(pick('mainImage')) || activityImages[0] || firstString(source.image) || 'https://picsum.photos/seed/fallback/800/600',
+    moreImages: ensureStringArray(pick('moreImages')).length ? ensureStringArray(pick('moreImages')) : activityImages.slice(1),
     url: firstString(pick('url')) || undefined,
     video: firstString(pick('video')) || undefined,
     tags: mergeUniqueStrings(
       ensureStringArray(pick('tags')),
-      ensureStringArray(source.themeTag ?? source.themetag ?? source.ThemeTag ?? source.Themetag),
+      mergeUniqueStrings(
+        ensureStringArray(source.themeTag ?? source.themetag ?? source.ThemeTag ?? source.Themetag),
+        themeTagAlias ? [themeTagAlias] : [],
+      ),
     ),
-    year: firstString(pick('year')) || undefined,
+    year: firstString(pick('year')) || yearAlias || undefined,
     isStarred: toBoolean(pick('isStarred')),
     methodologies: ensureStringArray(pick('methodologies')),
     storyButtons: mergeStoryButtons(ensureStoryButtons(pick('storyButtons')), collectStoryButtonsFromSource(source)),
     dataSpecs: mergeDataSpecs(ensureDataSpecs(pick('dataSpecs')), collectCardNamedSpecs(source)),
+    themeTag: themeTagAlias || undefined,
+    startDate: startDateAlias || undefined,
+    endDate: endDateAlias || undefined,
+    country: countryAlias || undefined,
+    city: cityAlias || undefined,
+    grant: grantAlias || undefined,
+    publicationName: publicationNameAlias || undefined,
     sourceDatabaseId,
     gridLocation: firstString(pick('gridLocation')) || undefined,
   };
