@@ -279,7 +279,7 @@ export function shouldReadFromSupabase(): boolean {
 
 export async function fetchCoursesFromSupabase(): Promise<Course[]> {
   const rows = await supabaseRequest<SupabaseCourseRow[]>(
-    '/rest/v1/courses?select=id,notion_page_id,slug,course_name,course_summary,cover_image_url,is_active&is_active=neq.false&order=created_at.desc',
+    '/rest/v1/courses?select=id,notion_page_id,slug,course_name,course_summary,cover_image_url,is_active&is_active=neq.false&is_published=neq.false&order=created_at.desc',
     {
       method: 'GET',
       headers: supabaseHeaders(),

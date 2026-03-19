@@ -399,18 +399,20 @@ export async function fetchCourseBySlug(slug: string, warnings: NormalizationWar
 export async function fetchAllCourses(): Promise<Course[]> {
   const coursesDb = getEnv('NOTION_DB_COURSES_ID');
   const pages = await queryDatabase(coursesDb);
-  return pages.map((page) => {
-    const coverFromProp = asFiles(property(page, 'CoverImage', 'Cover'))[0];
-    const coverFromPage = page.cover?.type === 'external' ? page.cover.external?.url : page.cover?.file?.url;
-    return {
-      id: page.id,
-      slug: asText(property(page, 'Slug')) || page.id,
-      courseName: asText(property(page, 'CourseName', 'Name', 'Title')) || 'Untitled Course',
-      courseSummary: asText(property(page, 'CourseSummary', 'Summary', 'Description')),
-      coverImage: coverFromProp || coverFromPage || 'https://picsum.photos/seed/course-fallback/1200/600',
-      projectIds: asStringArray(property(page, 'Projects')),
-    };
-  });
+  return pages
+    .filter((page) => asBoolean(property(page, 'PublishedStatus', 'Published', 'Publish')))
+    .map((page) => {
+      const coverFromProp = asFiles(property(page, 'CoverImage', 'Cover'))[0];
+      const coverFromPage = page.cover?.type === 'external' ? page.cover.external?.url : page.cover?.file?.url;
+      return {
+        id: page.id,
+        slug: asText(property(page, 'Slug')) || page.id,
+        courseName: asText(property(page, 'CourseName', 'Name', 'Title')) || 'Untitled Course',
+        courseSummary: asText(property(page, 'CourseSummary', 'Summary', 'Description')),
+        coverImage: coverFromProp || coverFromPage || 'https://picsum.photos/seed/course-fallback/1200/600',
+        projectIds: asStringArray(property(page, 'Projects')),
+      };
+    });
 }
 
 export async function fetchAllCoursesWithMeta(): Promise<NotionCourseMeta[]> {

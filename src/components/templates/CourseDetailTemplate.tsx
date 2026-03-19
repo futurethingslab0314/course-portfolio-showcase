@@ -7,6 +7,7 @@ import { Header } from '../Header';
 import { Footer } from '../Footer';
 import { Filter, Star, ChevronDown, Menu, X as CloseIcon } from 'lucide-react';
 import { AnimatePresence } from 'motion/react';
+import { collectThemeTags, filterAndSortWorksForDisplay } from './courseDetailViewModel';
 
 interface CourseDetailTemplateProps {
   course: Course;
@@ -34,7 +35,7 @@ export const CourseDetailTemplate = ({
   const [starredOnly, setStarredOnly] = useState<boolean>(false);
   const [selectedThemeTag, setSelectedThemeTag] = useState<string>('ALL');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const isBlogPostProject = activeProject?.displayStyle === 'blog-post';
+  const supportsThemeFilter = activeProject?.displayStyle === 'blog-post' || activeProject?.displayStyle === 'activity-event';
 
   const availableYears = useMemo(() => {
     const years = new Set(works.map(w => w.year).filter(Boolean));
@@ -42,26 +43,17 @@ export const CourseDetailTemplate = ({
   }, [works]);
 
   const availableThemeTags = useMemo(() => {
-    const tags = new Set<string>();
-    works.forEach((w) => {
-      w.tags?.forEach((tag) => tags.add(tag));
-    });
-    return ['ALL', ...Array.from(tags).sort((a, b) => a.localeCompare(b))];
+    return ['ALL', ...collectThemeTags(works)];
   }, [works]);
 
   const filteredWorks = useMemo(() => {
-    let result = works;
-    if (selectedYear !== 'ALL') {
-      result = result.filter(w => w.year === selectedYear);
-    }
-    if (isBlogPostProject && selectedThemeTag !== 'ALL') {
-      result = result.filter((w) => w.tags?.includes(selectedThemeTag));
-    }
-    if (starredOnly) {
-      result = result.filter(w => w.isStarred);
-    }
-    return result;
-  }, [works, selectedYear, selectedThemeTag, starredOnly, isBlogPostProject]);
+    return filterAndSortWorksForDisplay(works, {
+      displayStyle: activeProject?.displayStyle,
+      selectedYear,
+      selectedThemeTag,
+      starredOnly,
+    });
+  }, [works, activeProject?.displayStyle, selectedYear, selectedThemeTag, starredOnly]);
 
   return (
     <div className="min-h-screen bg-white">
@@ -200,11 +192,11 @@ export const CourseDetailTemplate = ({
             </div>
           </div>
 
-          {isBlogPostProject && (
+          {supportsThemeFilter && (
             <div className="flex items-center justify-between md:justify-start gap-6 md:pl-8 md:border-l border-black/5">
               <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-black/30">
                 <Filter size={12} />
-                <span>ThemeTag</span>
+                <span>Theme Tag</span>
               </div>
               <div className="relative group">
                 <select

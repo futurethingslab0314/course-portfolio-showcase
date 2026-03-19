@@ -1,6 +1,26 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { blockToBlogSectionForTest } from './notion';
+import { blockToBlogSectionForTest, fetchAllCourses } from './notion';
+
+const originalFetch = globalThis.fetch;
+const originalEnv = {
+  NOTION_TOKEN: process.env.NOTION_TOKEN,
+  NOTION_API_KEY: process.env.NOTION_API_KEY,
+  NOTION_DB_COURSES_ID: process.env.NOTION_DB_COURSES_ID,
+};
+
+test.beforeEach(() => {
+  process.env.NOTION_TOKEN = 'test-notion-token';
+  delete process.env.NOTION_API_KEY;
+  process.env.NOTION_DB_COURSES_ID = 'courses-db';
+});
+
+test.afterEach(() => {
+  globalThis.fetch = originalFetch;
+  process.env.NOTION_TOKEN = originalEnv.NOTION_TOKEN;
+  process.env.NOTION_API_KEY = originalEnv.NOTION_API_KEY;
+  process.env.NOTION_DB_COURSES_ID = originalEnv.NOTION_DB_COURSES_ID;
+});
 
 test('blockToBlogSectionForTest preserves rich-text links in paragraph blocks', async () => {
   const section = await blockToBlogSectionForTest({
@@ -163,4 +183,45 @@ test('blockToBlogSectionForTest maps toggle blocks with nested children', async 
       },
     ],
   });
+});
+
+test('fetchAllCourses returns only published courses for homepage fallback', async () => {
+  globalThis.fetch = async () =>
+    new Response(
+      JSON.stringify({
+        results: [
+          {
+            id: 'course-1',
+            properties: {
+              Slug: { type: 'rich_text', rich_text: [{ plain_text: 'published-course' }] },
+              CourseName: { type: 'rich_text', rich_text: [{ plain_text: 'Published Course' }] },
+              CourseSummary: { type: 'rich_text', rich_text: [{ plain_text: 'Visible summary' }] },
+              Projects: { type: 'relation', relation: [] },
+              PublishedStatus: { type: 'checkbox', checkbox: true },
+            },
+          },
+          {
+            id: 'course-2',
+            properties: {
+              Slug: { type: 'rich_text', rich_text: [{ plain_text: 'hidden-course' }] },
+              CourseName: { type: 'rich_text', rich_text: [{ plain_text: 'Hidden Course' }] },
+              CourseSummary: { type: 'rich_text', rich_text: [{ plain_text: 'Hidden summary' }] },
+              Projects: { type: 'relation', relation: [] },
+              PublishedStatus: { type: 'checkbox', checkbox: false },
+            },
+          },
+        ],
+        has_more: false,
+      }),
+      {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      },
+    );
+
+  const courses = await fetchAllCourses();
+
+  assert.equal(courses.length, 1);
+  assert.equal(courses[0]?.slug, 'published-course');
+  assert.equal(courses[0]?.courseName, 'Published Course');
 });

@@ -4,6 +4,7 @@ import {
   deleteProjectsNotInCourse,
   deleteStudentWorksNotInProjects,
   fetchCoursePayloadBySlugFromSupabase,
+  fetchCoursesFromSupabase,
   upsertProjectsToSupabase,
 } from './supabase';
 import { Project } from '../../src/types';
@@ -109,6 +110,50 @@ test('upsertProjectsToSupabase stores publication status for draft and published
 
   assert.match(requestBody, /"is_published":true/);
   assert.match(requestBody, /"is_published":false/);
+});
+
+test('fetchCoursesFromSupabase returns only published active courses for homepage', async () => {
+  let calledUrl = '';
+  const allRows = [
+    {
+      id: 'course-row-1',
+      notion_page_id: 'course-1',
+      slug: 'published-course',
+      course_name: 'Published Course',
+      course_summary: '',
+      cover_image_url: '',
+      is_active: true,
+      is_published: true,
+    },
+    {
+      id: 'course-row-2',
+      notion_page_id: 'course-2',
+      slug: 'draft-course',
+      course_name: 'Draft Course',
+      course_summary: '',
+      cover_image_url: '',
+      is_active: true,
+      is_published: false,
+    },
+  ];
+
+  globalThis.fetch = async (input) => {
+    calledUrl = String(input);
+    const rows = calledUrl.includes('is_published=neq.false') ? allRows.filter((row) => row.is_published !== false) : allRows;
+    return new Response(
+      JSON.stringify(rows),
+      {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      },
+    );
+  };
+
+  const courses = await fetchCoursesFromSupabase();
+
+  assert.match(calledUrl, /is_published=neq\.false/);
+  assert.equal(courses.length, 1);
+  assert.equal(courses[0]?.slug, 'published-course');
 });
 
 test('fetchCoursePayloadBySlugFromSupabase returns only published projects and their works', async () => {
