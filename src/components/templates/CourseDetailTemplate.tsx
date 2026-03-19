@@ -229,6 +229,8 @@ export const CourseDetailTemplate = ({
             "grid gap-12",
             activeProject?.displayStyle === 'generic-card' || activeProject?.displayStyle === 'blog-post'
               ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
+              : activeProject?.displayStyle === 'activity-event'
+                ? "grid-cols-1 xl:grid-cols-2"
               : "grid-cols-1"
           )}>
             {filteredWorks.map(work => (

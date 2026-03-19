@@ -7,6 +7,7 @@ import {
   ChevronRight,
   ExternalLink,
   Globe,
+  MapPin,
   Users,
   X,
 } from 'lucide-react';
@@ -33,10 +34,10 @@ export function ActivityEventCardContent({ work }: { work: StudentWork }) {
       <div className="flex flex-grow flex-col p-6">
         <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-black/40">
           <Calendar size={12} />
-          <span>{work.year || 'Undated'}</span>
+          <span>{work.year}</span>
           <span className="mx-1">•</span>
-          <Globe size={12} />
-          <span>{work.city || 'Global'}{work.country ? `, ${work.country}` : ''}</span>
+          <MapPin size={12} />
+          <span>{work.city || 'Global'}, {work.country || 'Remote'}</span>
         </div>
 
         <h3 className="mb-3 line-clamp-2 text-xl font-bold tracking-tight transition-colors group-hover:text-black/60">
@@ -231,10 +232,10 @@ export function ActivityEventDetailContent({
               href={work.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-sm font-bold text-black transition-opacity hover:opacity-60"
+              className="group flex w-full items-center justify-center gap-3 rounded-xl bg-black py-4 text-[11px] font-bold uppercase tracking-[0.2em] text-white transition-all hover:bg-black/80"
             >
-              Visit related link
-              <ExternalLink size={16} />
+              Visit Project
+              <ExternalLink size={14} className="transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
             </a>
           ) : null}
         </div>
