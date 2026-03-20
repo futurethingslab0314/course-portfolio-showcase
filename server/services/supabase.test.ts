@@ -218,6 +218,7 @@ test('fetchCoursePayloadBySlugFromSupabase returns only published projects and t
         {
           id: 'work-row-1',
           notion_page_id: 'work-1',
+          created_at: '2026-03-20T10:00:00.000Z',
           project_id: 'project-row-1',
           source_database_id: 'db-published',
           assignment_name: 'Published Work',
@@ -261,6 +262,7 @@ test('fetchCoursePayloadBySlugFromSupabase returns only published projects and t
   assert.equal(payload.projects[0]?.displayStyle, 'activity-event');
   assert.equal(payload.studentWorks.length, 1);
   assert.equal(payload.studentWorks[0]?.id, 'work-1');
+  assert.equal(payload.studentWorks[0]?.createdAt, '2026-03-20T10:00:00.000Z');
   assert.equal(payload.studentWorks[0]?.themeTag, 'Conference');
   assert.equal(payload.studentWorks[0]?.startDate, '2026-03-01');
   assert.equal(payload.studentWorks[0]?.endDate, '2026-03-03');

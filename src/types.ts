@@ -40,6 +40,7 @@ export type BlogContentSection = BlogTextSection | BlogImageSection | BlogTableS
 
 export interface StudentWork {
   id: string;
+  createdAt?: string;
   assignmentName: string;
   members: string[];
   studentIds?: string[];

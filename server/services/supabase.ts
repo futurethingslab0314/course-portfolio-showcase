@@ -31,6 +31,7 @@ interface SupabaseProjectRow {
 interface SupabaseStudentWorkRow {
   id: string;
   notion_page_id: string;
+  created_at?: string | null;
   project_id: string;
   source_database_id: string | null;
   assignment_name: string;
@@ -238,6 +239,7 @@ function mapWorkRowToStudentWork(row: SupabaseStudentWorkRow): StudentWork {
   const metadata = (row.metadata && typeof row.metadata === 'object' ? row.metadata : {}) as Record<string, unknown>;
   return {
     id: row.notion_page_id,
+    createdAt: row.created_at || undefined,
     assignmentName: row.assignment_name || 'Untitled Assignment',
     members: parseMaybeStringArray(row.members),
     description: row.description || '',
@@ -315,8 +317,8 @@ export async function fetchCoursePayloadBySlugFromSupabase(slug: string): Promis
   const visibleProjectRows = projectRows.filter((row) => row.is_published !== false);
   const projectIdList = visibleProjectRows.map((row) => row.id);
   const studentWorkRows = projectIdList.length
-    ? await supabaseRequest<SupabaseStudentWorkRow[]>(
-        `/rest/v1/student_works?select=id,notion_page_id,project_id,source_database_id,assignment_name,members,description,main_image_url,blog_content,metadata&project_id=${encodeURIComponent(buildInFilter(projectIdList))}`,
+      ? await supabaseRequest<SupabaseStudentWorkRow[]>(
+        `/rest/v1/student_works?select=id,notion_page_id,created_at,project_id,source_database_id,assignment_name,members,description,main_image_url,blog_content,metadata&project_id=${encodeURIComponent(buildInFilter(projectIdList))}`,
         {
           method: 'GET',
           headers: supabaseHeaders(),

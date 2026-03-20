@@ -160,3 +160,38 @@ test('filterAndSortWorksForDisplay filters gallery-story by keyword tag', () => 
     ['tracking-1'],
   );
 });
+
+test('filterAndSortWorksForDisplay sorts gallery-story by createdAt descending', () => {
+  const works: StudentWork[] = [
+    {
+      ...baseWork,
+      id: 'older',
+      assignmentName: 'Older',
+      createdAt: '2024-01-10T10:00:00.000Z',
+    } as StudentWork,
+    {
+      ...baseWork,
+      id: 'latest',
+      assignmentName: 'Latest',
+      createdAt: '2024-06-10T10:00:00.000Z',
+    } as StudentWork,
+    {
+      ...baseWork,
+      id: 'no-created-at',
+      assignmentName: 'No Created At',
+    } as StudentWork,
+  ];
+
+  const result = filterAndSortWorksForDisplay(works, {
+    displayStyle: 'gallery-story',
+    selectedYear: 'ALL',
+    selectedThemeTag: 'ALL',
+    selectedKeywordTag: 'ALL',
+    starredOnly: false,
+  });
+
+  assert.deepEqual(
+    result.map((work) => work.id),
+    ['latest', 'older', 'no-created-at'],
+  );
+});

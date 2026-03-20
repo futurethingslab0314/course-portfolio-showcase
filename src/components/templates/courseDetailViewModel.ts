@@ -39,6 +39,12 @@ function activitySortTimestamp(work: StudentWork): number {
   return Number.NEGATIVE_INFINITY;
 }
 
+function createdAtTimestamp(work: StudentWork): number {
+  if (!work.createdAt) return Number.NEGATIVE_INFINITY;
+  const parsed = Date.parse(work.createdAt);
+  return Number.isFinite(parsed) ? parsed : Number.NEGATIVE_INFINITY;
+}
+
 export function filterAndSortWorksForDisplay(
   works: StudentWork[],
   options: {
@@ -75,6 +81,19 @@ export function filterAndSortWorksForDisplay(
       .map((work, index) => ({ work, index }))
       .sort((left, right) => {
         const timeDelta = activitySortTimestamp(right.work) - activitySortTimestamp(left.work);
+        if (timeDelta !== 0) {
+          return timeDelta;
+        }
+        return left.index - right.index;
+      })
+      .map(({ work }) => work);
+  }
+
+  if (options.displayStyle === 'gallery-story') {
+    result = [...result]
+      .map((work, index) => ({ work, index }))
+      .sort((left, right) => {
+        const timeDelta = createdAtTimestamp(right.work) - createdAtTimestamp(left.work);
         if (timeDelta !== 0) {
           return timeDelta;
         }
