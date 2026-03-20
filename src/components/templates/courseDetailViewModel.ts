@@ -4,12 +4,20 @@ function uniqueStrings(values: string[]): string[] {
   return [...new Set(values.map((value) => value.trim()).filter(Boolean))];
 }
 
+export function workKeywordTags(work: StudentWork): string[] {
+  return uniqueStrings(work.tags || []);
+}
+
 export function workThemeTags(work: StudentWork): string[] {
   return uniqueStrings([work.themeTag || '', ...(work.tags || [])]);
 }
 
 export function collectThemeTags(works: StudentWork[]): string[] {
   return uniqueStrings(works.flatMap((work) => workThemeTags(work))).sort((a, b) => a.localeCompare(b));
+}
+
+export function collectKeywordTags(works: StudentWork[]): string[] {
+  return uniqueStrings(works.flatMap((work) => workKeywordTags(work))).sort((a, b) => a.localeCompare(b));
 }
 
 function activitySortTimestamp(work: StudentWork): number {
@@ -37,10 +45,12 @@ export function filterAndSortWorksForDisplay(
     displayStyle?: Project['displayStyle'];
     selectedYear: string;
     selectedThemeTag: string;
+    selectedKeywordTag: string;
     starredOnly: boolean;
   },
 ): StudentWork[] {
   const supportsThemeFilter = options.displayStyle === 'blog-post' || options.displayStyle === 'activity-event';
+  const supportsKeywordFilter = options.displayStyle === 'gallery-story';
 
   let result = works;
 
@@ -50,6 +60,10 @@ export function filterAndSortWorksForDisplay(
 
   if (supportsThemeFilter && options.selectedThemeTag !== 'ALL') {
     result = result.filter((work) => workThemeTags(work).includes(options.selectedThemeTag));
+  }
+
+  if (supportsKeywordFilter && options.selectedKeywordTag !== 'ALL') {
+    result = result.filter((work) => workKeywordTags(work).includes(options.selectedKeywordTag));
   }
 
   if (options.starredOnly) {

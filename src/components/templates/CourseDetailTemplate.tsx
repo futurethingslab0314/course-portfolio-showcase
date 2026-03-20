@@ -7,7 +7,7 @@ import { Header } from '../Header';
 import { Footer } from '../Footer';
 import { Filter, Star, ChevronDown, Menu, X as CloseIcon } from 'lucide-react';
 import { AnimatePresence } from 'motion/react';
-import { collectThemeTags, filterAndSortWorksForDisplay } from './courseDetailViewModel';
+import { collectKeywordTags, collectThemeTags, filterAndSortWorksForDisplay } from './courseDetailViewModel';
 
 interface CourseDetailTemplateProps {
   course: Course;
@@ -34,8 +34,10 @@ export const CourseDetailTemplate = ({
   const [selectedYear, setSelectedYear] = useState<string>('ALL');
   const [starredOnly, setStarredOnly] = useState<boolean>(false);
   const [selectedThemeTag, setSelectedThemeTag] = useState<string>('ALL');
+  const [selectedKeywordTag, setSelectedKeywordTag] = useState<string>('ALL');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const supportsThemeFilter = activeProject?.displayStyle === 'blog-post' || activeProject?.displayStyle === 'activity-event';
+  const supportsKeywordFilter = activeProject?.displayStyle === 'gallery-story';
 
   const availableYears = useMemo(() => {
     const years = new Set(works.map(w => w.year).filter(Boolean));
@@ -46,14 +48,19 @@ export const CourseDetailTemplate = ({
     return ['ALL', ...collectThemeTags(works)];
   }, [works]);
 
+  const availableKeywordTags = useMemo(() => {
+    return ['ALL', ...collectKeywordTags(works)];
+  }, [works]);
+
   const filteredWorks = useMemo(() => {
     return filterAndSortWorksForDisplay(works, {
       displayStyle: activeProject?.displayStyle,
       selectedYear,
       selectedThemeTag,
+      selectedKeywordTag,
       starredOnly,
     });
-  }, [works, activeProject?.displayStyle, selectedYear, selectedThemeTag, starredOnly]);
+  }, [works, activeProject?.displayStyle, selectedYear, selectedThemeTag, selectedKeywordTag, starredOnly]);
 
   return (
     <div className="min-h-screen bg-white">
@@ -83,6 +90,7 @@ export const CourseDetailTemplate = ({
                   setSelectedYear('ALL'); // Reset filter when switching projects
                   setStarredOnly(false);
                   setSelectedThemeTag('ALL');
+                  setSelectedKeywordTag('ALL');
                 }}
                 className={cn(
                   "text-[11px] font-bold uppercase tracking-[0.3em] whitespace-nowrap transition-all relative py-2",
@@ -119,6 +127,7 @@ export const CourseDetailTemplate = ({
                       setSelectedYear('ALL');
                       setStarredOnly(false);
                       setSelectedThemeTag('ALL');
+                      setSelectedKeywordTag('ALL');
                       setIsMobileMenuOpen(false);
                     }}
                     className={cn(
@@ -205,6 +214,27 @@ export const CourseDetailTemplate = ({
                   className="appearance-none bg-white border border-black/10 rounded-lg px-4 py-2 pr-10 text-[11px] font-bold uppercase tracking-wider focus:outline-none focus:border-black cursor-pointer min-w-[140px]"
                 >
                   {availableThemeTags.map((tag) => (
+                    <option key={tag} value={tag}>{tag}</option>
+                  ))}
+                </select>
+                <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-black/30" />
+              </div>
+            </div>
+          )}
+
+          {supportsKeywordFilter && (
+            <div className="flex items-center justify-between md:justify-start gap-6 md:pl-8 md:border-l border-black/5">
+              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-black/30">
+                <Filter size={12} />
+                <span>Keyword Tag</span>
+              </div>
+              <div className="relative group">
+                <select
+                  value={selectedKeywordTag}
+                  onChange={(e) => setSelectedKeywordTag(e.target.value)}
+                  className="appearance-none bg-white border border-black/10 rounded-lg px-4 py-2 pr-10 text-[11px] font-bold uppercase tracking-wider focus:outline-none focus:border-black cursor-pointer min-w-[140px]"
+                >
+                  {availableKeywordTags.map((tag) => (
                     <option key={tag} value={tag}>{tag}</option>
                   ))}
                 </select>

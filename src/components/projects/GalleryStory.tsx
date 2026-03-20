@@ -101,9 +101,9 @@ export const GalleryStory = ({ work, isExpanded, setIsExpanded, zoomedImage, set
           <div className="mb-10">
             <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-black/30 mb-4">Keywords Tag</h4>
             <div className="flex gap-2">
-              {work.methodologies?.map(m => (
-                <span key={m} className="text-[10px] font-bold text-purple-600 bg-purple-50 px-3 py-1 uppercase tracking-wider rounded border border-purple-100">
-                  {m}
+              {work.tags?.map((tag) => (
+                <span key={tag} className="text-[10px] font-bold text-purple-600 bg-purple-50 px-3 py-1 uppercase tracking-wider rounded border border-purple-100">
+                  {tag}
                 </span>
               ))}
             </div>

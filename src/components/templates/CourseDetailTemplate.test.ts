@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { collectThemeTags, filterAndSortWorksForDisplay } from './courseDetailViewModel';
+import { collectKeywordTags, collectThemeTags, filterAndSortWorksForDisplay } from './courseDetailViewModel';
 import { StudentWork } from '../../types';
 
 const baseWork = {
@@ -28,6 +28,25 @@ test('collectThemeTags includes activity-event themeTag values', () => {
   ];
 
   assert.deepEqual(collectThemeTags(works), ['Academic Conference', 'Hands-on', 'Workshop']);
+});
+
+test('collectKeywordTags includes gallery-story tags and removes duplicates', () => {
+  const works: StudentWork[] = [
+    {
+      ...baseWork,
+      id: 'gallery-1',
+      assignmentName: 'Tracking 1',
+      tags: ['Consumption', 'Diary'],
+    } as StudentWork,
+    {
+      ...baseWork,
+      id: 'gallery-2',
+      assignmentName: 'Tracking 2',
+      tags: ['Diary', 'Rhythm'],
+    } as StudentWork,
+  ];
+
+  assert.deepEqual(collectKeywordTags(works), ['Consumption', 'Diary', 'Rhythm']);
 });
 
 test('filterAndSortWorksForDisplay filters activity-event by theme tag and sorts newest first', () => {
@@ -62,6 +81,7 @@ test('filterAndSortWorksForDisplay filters activity-event by theme tag and sorts
     displayStyle: 'activity-event',
     selectedYear: 'ALL',
     selectedThemeTag: 'Academic Conference',
+    selectedKeywordTag: 'ALL',
     starredOnly: false,
   });
 
@@ -99,11 +119,44 @@ test('filterAndSortWorksForDisplay falls back to endDate and year for activity-e
     displayStyle: 'activity-event',
     selectedYear: 'ALL',
     selectedThemeTag: 'ALL',
+    selectedKeywordTag: 'ALL',
     starredOnly: false,
   });
 
   assert.deepEqual(
     result.map((work) => work.id),
     ['start-date', 'end-date', 'year-only'],
+  );
+});
+
+test('filterAndSortWorksForDisplay filters gallery-story by keyword tag', () => {
+  const works: StudentWork[] = [
+    {
+      ...baseWork,
+      id: 'tracking-1',
+      assignmentName: 'Tracking 1',
+      tags: ['Consumption'],
+      year: '2024',
+    } as StudentWork,
+    {
+      ...baseWork,
+      id: 'tracking-2',
+      assignmentName: 'Tracking 2',
+      tags: ['Rhythm'],
+      year: '2024',
+    } as StudentWork,
+  ];
+
+  const result = filterAndSortWorksForDisplay(works, {
+    displayStyle: 'gallery-story',
+    selectedYear: 'ALL',
+    selectedThemeTag: 'ALL',
+    selectedKeywordTag: 'Consumption',
+    starredOnly: false,
+  });
+
+  assert.deepEqual(
+    result.map((work) => work.id),
+    ['tracking-1'],
   );
 });
