@@ -1,9 +1,15 @@
-import React from 'react';
-import { ChevronDown, Plus, X, ExternalLink } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo } from 'react';
+import { ChevronDown, ChevronLeft, ChevronRight, Plus, X, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { StudentWork } from '../../types';
 import { cn } from '../../lib/utils';
 import { memberRows } from '../../lib/memberRows';
+import {
+  getGalleryStoryImages,
+  getGalleryStoryImageIndex,
+  getNextGalleryStoryImage,
+  getPrevGalleryStoryImage,
+} from './galleryStoryLightbox';
 
 interface GalleryStoryProps {
   work: StudentWork;
@@ -16,13 +22,52 @@ interface GalleryStoryProps {
 export const GalleryStory = ({ work, isExpanded, setIsExpanded, zoomedImage, setZoomedImage }: GalleryStoryProps) => {
   const members = memberRows(work);
   const storyButtons = (work.storyButtons ?? []).filter((button) => button.label && button.url);
+  const images = useMemo(() => getGalleryStoryImages(work.mainImage, work.moreImages), [work.mainImage, work.moreImages]);
+  const currentZoomedIndex = getGalleryStoryImageIndex(images, zoomedImage);
+  const hasMultipleImages = images.length > 1;
+
+  const openZoomedImage = useCallback((image: string) => {
+    setZoomedImage(image);
+  }, [setZoomedImage]);
+
+  const closeZoomedImage = useCallback(() => {
+    setZoomedImage(null);
+  }, [setZoomedImage]);
+
+  const showNextImage = useCallback(() => {
+    const nextImage = getNextGalleryStoryImage(images, zoomedImage);
+    if (nextImage) setZoomedImage(nextImage);
+  }, [images, setZoomedImage, zoomedImage]);
+
+  const showPrevImage = useCallback(() => {
+    const prevImage = getPrevGalleryStoryImage(images, zoomedImage);
+    if (prevImage) setZoomedImage(prevImage);
+  }, [images, setZoomedImage, zoomedImage]);
+
+  useEffect(() => {
+    if (!zoomedImage) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        closeZoomedImage();
+        return;
+      }
+
+      if (!hasMultipleImages) return;
+      if (event.key === 'ArrowRight') showNextImage();
+      if (event.key === 'ArrowLeft') showPrevImage();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [closeZoomedImage, hasMultipleImages, showNextImage, showPrevImage, zoomedImage]);
 
   return (
     <div className="gallery-story-container">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
         <div
           className="aspect-[4/3] bg-black/5 rounded-lg overflow-hidden cursor-zoom-in group relative"
-          onClick={() => setZoomedImage(work.mainImage)}
+          onClick={() => openZoomedImage(work.mainImage)}
         >
           <img src={work.mainImage} alt={work.assignmentName} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" referrerPolicy="no-referrer" />
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
@@ -132,7 +177,7 @@ export const GalleryStory = ({ work, isExpanded, setIsExpanded, zoomedImage, set
                   {work.moreImages?.map((img, i) => (
                     <div
                       key={i}
-                      onClick={() => setZoomedImage(img)}
+                      onClick={() => openZoomedImage(img)}
                       className={cn(
                         "rounded-lg overflow-hidden bg-black/5 cursor-zoom-in group relative",
                         i === 0 && "col-span-2 aspect-video",
@@ -160,7 +205,7 @@ export const GalleryStory = ({ work, isExpanded, setIsExpanded, zoomedImage, set
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setZoomedImage(null)}
+              onClick={closeZoomedImage}
               className="absolute inset-0 bg-black/90 backdrop-blur-xl"
             />
             <motion.div
@@ -168,6 +213,9 @@ export const GalleryStory = ({ work, isExpanded, setIsExpanded, zoomedImage, set
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               className="relative w-full max-w-6xl max-h-[90vh] rounded-2xl overflow-hidden shadow-2xl flex items-center justify-center bg-black"
+              role="dialog"
+              aria-modal="true"
+              aria-label={work.assignmentName}
             >
               <img
                 src={zoomedImage}
@@ -175,9 +223,28 @@ export const GalleryStory = ({ work, isExpanded, setIsExpanded, zoomedImage, set
                 className="max-w-full max-h-full object-contain"
                 referrerPolicy="no-referrer"
               />
+              {hasMultipleImages && currentZoomedIndex !== -1 ? (
+                <>
+                  <button
+                    onClick={showPrevImage}
+                    className="absolute left-4 md:left-6 z-20 p-2 md:p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
+                    aria-label="Previous image"
+                  >
+                    <ChevronLeft size={28} />
+                  </button>
+                  <button
+                    onClick={showNextImage}
+                    className="absolute right-4 md:right-20 z-20 p-2 md:p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
+                    aria-label="Next image"
+                  >
+                    <ChevronRight size={28} />
+                  </button>
+                </>
+              ) : null}
               <button
-                onClick={() => setZoomedImage(null)}
+                onClick={closeZoomedImage}
                 className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full text-white transition-colors"
+                aria-label="Close zoomed image"
               >
                 <X size={24} />
               </button>
