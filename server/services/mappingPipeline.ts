@@ -72,7 +72,7 @@ const TEMPLATE_FIELDS_BY_PATTERN: Record<UiPattern, Array<keyof StudentWork>> = 
   'gallery-story': [...BASE_TEMPLATE_FIELDS, 'moreImages', 'methodologies', 'storyButtons', 'url', 'year', 'tags'],
   'card-spec': [...BASE_TEMPLATE_FIELDS, 'dataSpecs', 'tags', 'year'],
   'data-matrix': [...BASE_TEMPLATE_FIELDS, 'gridLocation', 'year', 'tags'],
-  'blog-post': [...BASE_TEMPLATE_FIELDS, 'url', 'tags', 'year', 'isStarred'],
+  'blog-post': [...BASE_TEMPLATE_FIELDS, 'url', 'storyButtons', 'tags', 'year', 'isStarred'],
   'activity-event': [...BASE_TEMPLATE_FIELDS, 'moreImages', 'year', 'tags', 'themeTag', 'startDate', 'endDate', 'country', 'city', 'grant', 'publicationName', 'url'],
 };
 

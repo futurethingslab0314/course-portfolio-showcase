@@ -44,3 +44,33 @@ test('normalizeStudentWork maps activity-event aliases without explicit field ma
   assert.deepEqual(work.tags, ['Conference']);
   assert.equal(warnings.length, 0);
 });
+
+test('normalizeStudentWork infers multiple story buttons from button and URL pairs', () => {
+  const warnings: Array<{ level: 'warning' | 'error'; code: string; message: string }> = [];
+  const work = normalizeStudentWork(
+    {
+      id: 'blog-1',
+      title: 'Blog With Links',
+      description: 'Testing multiple CTA buttons.',
+      mainImage: 'https://example.com/cover.jpg',
+      button01: 'Read Article',
+      URLbutton01: 'https://example.com/article',
+      button02: 'View Dataset',
+      URLbutton02: 'https://example.com/dataset',
+    },
+    'db-blog',
+    {},
+    warnings,
+    {
+      projectId: 'project-blog',
+      courseId: 'course-1',
+      sourceDatabaseId: 'db-blog',
+    },
+  );
+
+  assert.deepEqual(work.storyButtons, [
+    { label: 'Read Article', url: 'https://example.com/article' },
+    { label: 'View Dataset', url: 'https://example.com/dataset' },
+  ]);
+  assert.equal(warnings.length, 0);
+});
