@@ -25,7 +25,7 @@ export const Footer = () => (
 
       <div className="md:text-right flex flex-col md:items-end">
         <h4 className="text-[11px] font-bold uppercase tracking-[0.3em] text-black/30 mb-6">Department</h4>
-        <h3 className="text-4xl font-bold mb-8 tracking-tighter">DESIGN DEPARTMENT</h3>
+        <h3 href="https://www.dt.ntust.edu.tw/" className="text-4xl font-bold mb-8 tracking-tighter">DESIGN DEPARTMENT</h3>
         <div className="w-32 h-[1px] bg-black/10 mb-8" />
         <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-black/30 md:text-right max-w-[240px]">
           NATIONAL TAIWAN UNIVERSITY OF SCIENCE AND TECHNOLOGY
