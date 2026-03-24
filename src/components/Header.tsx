@@ -22,24 +22,24 @@ export const Header = ({ title, titleLink = '/', showBackButton, onMenuClick, is
           </span>
         </Link>
         <p className="text-[8px] md:text-[10px] uppercase tracking-[0.2em] font-semibold text-black/40 mt-1">
-          Course Portfolio • NTUST
+          Design Department • NTUST
         </p>
       </div>
-      
+
       <div className="flex items-center w-full md:w-auto justify-between md:justify-end gap-2 md:gap-4">
         {onMenuClick && (
-          <button 
+          <button
             onClick={onMenuClick}
             className="md:hidden flex items-center justify-center p-2 bg-black text-white rounded-lg transition-all"
           >
             {isMenuOpen ? <CloseIcon size={14} /> : <Menu size={14} />}
           </button>
         )}
-        
+
         <div className="flex items-center gap-2 md:gap-4">
           {showBackButton && (
-            <Link 
-              to="/" 
+            <Link
+              to="/"
               className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-full border border-black/10 text-[9px] md:text-[10px] font-bold uppercase tracking-wider hover:bg-black/5 transition-all whitespace-nowrap"
             >
               to other courses
