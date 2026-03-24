@@ -14,8 +14,8 @@ export const Footer = () => (
       </div>
 
       <div>
-        <h4 className="text-[11px] font-bold uppercase tracking-[0.3em] text-black/30 mb-6">Department</h4>
-        <h3 className="text-2xl font-bold mb-6">DESIGN at NATIONAL TAIWAN UNIVERSITY OF SCIENCE AND TECHNOLOGY</h3>
+        <h4 className="text-[11px] font-bold uppercase tracking-[0.3em] text-black/30 mb-6"></h4>
+        <h3 className="text-2xl font-bold mb-6"></h3>
         <p className="text-xs text-black/40 leading-relaxed max-w-xs font-medium">
 
         </p>
@@ -24,11 +24,11 @@ export const Footer = () => (
 
 
       <div className="md:text-right flex flex-col md:items-end">
-        <h4 className="text-[11px] font-bold uppercase tracking-[0.3em] text-black/30 mb-6"></h4>
-        <h3 className="text-4xl font-bold mb-8 tracking-tighter"></h3>
+        <h4 className="text-[11px] font-bold uppercase tracking-[0.3em] text-black/30 mb-6">Department</h4>
+        <h3 className="text-4xl font-bold mb-8 tracking-tighter">DESIGN</h3>
         <div className="w-32 h-[1px] bg-black/10 mb-8" />
         <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-black/30 md:text-right max-w-[240px]">
-
+          NATIONAL TAIWAN UNIVERSITY OF SCIENCE AND TECHNOLOGY
         </p>
       </div>
     </div>
