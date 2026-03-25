@@ -5,6 +5,7 @@ import { StudentWork } from '../../types';
 import { memberRows } from '../../lib/memberRows';
 import { renderBlogSection } from './BlogPostContent';
 import { buildBlogQuickJumpItems } from './blogPostNavigation';
+import { BlogQuickJumpNav } from './BlogPostQuickJump';
 
 interface BlogPostProps {
   work: StudentWork;
@@ -15,6 +16,56 @@ export function BlogPostArticle({ work }: { work: StudentWork }) {
   const storyButtons = work.storyButtons?.filter((button) => button.label && button.url) ?? [];
   const quickJumpItems = buildBlogQuickJumpItems(work.blogContent);
   const quickJumpIdByIndex = new Map(quickJumpItems.map((item) => [item.index, item.anchorId]));
+  const [activeAnchorId, setActiveAnchorId] = useState<string | undefined>(quickJumpItems[0]?.anchorId);
+
+  useEffect(() => {
+    setActiveAnchorId(quickJumpItems[0]?.anchorId);
+  }, [quickJumpItems]);
+
+  useEffect(() => {
+    if (!quickJumpItems.length || typeof window === 'undefined' || typeof IntersectionObserver === 'undefined') {
+      return;
+    }
+
+    const headingElements = quickJumpItems
+      .map((item) => document.getElementById(item.anchorId))
+      .filter((element): element is HTMLElement => Boolean(element));
+
+    if (!headingElements.length) {
+      return;
+    }
+
+    const visibleEntries = new Map<string, number>();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            visibleEntries.set(entry.target.id, entry.boundingClientRect.top);
+          } else {
+            visibleEntries.delete(entry.target.id);
+          }
+        }
+
+        const activeFromView = [...visibleEntries.entries()].sort((a, b) => Math.abs(a[1]) - Math.abs(b[1]))[0]?.[0];
+        if (activeFromView) {
+          setActiveAnchorId(activeFromView);
+        }
+      },
+      {
+        root: null,
+        rootMargin: '-20% 0px -60% 0px',
+        threshold: [0, 0.2, 0.4, 1],
+      },
+    );
+
+    for (const element of headingElements) {
+      observer.observe(element);
+    }
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [quickJumpItems]);
 
   return (
     <article className="max-w-4xl mx-auto bg-white border border-black/5 shadow-sm overflow-hidden mb-24">
@@ -68,22 +119,7 @@ export function BlogPostArticle({ work }: { work: StudentWork }) {
           {work.description}
         </p>
 
-        {quickJumpItems.length > 0 && (
-          <nav aria-label="Blog quick jump" className="mb-10 rounded-2xl border border-black/8 bg-black/[0.02] px-5 py-5">
-            <div className="mb-3 text-[10px] font-bold uppercase tracking-[0.2em] text-black/35">Quick Jump</div>
-            <div className="flex flex-wrap gap-2.5">
-              {quickJumpItems.map((item) => (
-                <a
-                  key={item.anchorId}
-                  href={`#${item.anchorId}`}
-                  className="rounded-full border border-black/10 bg-white px-3 py-1.5 text-xs font-semibold text-black/65 transition-colors hover:border-black/20 hover:text-black"
-                >
-                  {item.label}
-                </a>
-              ))}
-            </div>
-          </nav>
-        )}
+        <BlogQuickJumpNav items={quickJumpItems} activeAnchorId={activeAnchorId} />
 
         <div className="space-y-4 mb-16">
           {work.blogContent?.map((section, index) => renderBlogSection(section, index, { anchorId: quickJumpIdByIndex.get(index) }))}

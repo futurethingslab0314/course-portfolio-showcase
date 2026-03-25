@@ -58,6 +58,7 @@ test('renderBlogSection renders rich-text links in paragraphs and table cells as
 
   assert.match(paragraphHtml, /href="https:\/\/example\.com\/docs"/);
   assert.match(paragraphHtml, /target="_blank"/);
+  assert.match(paragraphHtml, /leading-\[1\.65\]/);
   assert.match(tableHtml, /href="https:\/\/example\.com\/resource"/);
   assert.match(tableHtml, /rel="noopener noreferrer"/);
 });

@@ -109,7 +109,7 @@ function renderTextSection(
 
   return (
     <div key={index} className="blog-section">
-      <div className="prose prose-lg max-w-none text-black/80 leading-normal">
+      <div className="prose prose-lg max-w-none text-black/80 leading-[1.65]">
         {(section.richText?.length ? [section.content] : section.content.split('\n')).map((para, i) => (
           <p key={i} className="mb-2">
             {section.richText?.length ? renderRichText(section.richText, para) : para}
