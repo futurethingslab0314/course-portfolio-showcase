@@ -70,9 +70,9 @@ function renderTextSection(section: Extract<BlogContentSection, { type: 'text' }
 
   return (
     <div key={index} className="blog-section">
-      <div className="prose prose-lg max-w-none text-black/80 leading-relaxed">
+      <div className="prose prose-lg max-w-none text-black/80 leading-normal">
         {(section.richText?.length ? [section.content] : section.content.split('\n')).map((para, i) => (
-          <p key={i} className="mb-4">
+          <p key={i} className="mb-2">
             {section.richText?.length ? renderRichText(section.richText, para) : para}
           </p>
         ))}
