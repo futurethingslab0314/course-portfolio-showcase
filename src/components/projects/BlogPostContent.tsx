@@ -1,6 +1,10 @@
 import React from 'react';
 import { BlogContentSection, BlogRichTextSpan } from '../../types';
 
+interface RenderBlogSectionOptions {
+  anchorId?: string;
+}
+
 function getRichTextColorStyle(color: string | undefined): React.CSSProperties | undefined {
   if (!color) return undefined;
 
@@ -75,19 +79,24 @@ function renderRichText(spans: BlogRichTextSpan[] | undefined, fallback: string)
   return spans.map((span, index) => wrapSpan(span, index));
 }
 
-function renderTextSection(section: Extract<BlogContentSection, { type: 'text' }>, index: number) {
+function renderTextSection(
+  section: Extract<BlogContentSection, { type: 'text' }>,
+  index: number,
+  options?: RenderBlogSectionOptions,
+) {
   const content = section.richText?.length ? renderRichText(section.richText, section.content) : section.content;
+  const anchorId = options?.anchorId;
 
   if (section.blockType === 'heading_1') {
-    return <h1 key={index} className="mt-12 mb-7 text-4xl md:text-5xl font-bold tracking-tight text-black">{content}</h1>;
+    return <h1 id={anchorId} key={index} className="mt-12 mb-8 text-[32px] leading-tight font-bold tracking-tight text-black scroll-mt-24">{content}</h1>;
   }
 
   if (section.blockType === 'heading_2') {
-    return <h2 key={index} className="mt-10 mb-6 text-3xl md:text-4xl font-bold tracking-tight text-black">{content}</h2>;
+    return <h2 id={anchorId} key={index} className="mt-10 mb-7 text-[24px] leading-tight font-bold tracking-tight text-black scroll-mt-24">{content}</h2>;
   }
 
   if (section.blockType === 'heading_3') {
-    return <h3 key={index} className="mt-8 mb-5 text-2xl md:text-3xl font-semibold tracking-tight text-black/90">{content}</h3>;
+    return <h3 id={anchorId} key={index} className="mt-8 mb-6 text-[20px] leading-tight font-semibold tracking-tight text-black/90 scroll-mt-24">{content}</h3>;
   }
 
   if (section.blockType === 'quote' || section.blockType === 'callout') {
@@ -111,9 +120,9 @@ function renderTextSection(section: Extract<BlogContentSection, { type: 'text' }
   );
 }
 
-export function renderBlogSection(section: BlogContentSection, index: number) {
+export function renderBlogSection(section: BlogContentSection, index: number, options?: RenderBlogSectionOptions) {
   if (section.type === 'text') {
-    return renderTextSection(section, index);
+    return renderTextSection(section, index, options);
   }
 
   if (section.type === 'image') {

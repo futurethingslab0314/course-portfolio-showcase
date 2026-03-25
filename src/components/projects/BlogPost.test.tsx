@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { renderBlogSection } from './BlogPostContent';
+import { buildBlogQuickJumpItems } from './blogPostNavigation';
 
 test('renderBlogSection renders table sections with column headers and cell content', () => {
   const html = renderToStaticMarkup(
@@ -102,7 +103,8 @@ test('renderBlogSection renders headings and inline annotations', () => {
   assert.match(html, /text-decoration-line:underline line-through|underline/);
   assert.match(html, /<code[^>]*>/);
   assert.match(html, /mt-10/);
-  assert.match(html, /mb-6/);
+  assert.match(html, /mb-7/);
+  assert.match(html, /text-\[24px\]/);
 });
 
 test('renderBlogSection renders toggle sections with nested content', () => {
@@ -147,4 +149,33 @@ test('renderBlogSection renders code blocks with preformatted content and langua
   assert.match(html, /<code/);
   assert.match(html, /const answer = 42;/);
   assert.match(html, /typescript/i);
+});
+
+test('buildBlogQuickJumpItems derives quick navigation from heading_1 sections only', () => {
+  const items = buildBlogQuickJumpItems([
+    { type: 'text', blockType: 'heading_1', content: 'Architecture' },
+    { type: 'text', blockType: 'paragraph', content: 'Body text' },
+    { type: 'text', blockType: 'heading_1', content: 'Tradeoffs' },
+  ]);
+
+  assert.deepEqual(items, [
+    { label: 'Architecture', anchorId: 'blog-section-architecture-0', index: 0 },
+    { label: 'Tradeoffs', anchorId: 'blog-section-tradeoffs-2', index: 2 },
+  ]);
+});
+
+test('renderBlogSection applies anchor id to heading sections when provided', () => {
+  const html = renderToStaticMarkup(
+    renderBlogSection(
+      {
+        type: 'text',
+        blockType: 'heading_1',
+        content: 'Architecture',
+      },
+      0,
+      { anchorId: 'blog-section-architecture-0' },
+    ),
+  );
+
+  assert.match(html, /id="blog-section-architecture-0"/);
 });

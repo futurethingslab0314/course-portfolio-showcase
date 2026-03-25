@@ -4,6 +4,7 @@ import { ExternalLink, Plus, User, X } from 'lucide-react';
 import { StudentWork } from '../../types';
 import { memberRows } from '../../lib/memberRows';
 import { renderBlogSection } from './BlogPostContent';
+import { buildBlogQuickJumpItems } from './blogPostNavigation';
 
 interface BlogPostProps {
   work: StudentWork;
@@ -12,6 +13,8 @@ interface BlogPostProps {
 export function BlogPostArticle({ work }: { work: StudentWork }) {
   const members = memberRows(work);
   const storyButtons = work.storyButtons?.filter((button) => button.label && button.url) ?? [];
+  const quickJumpItems = buildBlogQuickJumpItems(work.blogContent);
+  const quickJumpIdByIndex = new Map(quickJumpItems.map((item) => [item.index, item.anchorId]));
 
   return (
     <article className="max-w-4xl mx-auto bg-white border border-black/5 shadow-sm overflow-hidden mb-24">
@@ -65,8 +68,25 @@ export function BlogPostArticle({ work }: { work: StudentWork }) {
           {work.description}
         </p>
 
+        {quickJumpItems.length > 0 && (
+          <nav aria-label="Blog quick jump" className="mb-10 rounded-2xl border border-black/8 bg-black/[0.02] px-5 py-5">
+            <div className="mb-3 text-[10px] font-bold uppercase tracking-[0.2em] text-black/35">Quick Jump</div>
+            <div className="flex flex-wrap gap-2.5">
+              {quickJumpItems.map((item) => (
+                <a
+                  key={item.anchorId}
+                  href={`#${item.anchorId}`}
+                  className="rounded-full border border-black/10 bg-white px-3 py-1.5 text-xs font-semibold text-black/65 transition-colors hover:border-black/20 hover:text-black"
+                >
+                  {item.label}
+                </a>
+              ))}
+            </div>
+          </nav>
+        )}
+
         <div className="space-y-4 mb-16">
-          {work.blogContent?.map((section, index) => renderBlogSection(section, index))}
+          {work.blogContent?.map((section, index) => renderBlogSection(section, index, { anchorId: quickJumpIdByIndex.get(index) }))}
         </div>
 
         <div className="pt-12 border-t border-black/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
