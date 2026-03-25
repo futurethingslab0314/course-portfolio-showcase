@@ -1,17 +1,30 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { ExternalLink, Plus, User, X } from 'lucide-react';
+import { ArrowUp, ExternalLink, Plus, User, X } from 'lucide-react';
 import { StudentWork } from '../../types';
 import { memberRows } from '../../lib/memberRows';
 import { renderBlogSection } from './BlogPostContent';
 import { buildBlogQuickJumpItems } from './blogPostNavigation';
 import { BlogQuickJumpNav } from './BlogPostQuickJump';
+import { findActiveHeadingAnchorId } from './blogPostScroll';
 
 interface BlogPostProps {
   work: StudentWork;
 }
 
 export function BlogPostArticle({ work }: { work: StudentWork }) {
+  return <BlogPostArticleContent work={work} />;
+}
+
+function BlogPostArticleContent({
+  work,
+  scrollContainerRef,
+  onBackToTopVisibilityChange,
+}: {
+  work: StudentWork;
+  scrollContainerRef?: RefObject<HTMLDivElement | null>;
+  onBackToTopVisibilityChange?: (visible: boolean) => void;
+}) {
   const members = memberRows(work);
   const storyButtons = work.storyButtons?.filter((button) => button.label && button.url) ?? [];
   const quickJumpItems = buildBlogQuickJumpItems(work.blogContent);
@@ -23,49 +36,36 @@ export function BlogPostArticle({ work }: { work: StudentWork }) {
   }, [quickJumpItems]);
 
   useEffect(() => {
-    if (!quickJumpItems.length || typeof window === 'undefined' || typeof IntersectionObserver === 'undefined') {
+    const scrollContainer = scrollContainerRef?.current;
+    if (!quickJumpItems.length || !scrollContainer || typeof window === 'undefined') {
       return;
     }
 
-    const headingElements = quickJumpItems
-      .map((item) => document.getElementById(item.anchorId))
-      .filter((element): element is HTMLElement => Boolean(element));
+    const updateActiveHeading = () => {
+      const containerTop = scrollContainer.getBoundingClientRect().top;
+      const topsByAnchorId = Object.fromEntries(
+        quickJumpItems.map((item) => {
+          const heading = document.getElementById(item.anchorId);
+          const top = heading ? heading.getBoundingClientRect().top - containerTop : Number.POSITIVE_INFINITY;
+          return [item.anchorId, top];
+        }),
+      );
+      const nextActive = findActiveHeadingAnchorId(quickJumpItems, topsByAnchorId, 140);
+      if (nextActive) {
+        setActiveAnchorId(nextActive);
+      }
+      onBackToTopVisibilityChange?.(scrollContainer.scrollTop > 260);
+    };
 
-    if (!headingElements.length) {
-      return;
-    }
-
-    const visibleEntries = new Map<string, number>();
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            visibleEntries.set(entry.target.id, entry.boundingClientRect.top);
-          } else {
-            visibleEntries.delete(entry.target.id);
-          }
-        }
-
-        const activeFromView = [...visibleEntries.entries()].sort((a, b) => Math.abs(a[1]) - Math.abs(b[1]))[0]?.[0];
-        if (activeFromView) {
-          setActiveAnchorId(activeFromView);
-        }
-      },
-      {
-        root: null,
-        rootMargin: '-20% 0px -60% 0px',
-        threshold: [0, 0.2, 0.4, 1],
-      },
-    );
-
-    for (const element of headingElements) {
-      observer.observe(element);
-    }
+    updateActiveHeading();
+    scrollContainer.addEventListener('scroll', updateActiveHeading, { passive: true });
+    window.addEventListener('resize', updateActiveHeading);
 
     return () => {
-      observer.disconnect();
+      scrollContainer.removeEventListener('scroll', updateActiveHeading);
+      window.removeEventListener('resize', updateActiveHeading);
     };
-  }, [quickJumpItems]);
+  }, [onBackToTopVisibilityChange, quickJumpItems, scrollContainerRef]);
 
   return (
     <article className="max-w-4xl mx-auto bg-white border border-black/5 shadow-sm overflow-hidden mb-24">
@@ -162,6 +162,8 @@ export function BlogPostArticle({ work }: { work: StudentWork }) {
 
 export const BlogPost = ({ work }: BlogPostProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [showBackToTop, setShowBackToTop] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const previewText = useMemo(() => {
     const firstText = work.blogContent?.find((section) => section.type === 'text')?.content || '';
@@ -171,6 +173,9 @@ export const BlogPost = ({ work }: BlogPostProps) => {
 
   const open = () => setIsOpen(true);
   const close = useCallback(() => setIsOpen(false), []);
+  const backToTop = useCallback(() => {
+    scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -248,6 +253,7 @@ export const BlogPost = ({ work }: BlogPostProps) => {
               role="dialog"
               aria-modal="true"
               aria-label={work.assignmentName}
+              ref={scrollContainerRef}
             >
               <button
                 onClick={close}
@@ -258,8 +264,23 @@ export const BlogPost = ({ work }: BlogPostProps) => {
               </button>
 
               <div className="min-h-full py-20 px-4 md:px-8 bg-[#f7f7f6]">
-                <BlogPostArticle work={work} />
+                <BlogPostArticleContent
+                  work={work}
+                  scrollContainerRef={scrollContainerRef}
+                  onBackToTopVisibilityChange={setShowBackToTop}
+                />
               </div>
+
+              {showBackToTop && (
+                <button
+                  type="button"
+                  onClick={backToTop}
+                  className="fixed right-5 bottom-5 z-[110] inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/95 px-4 py-2 text-xs font-semibold text-black shadow-[0_10px_30px_rgba(0,0,0,0.12)] transition-colors hover:bg-white"
+                >
+                  <ArrowUp size={14} />
+                  Top
+                </button>
+              )}
             </motion.div>
           </div>
         )}
