@@ -276,6 +276,20 @@ function buildNotInFilter(values: string[]): string {
   return `not.in.(${values.map((value) => `"${value}"`).join(',')})`;
 }
 
+function groupRowsByShape(rows: Array<Record<string, unknown>>): Array<Array<Record<string, unknown>>> {
+  const groups = new Map<string, Array<Record<string, unknown>>>();
+  for (const row of rows) {
+    const key = Object.keys(row).sort().join('|');
+    const existing = groups.get(key);
+    if (existing) {
+      existing.push(row);
+    } else {
+      groups.set(key, [row]);
+    }
+  }
+  return [...groups.values()];
+}
+
 export function shouldReadFromSupabase(): boolean {
   return String(process.env.READ_FROM_SUPABASE || 'false').toLowerCase() === 'true';
 }
@@ -484,16 +498,20 @@ export async function upsertStudentWorksToSupabase(params: {
     return { upserted: 0, skipped };
   }
 
-  const upserted = await supabaseRequest<SupabaseStudentWorkRow[]>(
-    '/rest/v1/student_works?on_conflict=notion_page_id',
-    {
-      method: 'POST',
-      headers: supabaseHeaders({ Prefer: 'resolution=merge-duplicates,return=representation' }),
-      body: JSON.stringify(rows),
-    },
-  );
+  let upsertedCount = 0;
+  for (const batch of groupRowsByShape(rows)) {
+    const upserted = await supabaseRequest<SupabaseStudentWorkRow[]>(
+      '/rest/v1/student_works?on_conflict=notion_page_id',
+      {
+        method: 'POST',
+        headers: supabaseHeaders({ Prefer: 'resolution=merge-duplicates,return=representation' }),
+        body: JSON.stringify(batch),
+      },
+    );
+    upsertedCount += upserted.length;
+  }
 
-  return { upserted: upserted.length, skipped };
+  return { upserted: upsertedCount, skipped };
 }
 
 export async function deleteStudentWorksNotInProjects(params: {

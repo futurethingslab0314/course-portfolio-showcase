@@ -330,3 +330,46 @@ test('upsertStudentWorksToSupabase does not overwrite existing blog_content when
   assert.equal(payload.length, 1);
   assert.equal(Object.hasOwn(payload[0] || {}, 'blog_content'), false);
 });
+
+test('upsertStudentWorksToSupabase batches rows by object shape when blog_content presence differs', async () => {
+  const requestBodies: string[] = [];
+
+  const works: StudentWork[] = [
+    {
+      id: 'work-1',
+      assignmentName: 'Blog Work',
+      members: ['Author'],
+      description: 'desc',
+      mainImage: 'https://example.com/main.jpg',
+      sourceDatabaseId: 'db-1',
+      blogContent: [{ type: 'text', content: 'Hello', blockType: 'paragraph' }],
+    },
+    {
+      id: 'work-2',
+      assignmentName: 'Plain Work',
+      members: ['Author'],
+      description: 'desc',
+      mainImage: 'https://example.com/main-2.jpg',
+      sourceDatabaseId: 'db-1',
+    },
+  ];
+
+  globalThis.fetch = async (_input, init) => {
+    requestBodies.push(String(init?.body || ''));
+    return new Response(String(init?.body || '[]'), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+  };
+
+  await upsertStudentWorksToSupabase({
+    studentWorks: works,
+    projectIdBySourceDb: new Map([['db-1', 'project-row-1']]),
+    warnings: [],
+  });
+
+  assert.equal(requestBodies.length, 2);
+  const payloads = requestBodies.map((body) => JSON.parse(body) as Array<Record<string, unknown>>);
+  assert.equal(Object.hasOwn(payloads[0]?.[0] || {}, 'blog_content') || Object.hasOwn(payloads[1]?.[0] || {}, 'blog_content'), true);
+  assert.equal(Object.hasOwn(payloads[0]?.[0] || {}, 'blog_content') && Object.hasOwn(payloads[1]?.[0] || {}, 'blog_content'), false);
+});
