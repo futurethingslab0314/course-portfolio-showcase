@@ -1,6 +1,7 @@
 export interface BlogRichTextSpan {
   text: string;
   href?: string;
+  color?: string;
   bold?: boolean;
   italic?: boolean;
   underline?: boolean;

@@ -226,7 +226,16 @@ test('fetchCoursePayloadBySlugFromSupabase returns only published projects and t
           members: ['Author A', 'Author B'],
           description: '',
           main_image_url: '',
-          blog_content: null,
+          blog_content: [
+            {
+              type: 'text',
+              content: 'Alert note',
+              richText: [
+                { text: 'Alert', color: 'red' },
+                { text: ' note', color: 'yellow_background' },
+              ],
+            },
+          ],
           metadata: {
             themeTag: 'Conference',
             startDate: '2026-03-01',
@@ -272,6 +281,16 @@ test('fetchCoursePayloadBySlugFromSupabase returns only published projects and t
   assert.equal(payload.studentWorks[0]?.grant, 'NSTC');
   assert.equal(payload.studentWorks[0]?.publicationName, 'CHI 2026');
   assert.deepEqual(payload.studentWorks[0]?.members, ['Author A', 'Author B']);
+  assert.deepEqual(payload.studentWorks[0]?.blogContent, [
+    {
+      type: 'text',
+      content: 'Alert note',
+      richText: [
+        { text: 'Alert', color: 'red' },
+        { text: ' note', color: 'yellow_background' },
+      ],
+    },
+  ]);
   assert.deepEqual(payload.studentWorks[0]?.moreImages, ['https://example.com/2.jpg']);
   assert.equal(payload.studentWorks[0]?.year, '2026');
 });

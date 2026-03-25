@@ -1,6 +1,33 @@
 import React from 'react';
 import { BlogContentSection, BlogRichTextSpan } from '../../types';
 
+function getRichTextColorStyle(color: string | undefined): React.CSSProperties | undefined {
+  if (!color) return undefined;
+
+  const colorMap: Record<string, React.CSSProperties> = {
+    gray: { color: '#787774' },
+    brown: { color: '#9f6b53' },
+    orange: { color: '#d9730d' },
+    yellow: { color: '#cb912f' },
+    green: { color: '#448361' },
+    blue: { color: '#337ea9' },
+    purple: { color: '#9065b0' },
+    pink: { color: '#c14c8a' },
+    red: { color: '#e03e3e' },
+    gray_background: { backgroundColor: '#f1f1ef', color: '#787774', borderRadius: '0.25rem', paddingInline: '0.2rem' },
+    brown_background: { backgroundColor: '#f4eeee', color: '#9f6b53', borderRadius: '0.25rem', paddingInline: '0.2rem' },
+    orange_background: { backgroundColor: '#faebdd', color: '#d9730d', borderRadius: '0.25rem', paddingInline: '0.2rem' },
+    yellow_background: { backgroundColor: '#fbf3db', color: '#cb912f', borderRadius: '0.25rem', paddingInline: '0.2rem' },
+    green_background: { backgroundColor: '#edf3ec', color: '#448361', borderRadius: '0.25rem', paddingInline: '0.2rem' },
+    blue_background: { backgroundColor: '#e7f3f8', color: '#337ea9', borderRadius: '0.25rem', paddingInline: '0.2rem' },
+    purple_background: { backgroundColor: '#f6f3f9', color: '#9065b0', borderRadius: '0.25rem', paddingInline: '0.2rem' },
+    pink_background: { backgroundColor: '#faecef', color: '#c14c8a', borderRadius: '0.25rem', paddingInline: '0.2rem' },
+    red_background: { backgroundColor: '#fdebec', color: '#e03e3e', borderRadius: '0.25rem', paddingInline: '0.2rem' },
+  };
+
+  return colorMap[color];
+}
+
 function wrapSpan(span: BlogRichTextSpan, key: number) {
   let node: React.ReactNode = span.text;
 
@@ -19,6 +46,9 @@ function wrapSpan(span: BlogRichTextSpan, key: number) {
       span.strikethrough ? 'line-through' : '',
     ].filter(Boolean).join(' ');
     node = <span key={`decor-${key}`} className={className}>{node}</span>;
+  }
+  if (span.color) {
+    node = <span key={`color-${key}`} style={getRichTextColorStyle(span.color)}>{node}</span>;
   }
   if (span.href) {
     node = (
@@ -49,15 +79,15 @@ function renderTextSection(section: Extract<BlogContentSection, { type: 'text' }
   const content = section.richText?.length ? renderRichText(section.richText, section.content) : section.content;
 
   if (section.blockType === 'heading_1') {
-    return <h1 key={index} className="mb-6 text-4xl md:text-5xl font-bold tracking-tight text-black">{content}</h1>;
+    return <h1 key={index} className="mt-12 mb-7 text-4xl md:text-5xl font-bold tracking-tight text-black">{content}</h1>;
   }
 
   if (section.blockType === 'heading_2') {
-    return <h2 key={index} className="mb-5 text-3xl md:text-4xl font-bold tracking-tight text-black">{content}</h2>;
+    return <h2 key={index} className="mt-10 mb-6 text-3xl md:text-4xl font-bold tracking-tight text-black">{content}</h2>;
   }
 
   if (section.blockType === 'heading_3') {
-    return <h3 key={index} className="mb-4 text-2xl md:text-3xl font-semibold tracking-tight text-black/90">{content}</h3>;
+    return <h3 key={index} className="mt-8 mb-5 text-2xl md:text-3xl font-semibold tracking-tight text-black/90">{content}</h3>;
   }
 
   if (section.blockType === 'quote' || section.blockType === 'callout') {

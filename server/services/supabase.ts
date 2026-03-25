@@ -108,6 +108,7 @@ function parseMaybeBlogContent(value: unknown): StudentWork['blogContent'] {
       .map((item) => {
         const text = typeof (item as any).text === 'string' ? (item as any).text : '';
         const href = typeof (item as any).href === 'string' ? (item as any).href.trim() : undefined;
+        const color = typeof (item as any).color === 'string' ? (item as any).color.trim() : undefined;
         const bold = typeof (item as any).bold === 'boolean' ? (item as any).bold : undefined;
         const italic = typeof (item as any).italic === 'boolean' ? (item as any).italic : undefined;
         const underline = typeof (item as any).underline === 'boolean' ? (item as any).underline : undefined;
@@ -115,10 +116,10 @@ function parseMaybeBlogContent(value: unknown): StudentWork['blogContent'] {
         const code = typeof (item as any).code === 'boolean' ? (item as any).code : undefined;
         if (!text) return null;
         return Object.fromEntries(
-          Object.entries({ text, href, bold, italic, underline, strikethrough, code }).filter(([, value]) => value !== undefined),
+          Object.entries({ text, href, color, bold, italic, underline, strikethrough, code }).filter(([, value]) => value !== undefined),
         );
       })
-      .filter((item): item is { text: string; href?: string } => Boolean(item));
+      .filter((item): item is { text: string; href?: string; color?: string } => Boolean(item));
     return spans.length ? spans : undefined;
   };
 
@@ -144,14 +145,18 @@ function parseMaybeBlogContent(value: unknown): StudentWork['blogContent'] {
     const type = (item as any).type;
     const content = (item as any).content;
     if ((type === 'text' || type === 'image' || type === 'code') && typeof content === 'string' && content.trim()) {
-      rows.push({
-        type,
-        content: content.trim(),
-        blockType: type === 'text' && typeof (item as any).blockType === 'string' ? (item as any).blockType : undefined,
-        caption: typeof (item as any).caption === 'string' ? (item as any).caption : undefined,
-        richText: type === 'text' ? parseRichText((item as any).richText) : undefined,
-        language: type === 'code' && typeof (item as any).language === 'string' ? (item as any).language : undefined,
-      });
+      rows.push(
+        Object.fromEntries(
+          Object.entries({
+            type,
+            content: content.trim(),
+            blockType: type === 'text' && typeof (item as any).blockType === 'string' ? (item as any).blockType : undefined,
+            caption: type === 'image' && typeof (item as any).caption === 'string' ? (item as any).caption : undefined,
+            richText: type === 'text' ? parseRichText((item as any).richText) : undefined,
+            language: type === 'code' && typeof (item as any).language === 'string' ? (item as any).language : undefined,
+          }).filter(([, entryValue]) => entryValue !== undefined),
+        ) as StudentWork['blogContent'][number],
+      );
       continue;
     }
 

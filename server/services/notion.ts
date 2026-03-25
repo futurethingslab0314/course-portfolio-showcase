@@ -201,10 +201,12 @@ function richTextToSpans(richText: any[] | undefined): Array<{ text: string; hre
       const text = String(item?.plain_text || '');
       const href = typeof item?.href === 'string' && item.href.trim() ? item.href.trim() : undefined;
       const annotations = item?.annotations || {};
+      const color = typeof annotations.color === 'string' && annotations.color !== 'default' ? annotations.color : undefined;
       if (!text) return null;
       const span = {
         text,
         href,
+        color,
         bold: Boolean(annotations.bold) || undefined,
         italic: Boolean(annotations.italic) || undefined,
         underline: Boolean(annotations.underline) || undefined,

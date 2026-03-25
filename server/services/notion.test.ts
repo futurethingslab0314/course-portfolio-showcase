@@ -45,6 +45,49 @@ test('blockToBlogSectionForTest preserves rich-text links in paragraph blocks', 
   });
 });
 
+test('blockToBlogSectionForTest preserves rich-text color annotations in paragraph blocks', async () => {
+  const section = await blockToBlogSectionForTest({
+    id: 'paragraph-color-block',
+    type: 'paragraph',
+    paragraph: {
+      rich_text: [
+        {
+          plain_text: 'Alert',
+          annotations: {
+            bold: false,
+            italic: false,
+            underline: false,
+            strikethrough: false,
+            code: false,
+            color: 'red',
+          },
+        },
+        {
+          plain_text: ' note',
+          annotations: {
+            bold: false,
+            italic: false,
+            underline: false,
+            strikethrough: false,
+            code: false,
+            color: 'yellow_background',
+          },
+        },
+      ],
+    },
+  } as any);
+
+  assert.deepEqual(section, {
+    type: 'text',
+    blockType: 'paragraph',
+    content: 'Alert note',
+    richText: [
+      { text: 'Alert', color: 'red' },
+      { text: ' note', color: 'yellow_background' },
+    ],
+  });
+});
+
 test('blockToBlogSectionForTest maps Notion table blocks into blog table sections', async () => {
   const section = await blockToBlogSectionForTest({
     id: 'table-block',

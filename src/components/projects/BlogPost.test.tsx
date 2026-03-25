@@ -61,6 +61,25 @@ test('renderBlogSection renders rich-text links in paragraphs and table cells as
   assert.match(tableHtml, /rel="noopener noreferrer"/);
 });
 
+test('renderBlogSection renders rich-text color annotations', () => {
+  const html = renderToStaticMarkup(
+    renderBlogSection(
+      {
+        type: 'text',
+        content: 'Alert note',
+        richText: [
+          { text: 'Alert', color: 'red' },
+          { text: ' note', color: 'yellow_background' },
+        ],
+      },
+      0,
+    ),
+  );
+
+  assert.match(html, /style="color:#e03e3e"/);
+  assert.match(html, /background-color:#fbf3db/);
+});
+
 test('renderBlogSection renders headings and inline annotations', () => {
   const html = renderToStaticMarkup(
     renderBlogSection(
@@ -82,6 +101,8 @@ test('renderBlogSection renders headings and inline annotations', () => {
   assert.match(html, /<em[^>]*>/);
   assert.match(html, /text-decoration-line:underline line-through|underline/);
   assert.match(html, /<code[^>]*>/);
+  assert.match(html, /mt-10/);
+  assert.match(html, /mb-6/);
 });
 
 test('renderBlogSection renders toggle sections with nested content', () => {
