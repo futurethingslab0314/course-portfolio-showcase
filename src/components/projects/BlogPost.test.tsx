@@ -109,3 +109,21 @@ test('renderBlogSection renders toggle sections with nested content', () => {
   assert.match(html, /Read more/);
   assert.match(html, /Nested detail/);
 });
+
+test('renderBlogSection renders code blocks with preformatted content and language label', () => {
+  const html = renderToStaticMarkup(
+    renderBlogSection(
+      {
+        type: 'code',
+        content: 'const answer = 42;',
+        language: 'typescript',
+      },
+      2,
+    ),
+  );
+
+  assert.match(html, /<pre/);
+  assert.match(html, /<code/);
+  assert.match(html, /const answer = 42;/);
+  assert.match(html, /typescript/i);
+});

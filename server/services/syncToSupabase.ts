@@ -13,9 +13,57 @@ import {
   upsertProjectsToSupabase,
   upsertStudentWorksToSupabase,
 } from './supabase';
+import { BlogContentSection, StudentWork } from '../../src/types';
 
 function logWithContext(message: string, context: Record<string, unknown>) {
   console.log(JSON.stringify({ message, ...context }));
+}
+
+type BlogImageRewriteResult = {
+  blogContent: StudentWork['blogContent'];
+  uploaded: number;
+  skipped: number;
+};
+
+async function rewriteBlogContentImagesToR2(
+  blogContent: StudentWork['blogContent'],
+  rewriteUrl: (sourceUrl: string) => Promise<string>,
+): Promise<BlogImageRewriteResult> {
+  if (!Array.isArray(blogContent) || !blogContent.length) {
+    return { blogContent, uploaded: 0, skipped: 0 };
+  }
+
+  let uploaded = 0;
+  let skipped = 0;
+
+  const rewriteSection = async (section: BlogContentSection): Promise<BlogContentSection> => {
+    if (section.type === 'image') {
+      const nextUrl = await rewriteUrl(section.content);
+      if (nextUrl !== section.content) {
+        uploaded += 1;
+      } else {
+        skipped += 1;
+      }
+      return { ...section, content: nextUrl };
+    }
+
+    if (section.type === 'toggle') {
+      const children = await Promise.all(section.children.map((child) => rewriteSection(child)));
+      return { ...section, children };
+    }
+
+    return section;
+  };
+
+  const nextContent = await Promise.all(blogContent.map((section) => rewriteSection(section)));
+  return { blogContent: nextContent, uploaded, skipped };
+}
+
+export async function rewriteBlogContentImagesToR2ForTest(
+  blogContent: StudentWork['blogContent'],
+  rewriteUrl: (sourceUrl: string) => Promise<string>,
+): Promise<BlogImageRewriteResult> {
+  return rewriteBlogContentImagesToR2(blogContent, rewriteUrl);
 }
 
 async function rewriteCourseCoverToR2(payload: CoursePayload, runId: string): Promise<{ uploaded: number; skipped: number }> {
@@ -69,7 +117,16 @@ async function rewriteWorkImagesToR2(payload: CoursePayload, runId: string): Pro
   for (const work of payload.studentWorks) {
     const project = payload.projects.find((item) => item.sourceDatabaseId === work.sourceDatabaseId);
     if (!project) {
-      const imageCount = 1 + (Array.isArray(work.moreImages) ? work.moreImages.length : 0);
+      const countBlogImages = (sections: StudentWork['blogContent']): number => {
+        if (!Array.isArray(sections)) return 0;
+        return sections.reduce((count, section) => {
+          if (section.type === 'image') return count + 1;
+          if (section.type === 'toggle') return count + countBlogImages(section.children);
+          return count;
+        }, 0);
+      };
+
+      const imageCount = 1 + (Array.isArray(work.moreImages) ? work.moreImages.length : 0) + countBlogImages(work.blogContent);
       skipped += imageCount;
       payload.warnings.push({
         level: 'warning',
@@ -133,6 +190,44 @@ async function rewriteWorkImagesToR2(payload: CoursePayload, runId: string): Pro
       }
       work.moreImages = next.filter((item) => item.trim().length > 0);
     }
+
+    const blogImageResult = await rewriteBlogContentImagesToR2(work.blogContent, async (sourceUrl) => {
+      const trimmed = String(sourceUrl || '').trim();
+      if (!trimmed) {
+        return trimmed;
+      }
+
+      try {
+        const result = await uploadImageUrlToR2({
+          sourceUrl: trimmed,
+          courseSlug: payload.course.slug || payload.course.id,
+          projectNotionId: project.id,
+          workNotionId: `${work.id}-blog`,
+        });
+        return result.publicUrl;
+      } catch (error) {
+        payload.warnings.push({
+          level: 'warning',
+          code: 'R2_BLOG_IMAGE_UPLOAD_FAILED',
+          message: error instanceof Error ? error.message : 'Unknown R2 blog image upload failure',
+          sourceDatabaseId: work.sourceDatabaseId,
+          workId: work.id,
+        });
+
+        await appendSyncLog({
+          runId,
+          entityType: 'image',
+          entityNotionId: work.id,
+          status: 'failed',
+          message: `blogContent: ${error instanceof Error ? error.message : 'Unknown R2 blog image upload failure'}`,
+        }).catch(() => undefined);
+
+        return trimmed;
+      }
+    });
+    work.blogContent = blogImageResult.blogContent;
+    uploaded += blogImageResult.uploaded;
+    skipped += blogImageResult.skipped;
   }
 
   return { uploaded, skipped };

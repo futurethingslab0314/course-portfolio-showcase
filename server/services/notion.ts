@@ -284,6 +284,17 @@ async function blockToBlogSection(block: NotionBlock): Promise<StudentWork['blog
     return { type: 'image', content: url, caption: caption || undefined };
   }
 
+  if (block.type === 'code') {
+    const content = richTextToPlainText(block.code?.rich_text);
+    if (!content) return null;
+    const language = typeof block.code?.language === 'string' ? block.code.language.trim() : '';
+    return {
+      type: 'code',
+      content,
+      language: language || undefined,
+    };
+  }
+
   if (block.type === 'table') {
     const childBlocks = Array.isArray(block.children) ? block.children : await fetchBlockChildren(block.id);
     const rows = asTableRows(childBlocks);

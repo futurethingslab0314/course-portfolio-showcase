@@ -21,6 +21,12 @@ export interface BlogImageSection {
   caption?: string;
 }
 
+export interface BlogCodeSection {
+  type: 'code';
+  content: string;
+  language?: string;
+}
+
 export interface BlogTableSection {
   type: 'table';
   rows: string[][];
@@ -36,7 +42,7 @@ export interface BlogToggleSection {
   children: BlogContentSection[];
 }
 
-export type BlogContentSection = BlogTextSection | BlogImageSection | BlogTableSection | BlogToggleSection;
+export type BlogContentSection = BlogTextSection | BlogImageSection | BlogCodeSection | BlogTableSection | BlogToggleSection;
 
 export interface StudentWork {
   id: string;

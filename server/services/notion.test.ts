@@ -185,6 +185,25 @@ test('blockToBlogSectionForTest maps toggle blocks with nested children', async 
   });
 });
 
+test('blockToBlogSectionForTest maps Notion code blocks with language metadata', async () => {
+  const section = await blockToBlogSectionForTest({
+    id: 'code-block',
+    type: 'code',
+    code: {
+      language: 'typescript',
+      rich_text: [
+        { plain_text: 'const answer = 42;' },
+      ],
+    },
+  } as any);
+
+  assert.deepEqual(section, {
+    type: 'code',
+    content: 'const answer = 42;',
+    language: 'typescript',
+  });
+});
+
 test('fetchAllCourses returns only published courses for homepage fallback', async () => {
   globalThis.fetch = async () =>
     new Response(

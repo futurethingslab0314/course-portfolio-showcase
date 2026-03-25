@@ -6,8 +6,9 @@ import {
   fetchCoursePayloadBySlugFromSupabase,
   fetchCoursesFromSupabase,
   upsertProjectsToSupabase,
+  upsertStudentWorksToSupabase,
 } from './supabase';
-import { Project } from '../../src/types';
+import { Project, StudentWork } from '../../src/types';
 
 const originalFetch = globalThis.fetch;
 const originalEnv = {
@@ -295,4 +296,37 @@ test('deleteProjectsNotInCourse deletes stale projects for a course', async () =
   assert.match(calledUrl, /\/rest\/v1\/projects\?/);
   assert.match(calledUrl, /course_id=eq\.course-row-1/);
   assert.match(calledUrl, /notion_page_id=/);
+});
+
+test('upsertStudentWorksToSupabase does not overwrite existing blog_content when blogContent is undefined', async () => {
+  let requestBody = '';
+
+  const works: StudentWork[] = [
+    {
+      id: 'work-1',
+      assignmentName: 'Blog Work',
+      members: ['Author'],
+      description: 'desc',
+      mainImage: 'https://example.com/main.jpg',
+      sourceDatabaseId: 'db-1',
+    },
+  ];
+
+  globalThis.fetch = async (_input, init) => {
+    requestBody = String(init?.body || '');
+    return new Response(requestBody, {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+  };
+
+  await upsertStudentWorksToSupabase({
+    studentWorks: works,
+    projectIdBySourceDb: new Map([['db-1', 'project-row-1']]),
+    warnings: [],
+  });
+
+  const payload = JSON.parse(requestBody) as Array<Record<string, unknown>>;
+  assert.equal(payload.length, 1);
+  assert.equal(Object.hasOwn(payload[0] || {}, 'blog_content'), false);
 });

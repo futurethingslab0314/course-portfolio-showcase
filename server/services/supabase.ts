@@ -143,13 +143,14 @@ function parseMaybeBlogContent(value: unknown): StudentWork['blogContent'] {
     if (!item || typeof item !== 'object') continue;
     const type = (item as any).type;
     const content = (item as any).content;
-    if ((type === 'text' || type === 'image') && typeof content === 'string' && content.trim()) {
+    if ((type === 'text' || type === 'image' || type === 'code') && typeof content === 'string' && content.trim()) {
       rows.push({
         type,
         content: content.trim(),
         blockType: type === 'text' && typeof (item as any).blockType === 'string' ? (item as any).blockType : undefined,
         caption: typeof (item as any).caption === 'string' ? (item as any).caption : undefined,
         richText: type === 'text' ? parseRichText((item as any).richText) : undefined,
+        language: type === 'code' && typeof (item as any).language === 'string' ? (item as any).language : undefined,
       });
       continue;
     }
@@ -459,7 +460,7 @@ export async function upsertStudentWorksToSupabase(params: {
       continue;
     }
 
-    rows.push({
+    const row: Record<string, unknown> = {
       notion_page_id: work.id || randomUUID(),
       project_id: projectId,
       source_database_id: work.sourceDatabaseId || null,
@@ -467,11 +468,16 @@ export async function upsertStudentWorksToSupabase(params: {
       members: work.members || [],
       description: work.description || null,
       main_image_url: work.mainImage || null,
-      blog_content: work.blogContent || null,
       metadata: buildStudentWorkMetadata(work),
       last_synced_at: timestamp,
       updated_at: timestamp,
-    });
+    };
+
+    if (work.blogContent !== undefined) {
+      row.blog_content = work.blogContent || null;
+    }
+
+    rows.push(row);
   }
 
   if (!rows.length) {

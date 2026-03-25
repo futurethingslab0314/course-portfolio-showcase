@@ -108,6 +108,26 @@ export function renderBlogSection(section: BlogContentSection, index: number) {
     );
   }
 
+  if (section.type === 'code') {
+    return (
+      <div key={index} className="blog-section">
+        <figure className="my-8 overflow-hidden rounded-2xl border border-black/10 bg-[#111111] text-[#f5f5f0] shadow-[0_12px_32px_rgba(0,0,0,0.18)]">
+          <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">Code</span>
+            {section.language ? (
+              <span className="rounded-full border border-white/12 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.18em] text-white/55">
+                {section.language}
+              </span>
+            ) : null}
+          </div>
+          <pre className="overflow-x-auto px-4 py-5 text-sm leading-7">
+            <code className="font-mono whitespace-pre-wrap break-words">{section.content}</code>
+          </pre>
+        </figure>
+      </div>
+    );
+  }
+
   if (section.type === 'toggle') {
     return (
       <details key={index} className="blog-section my-6 overflow-hidden rounded-2xl border border-black/10 bg-black/[0.02]">
