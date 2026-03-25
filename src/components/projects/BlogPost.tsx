@@ -65,7 +65,7 @@ export function BlogPostArticle({ work }: { work: StudentWork }) {
           {work.description}
         </p>
 
-        <div className="space-y-12 mb-16">
+        <div className="space-y-4 mb-16">
           {work.blogContent?.map((section, index) => renderBlogSection(section, index))}
         </div>
 
