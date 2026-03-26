@@ -22,7 +22,7 @@ export const Header = ({ title, titleLink = '/', showBackButton, onMenuClick, is
           </span>
         </Link>
         <p className="text-[8px] md:text-[10px] uppercase tracking-[0.2em] font-semibold text-black/40 mt-1">
-          Design Department • NTUST
+          Future Things Lab • Design Department • NTUST
         </p>
       </div>
 
