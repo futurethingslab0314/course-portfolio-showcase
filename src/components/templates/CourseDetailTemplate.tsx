@@ -145,16 +145,42 @@ export const CourseDetailTemplate = ({
 
   const handlePrintCardCase = () => {
     if (!filteredVisibleCardCaseWorks.length) return;
-    const printWindow = window.open('', '_blank', 'noopener,noreferrer');
-    if (!printWindow) return;
     const title = activeCardCaseGroup?.group || selectedCardCaseGroup || activeProject?.projectName || 'Card Case';
-    printWindow.document.open();
-    printWindow.document.write(buildCardCasePrintHtml(filteredVisibleCardCaseWorks, title));
-    printWindow.document.close();
-    printWindow.onload = () => {
+    const iframe = document.createElement('iframe');
+    iframe.setAttribute('aria-hidden', 'true');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    iframe.style.opacity = '0';
+    iframe.style.pointerEvents = 'none';
+    document.body.appendChild(iframe);
+
+    const printWindow = iframe.contentWindow;
+    const printDocument = printWindow?.document;
+    if (!printWindow || !printDocument) {
+      iframe.remove();
+      return;
+    }
+
+    printDocument.open();
+    printDocument.write(buildCardCasePrintHtml(filteredVisibleCardCaseWorks, title));
+    printDocument.close();
+
+    const cleanup = () => {
+      window.setTimeout(() => {
+        iframe.remove();
+      }, 300);
+    };
+
+    printWindow.onafterprint = cleanup;
+    window.setTimeout(() => {
       printWindow.focus();
       printWindow.print();
-    };
+      cleanup();
+    }, 150);
   };
 
   return (
