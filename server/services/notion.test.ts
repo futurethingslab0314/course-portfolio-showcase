@@ -368,7 +368,7 @@ test('fetchStudentWorksForProject expands card-case student, case, and body rela
   };
 
   const warnings: Array<{ level: 'warning' | 'error'; code: string; message: string }> = [];
-  const works = await fetchStudentWorksForProject(project, {}, warnings);
+  const works = await fetchStudentWorksForProject(project, {}, undefined, warnings);
 
   const groupRecord = works.find((work) => work.cardCaseRecordType === 'group');
   const caseRecord = works.find((work) => work.cardCaseRecordType === 'case');

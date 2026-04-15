@@ -32,7 +32,7 @@ async function buildCoursePayloadBySlugWithOptions(
     });
 
     try {
-      const works = await fetchStudentWorksForProject(row.project, row.fieldMapping, warnings);
+      const works = await fetchStudentWorksForProject(row.project, row.fieldMapping, row.relationConfig, warnings);
       studentWorks.push(...works);
     } catch (error) {
       warnings.push({

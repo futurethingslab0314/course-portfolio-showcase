@@ -34,6 +34,32 @@ export interface MappingRule {
 
 export type FieldMapping = Partial<Record<keyof StudentWork, MappingRule>>;
 
+export interface CardCaseRelationConfig {
+  entry: {
+    databaseId: string;
+    groupField: string;
+    studentNameField: string;
+    studentIdField: string;
+    yearField: string;
+    caseRelationField: string;
+  };
+  case: {
+    databaseId: string;
+    nameField: string;
+    bodyRelationField: string;
+    imageField: string;
+    targetUserField: string;
+    yearField: string;
+    designTeamField: string;
+    keywordsField: string;
+    studentRelationField: string;
+  };
+  body: {
+    databaseId: string;
+    iconField: string;
+  };
+}
+
 export interface NormalizationWarning {
   level: 'warning' | 'error';
   code: string;

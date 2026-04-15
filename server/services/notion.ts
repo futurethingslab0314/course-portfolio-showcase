@@ -1,5 +1,5 @@
 import { Course, Project, StudentWork } from '../../src/types';
-import { FieldMapping, NormalizationWarning } from '../../shared/contracts';
+import { CardCaseRelationConfig, FieldMapping, NormalizationWarning } from '../../shared/contracts';
 import { mapUiPattern, normalizeStudentWork, parseFieldMapping } from '../../shared/notionMapper';
 
 export interface NotionPage {
@@ -449,7 +449,7 @@ export async function fetchAllCoursesWithMeta(): Promise<NotionCourseMeta[]> {
   return rows;
 }
 
-export async function fetchProjectsByCourse(coursePageId: string, courseRelationIds: string[], warnings: NormalizationWarning[]): Promise<Array<{ project: Project; fieldMapping: FieldMapping }>> {
+export async function fetchProjectsByCourse(coursePageId: string, courseRelationIds: string[], warnings: NormalizationWarning[]): Promise<Array<{ project: Project; fieldMapping: FieldMapping; relationConfig?: CardCaseRelationConfig }>> {
   const projectsDb = getEnv('NOTION_DB_PROJECTS_ID');
   const pages = await queryDatabase(projectsDb, {
     filter: { property: 'Course', relation: { contains: coursePageId } },
@@ -505,6 +505,8 @@ export async function fetchProjectsByCourse(coursePageId: string, courseRelation
         projectId: page.id,
         sourceDatabaseId,
       });
+      const relationConfigRaw = asText(property(page, 'RelationConfig', 'Relation Config')) || undefined;
+      const relationConfig = parseRelationConfig(relationConfigRaw);
 
       if (!project.sourceDatabaseId) {
         warnings.push({
@@ -516,7 +518,7 @@ export async function fetchProjectsByCourse(coursePageId: string, courseRelation
         });
       }
 
-      return { project, fieldMapping };
+      return { project, fieldMapping, relationConfig };
     })
     .sort((a, b) => a.project.order - b.project.order);
 }
@@ -553,6 +555,19 @@ function normalizeSourceRecord(page: NotionPage): Record<string, unknown> {
   return result;
 }
 
+function parseRelationConfig(raw: unknown): CardCaseRelationConfig | undefined {
+  if (!raw || typeof raw !== 'string') return undefined;
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === 'object') {
+      return parsed as CardCaseRelationConfig;
+    }
+  } catch {
+    return undefined;
+  }
+  return undefined;
+}
+
 function pageFileOrCoverUrl(page: NotionPage, ...names: string[]): string {
   const fileUrl = asFiles(property(page, ...names))[0];
   if (fileUrl) return fileUrl;
@@ -581,22 +596,23 @@ interface CardCaseMember {
 
 async function fetchCardCaseWorksForProject(
   project: Project,
+  relationConfig: CardCaseRelationConfig | undefined,
   warnings: NormalizationWarning[],
 ): Promise<StudentWork[]> {
-  const studentGroupAliases = ['group', 'Group', 'GROUP', 'Project Group', 'project group', 'Team', 'team'];
-  const studentNameAliases = ['StudentName', 'Student Name', 'studentName', 'student name', 'Name', 'name', 'Title'];
-  const studentIdAliases = ['StudentID', 'Student Id', 'Student ID', 'studentId', 'student id', 'ID', 'Id', 'id'];
-  const studentYearAliases = ['year', 'Year', 'YEAR', 'Academic Year', 'academic year'];
-  const caseCardsAliases = ['CaseCards', 'Case Cards', 'caseCards', 'case cards', 'Cases', 'cases'];
-  const caseNameAliases = ['CaseName', 'Case Name', 'caseName', 'case name', 'Name', 'name', 'Title'];
-  const bodyPartAliases = ['BodyPart', 'Body Part', 'bodyPart', 'body part', 'Interaction Part', 'interaction part'];
-  const caseImageAliases = ['mainImage', 'MainImage', 'Main Image', 'main image', 'Image', 'image', 'CoverImage', 'Cover Image', 'Cover'];
-  const targetUserAliases = ['TargetUser', 'Target User', 'targetUser', 'target user', 'Audience', 'audience'];
-  const caseYearAliases = ['CaseYear', 'Case Year', 'caseYear', 'case year', 'Year', 'year'];
-  const designTeamAliases = ['DesignTeam', 'Design Team', 'designTeam', 'design team', 'Team', 'team'];
-  const keywordAliases = ['Keywords', 'Keyword', 'keywords', 'keyword', 'Tags', 'Tag', 'tags', 'tag'];
-  const caseStudentAliases = ['StudentName', 'Student Name', 'studentName', 'student name', 'Students', 'students'];
-  const bodyIconAliases = ['Icon', 'icon', 'Body Icon', 'body icon'];
+  const studentGroupAliases = [relationConfig?.entry.groupField || '', 'group', 'Group', 'GROUP', 'Project Group', 'project group', 'Team', 'team'];
+  const studentNameAliases = [relationConfig?.entry.studentNameField || '', 'StudentName', 'Student Name', 'studentName', 'student name', 'Name', 'name', 'Title'];
+  const studentIdAliases = [relationConfig?.entry.studentIdField || '', 'StudentID', 'Student Id', 'Student ID', 'studentId', 'student id', 'ID', 'Id', 'id'];
+  const studentYearAliases = [relationConfig?.entry.yearField || '', 'year', 'Year', 'YEAR', 'Academic Year', 'academic year'];
+  const caseCardsAliases = [relationConfig?.entry.caseRelationField || '', 'CaseCards', 'Case Cards', 'caseCards', 'case cards', 'Cases', 'cases'];
+  const caseNameAliases = [relationConfig?.case.nameField || '', 'CaseName', 'Case Name', 'caseName', 'case name', 'Name', 'name', 'Title'];
+  const bodyPartAliases = [relationConfig?.case.bodyRelationField || '', 'BodyPart', 'Body Part', 'bodyPart', 'body part', 'Interaction Part', 'interaction part'];
+  const caseImageAliases = [relationConfig?.case.imageField || '', 'mainImage', 'MainImage', 'Main Image', 'main image', 'Image', 'image', 'CoverImage', 'Cover Image', 'Cover'];
+  const targetUserAliases = [relationConfig?.case.targetUserField || '', 'TargetUser', 'Target User', 'targetUser', 'target user', 'Audience', 'audience'];
+  const caseYearAliases = [relationConfig?.case.yearField || '', 'CaseYear', 'Case Year', 'caseYear', 'case year', 'Year', 'year'];
+  const designTeamAliases = [relationConfig?.case.designTeamField || '', 'DesignTeam', 'Design Team', 'designTeam', 'design team', 'Team', 'team'];
+  const keywordAliases = [relationConfig?.case.keywordsField || '', 'Keywords', 'Keyword', 'keywords', 'keyword', 'Tags', 'Tag', 'tags', 'tag'];
+  const caseStudentAliases = [relationConfig?.case.studentRelationField || '', 'StudentName', 'Student Name', 'studentName', 'student name', 'Students', 'students'];
+  const bodyIconAliases = [relationConfig?.body.iconField || '', 'Icon', 'icon', 'Body Icon', 'body icon'];
 
   const studentPages = await queryDatabase(normalizeNotionId(project.sourceDatabaseId));
   const studentById = new Map<string, CardCaseMember>();
@@ -725,6 +741,7 @@ async function fetchCardCaseWorksForProject(
 export async function fetchStudentWorksForProject(
   project: Project,
   fieldMapping: FieldMapping,
+  relationConfig: CardCaseRelationConfig | undefined,
   warnings: NormalizationWarning[],
 ): Promise<StudentWork[]> {
   if (!project.sourceDatabaseId) {
@@ -732,7 +749,7 @@ export async function fetchStudentWorksForProject(
   }
 
   if (project.displayStyle === 'card-case') {
-    return fetchCardCaseWorksForProject(project, warnings);
+    return fetchCardCaseWorksForProject(project, relationConfig, warnings);
   }
 
   const sourceDatabaseId = normalizeNotionId(project.sourceDatabaseId);
@@ -797,6 +814,7 @@ export async function fetchProjectSyncContext(projectPageId: string): Promise<{
   page: NotionPage;
   sourceDatabaseId: string;
   fieldMappingValue: string;
+  relationConfigValue: string;
   uiPatternValue: string;
 }> {
   const page = await fetchPageById(projectPageId);
@@ -810,6 +828,7 @@ export async function fetchProjectSyncContext(projectPageId: string): Promise<{
     page,
     sourceDatabaseId,
     fieldMappingValue: asText(property(page, 'FieldMapping')).trim(),
+    relationConfigValue: asText(property(page, 'RelationConfig', 'Relation Config')).trim(),
     uiPatternValue: asText(property(page, 'UiPattern', 'DisplayStyle', 'Pattern')).trim(),
   };
 }

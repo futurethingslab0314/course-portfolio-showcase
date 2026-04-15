@@ -1,0 +1,192 @@
+[
+  {
+    "sourceDatabaseId": "student-db",
+    "uiPattern": "card-case",
+    "version": "1.0.3",
+    "fieldMapping": {
+      "assignmentName": {
+        "sourceCandidates": [],
+        "transform": "string",
+        "default": "Untitled"
+      },
+      "members": {
+        "sourceCandidates": [
+          "StudentName"
+        ],
+        "transform": "string[]",
+        "default": []
+      },
+      "description": {
+        "sourceCandidates": [],
+        "transform": "string",
+        "default": ""
+      },
+      "mainImage": {
+        "sourceCandidates": [],
+        "transform": "string",
+        "default": "https://picsum.photos/seed/fallback/800/600"
+      },
+      "group": {
+        "sourceCandidates": [
+          "group"
+        ],
+        "transform": "string"
+      },
+      "cardCaseRecordType": {
+        "sourceCandidates": [],
+        "transform": "string"
+      },
+      "caseIds": {
+        "sourceCandidates": [],
+        "transform": "string[]"
+      },
+      "interactionPart": {
+        "sourceCandidates": [],
+        "transform": "string"
+      },
+      "targetUser": {
+        "sourceCandidates": [],
+        "transform": "string"
+      },
+      "designTeam": {
+        "sourceCandidates": [],
+        "transform": "string"
+      },
+      "tags": {
+        "sourceCandidates": [],
+        "transform": "string[]",
+        "default": []
+      },
+      "year": {
+        "sourceCandidates": [
+          "year"
+        ],
+        "transform": "string"
+      },
+      "memberDetails": {
+        "sourceCandidates": [],
+        "transform": "json"
+      }
+    },
+    "confidenceReport": [
+      {
+        "targetField": "assignmentName",
+        "score": 0.5,
+        "reason": "No clear source field matched; using default.",
+        "status": "review",
+        "matchedFrom": "fallback",
+        "needsReview": true,
+        "reviewReason": "Low confidence mapping candidate."
+      },
+      {
+        "targetField": "members",
+        "score": 0.92,
+        "reason": "Using same-database historical mapping for members.",
+        "status": "review",
+        "matchedFrom": "history_same_db",
+        "needsReview": true,
+        "reviewReason": "Competing candidates are too close in score."
+      },
+      {
+        "targetField": "description",
+        "score": 0.5,
+        "reason": "No clear source field matched; using default.",
+        "status": "review",
+        "matchedFrom": "fallback",
+        "needsReview": true,
+        "reviewReason": "Low confidence mapping candidate."
+      },
+      {
+        "targetField": "mainImage",
+        "score": 0.5,
+        "reason": "No clear source field matched; using default.",
+        "status": "review",
+        "matchedFrom": "fallback",
+        "needsReview": true,
+        "reviewReason": "Low confidence mapping candidate."
+      },
+      {
+        "targetField": "group",
+        "score": 0.95,
+        "reason": "Exact field match for group.",
+        "status": "review",
+        "matchedFrom": "exact",
+        "needsReview": true,
+        "reviewReason": "Competing candidates are too close in score."
+      },
+      {
+        "targetField": "cardCaseRecordType",
+        "score": 0.5,
+        "reason": "No clear source field matched; using default.",
+        "status": "review",
+        "matchedFrom": "fallback",
+        "needsReview": true,
+        "reviewReason": "Low confidence mapping candidate."
+      },
+      {
+        "targetField": "caseIds",
+        "score": 0.5,
+        "reason": "No clear source field matched; using default.",
+        "status": "review",
+        "matchedFrom": "fallback",
+        "needsReview": true,
+        "reviewReason": "Low confidence mapping candidate."
+      },
+      {
+        "targetField": "interactionPart",
+        "score": 0.5,
+        "reason": "No clear source field matched; using default.",
+        "status": "review",
+        "matchedFrom": "fallback",
+        "needsReview": true,
+        "reviewReason": "Low confidence mapping candidate."
+      },
+      {
+        "targetField": "targetUser",
+        "score": 0.5,
+        "reason": "No clear source field matched; using default.",
+        "status": "review",
+        "matchedFrom": "fallback",
+        "needsReview": true,
+        "reviewReason": "Low confidence mapping candidate."
+      },
+      {
+        "targetField": "designTeam",
+        "score": 0.5,
+        "reason": "No clear source field matched; using default.",
+        "status": "review",
+        "matchedFrom": "fallback",
+        "needsReview": true,
+        "reviewReason": "Low confidence mapping candidate."
+      },
+      {
+        "targetField": "tags",
+        "score": 0.5,
+        "reason": "No clear source field matched; using default.",
+        "status": "review",
+        "matchedFrom": "fallback",
+        "needsReview": true,
+        "reviewReason": "Low confidence mapping candidate."
+      },
+      {
+        "targetField": "year",
+        "score": 0.95,
+        "reason": "Exact field match for year.",
+        "status": "review",
+        "matchedFrom": "exact",
+        "needsReview": true,
+        "reviewReason": "Competing candidates are too close in score."
+      },
+      {
+        "targetField": "memberDetails",
+        "score": 0.5,
+        "reason": "No clear source field matched; using default.",
+        "status": "review",
+        "matchedFrom": "fallback",
+        "needsReview": true,
+        "reviewReason": "Low confidence mapping candidate."
+      }
+    ],
+    "updatedAt": "2026-04-15T10:44:57.930Z"
+  }
+]
