@@ -583,18 +583,33 @@ async function fetchCardCaseWorksForProject(
   project: Project,
   warnings: NormalizationWarning[],
 ): Promise<StudentWork[]> {
+  const studentGroupAliases = ['group', 'Group', 'GROUP', 'Project Group', 'project group', 'Team', 'team'];
+  const studentNameAliases = ['StudentName', 'Student Name', 'studentName', 'student name', 'Name', 'name', 'Title'];
+  const studentIdAliases = ['StudentID', 'Student Id', 'Student ID', 'studentId', 'student id', 'ID', 'Id', 'id'];
+  const studentYearAliases = ['year', 'Year', 'YEAR', 'Academic Year', 'academic year'];
+  const caseCardsAliases = ['CaseCards', 'Case Cards', 'caseCards', 'case cards', 'Cases', 'cases'];
+  const caseNameAliases = ['CaseName', 'Case Name', 'caseName', 'case name', 'Name', 'name', 'Title'];
+  const bodyPartAliases = ['BodyPart', 'Body Part', 'bodyPart', 'body part', 'Interaction Part', 'interaction part'];
+  const caseImageAliases = ['mainImage', 'MainImage', 'Main Image', 'main image', 'Image', 'image', 'CoverImage', 'Cover Image', 'Cover'];
+  const targetUserAliases = ['TargetUser', 'Target User', 'targetUser', 'target user', 'Audience', 'audience'];
+  const caseYearAliases = ['CaseYear', 'Case Year', 'caseYear', 'case year', 'Year', 'year'];
+  const designTeamAliases = ['DesignTeam', 'Design Team', 'designTeam', 'design team', 'Team', 'team'];
+  const keywordAliases = ['Keywords', 'Keyword', 'keywords', 'keyword', 'Tags', 'Tag', 'tags', 'tag'];
+  const caseStudentAliases = ['StudentName', 'Student Name', 'studentName', 'student name', 'Students', 'students'];
+  const bodyIconAliases = ['Icon', 'icon', 'Body Icon', 'body icon'];
+
   const studentPages = await queryDatabase(normalizeNotionId(project.sourceDatabaseId));
   const studentById = new Map<string, CardCaseMember>();
   const groupSummaries = new Map<string, StudentWork>();
 
   for (const studentPage of studentPages) {
-    const group = asText(property(studentPage, 'group', 'Group')).trim() || 'Ungrouped';
+    const group = asText(property(studentPage, ...studentGroupAliases)).trim() || 'Ungrouped';
     const member: CardCaseMember = {
       pageId: studentPage.id,
-      name: asText(property(studentPage, 'StudentName', 'Student Name', 'Name', 'Title')).trim() || 'Unnamed Student',
-      id: asText(property(studentPage, 'StudentID', 'Student Id', 'ID')).trim(),
+      name: asText(property(studentPage, ...studentNameAliases)).trim() || 'Unnamed Student',
+      id: asText(property(studentPage, ...studentIdAliases)).trim(),
       group,
-      year: asText(property(studentPage, 'year', 'Year')).trim(),
+      year: asText(property(studentPage, ...studentYearAliases)).trim(),
     };
 
     studentById.set(stripNotionId(studentPage.id), member);
@@ -626,21 +641,21 @@ async function fetchCardCaseWorksForProject(
     groupSummaries.set(group, summary);
   }
 
-  const allCaseIds = studentPages.flatMap((page) => relationIds(page, 'CaseCards', 'Case Cards'));
+  const allCaseIds = studentPages.flatMap((page) => relationIds(page, ...caseCardsAliases));
   const casePages = await fetchPagesByIds(allCaseIds);
   const caseById = new Map(casePages.map((page) => [stripNotionId(page.id), page]));
-  const allBodyIds = casePages.flatMap((page) => relationIds(page, 'BodyPart', 'Body Part'));
+  const allBodyIds = casePages.flatMap((page) => relationIds(page, ...bodyPartAliases));
   const bodyPages = await fetchPagesByIds(allBodyIds);
-  const bodyIconById = new Map(bodyPages.map((page) => [stripNotionId(page.id), pageFileOrCoverUrl(page, 'Icon')]));
+  const bodyIconById = new Map(bodyPages.map((page) => [stripNotionId(page.id), pageFileOrCoverUrl(page, ...bodyIconAliases)]));
 
   const caseWorks: StudentWork[] = [];
   const seenGroupCases = new Set<string>();
 
   for (const studentPage of studentPages) {
-    const group = asText(property(studentPage, 'group', 'Group')).trim() || 'Ungrouped';
+    const group = asText(property(studentPage, ...studentGroupAliases)).trim() || 'Ungrouped';
     const summary = groupSummaries.get(group);
     const groupMemberDetails = summary?.memberDetails || [];
-    const linkedCaseIds = relationIds(studentPage, 'CaseCards', 'Case Cards');
+    const linkedCaseIds = relationIds(studentPage, ...caseCardsAliases);
 
     for (const rawCaseId of linkedCaseIds) {
       const casePage = caseById.get(stripNotionId(rawCaseId));
@@ -662,7 +677,7 @@ async function fetchCardCaseWorksForProject(
       }
       seenGroupCases.add(uniqueGroupCaseKey);
 
-      const relatedStudents = relationIds(casePage, 'StudentName', 'Student Name')
+      const relatedStudents = relationIds(casePage, ...caseStudentAliases)
         .map((id) => studentById.get(stripNotionId(id)))
         .filter((item): item is CardCaseMember => Boolean(item));
       const memberDetails = (relatedStudents.length ? relatedStudents : groupMemberDetails.map((item) => ({
@@ -676,22 +691,22 @@ async function fetchCardCaseWorksForProject(
         id: member.id || 'N/A',
       }));
 
-      const bodyIcons = relationIds(casePage, 'BodyPart', 'Body Part')
+      const bodyIcons = relationIds(casePage, ...bodyPartAliases)
         .map((id) => bodyIconById.get(stripNotionId(id)) || '')
         .filter(Boolean);
 
       caseWorks.push({
         id: casePage.id,
-        assignmentName: asText(property(casePage, 'CaseName', 'Name', 'Title')).trim() || 'Untitled Case',
+        assignmentName: asText(property(casePage, ...caseNameAliases)).trim() || 'Untitled Case',
         members: memberDetails.map((member) => member.name),
         studentIds: relatedStudents.map((member) => stripNotionId(member.pageId)),
         memberDetails,
-        description: asText(property(casePage, 'Description')).trim(),
-        mainImage: pageFileOrCoverUrl(casePage, 'mainImage', 'MainImage', 'Main Image', 'Image', 'CoverImage', 'Cover'),
-        tags: asStringArray(property(casePage, 'Keywords', 'Keyword', 'Tags')),
-        year: asText(property(casePage, 'CaseYear', 'Year')).trim() || summary?.year || '',
-        targetUser: asText(property(casePage, 'TargetUser', 'Target User')).trim(),
-        designTeam: asText(property(casePage, 'DesignTeam', 'Design Team')).trim(),
+        description: asText(property(casePage, 'Description', 'description', 'Summary', 'summary', 'Brief', 'brief')).trim(),
+        mainImage: pageFileOrCoverUrl(casePage, ...caseImageAliases),
+        tags: asStringArray(property(casePage, ...keywordAliases)),
+        year: asText(property(casePage, ...caseYearAliases)).trim() || summary?.year || '',
+        targetUser: asText(property(casePage, ...targetUserAliases)).trim(),
+        designTeam: asText(property(casePage, ...designTeamAliases)).trim(),
         interactionPart: bodyIcons[0] || '',
         group,
         cardCaseRecordType: 'case',
