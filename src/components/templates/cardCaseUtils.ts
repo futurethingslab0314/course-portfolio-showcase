@@ -20,29 +20,70 @@ export function filterCardCaseWorksByStudent(works: StudentWork[], selectedStude
   return works.filter((work) => (work.memberDetails || []).some((member) => member.name === selectedStudent));
 }
 
+export function getCardCaseAvailableYears(works: StudentWork[]): string[] {
+  const years = [...new Set(
+    works
+      .filter((work) => work.cardCaseRecordType === 'group')
+      .map((work) => (work.year || '').trim())
+      .filter(Boolean),
+  )].sort((left, right) => right.localeCompare(left));
+
+  return ['ALL', ...years];
+}
+
 export function getCardCaseStudentLabel(work: StudentWork): string {
   const names = (work.memberDetails || []).map((member) => member.name).filter(Boolean);
   return names.length ? names.join(', ') : 'Unknown Student';
 }
 
 export function buildCardCasePrintHtml(works: StudentWork[], title: string): string {
-  const cards = works
-    .map((work) => {
+  const pages = works.reduce<StudentWork[][]>((accumulator, work, index) => {
+    const pageIndex = Math.floor(index / 8);
+    if (!accumulator[pageIndex]) accumulator[pageIndex] = [];
+    accumulator[pageIndex].push(work);
+    return accumulator;
+  }, []);
+
+  const pageHtml = pages
+    .map((pageWorks, pageIndex) => {
+      const cards = pageWorks.map((work) => {
       const studentLabel = getCardCaseStudentLabel(work);
       const imageSection = work.mainImage
         ? `<img src="${escapeHtml(work.mainImage)}" alt="${escapeHtml(work.assignmentName)}" class="image" />`
         : `<div class="image fallback"></div>`;
+      const iconSection = work.interactionPart
+        ? `<img src="${escapeHtml(work.interactionPart)}" alt="" class="icon-image" />`
+        : `<div class="icon-placeholder"></div>`;
+      const keywords = (work.tags || [])
+        .map((tag) => `<span class="keyword">${escapeHtml(tag)}</span>`)
+        .join('');
 
       return `
         <article class="card">
-          ${imageSection}
+          <div class="media">
+            ${imageSection}
+            <div class="overlay"></div>
+            <div class="icon-shell">${iconSection}</div>
+            <div class="hero-copy">
+              <div class="target-label">Target User</div>
+              <div class="target-value">${escapeHtml(work.targetUser || 'N/A')}</div>
+            </div>
+          </div>
           <div class="body">
             <div class="meta">${escapeHtml(work.year || 'N/A')} • ${escapeHtml(work.designTeam || 'N/A')}</div>
             <h2>${escapeHtml(work.assignmentName)}</h2>
+            <div class="keywords">${keywords}</div>
             <div class="student">${escapeHtml(studentLabel)}</div>
-            <div class="target">Target User: ${escapeHtml(work.targetUser || 'N/A')}</div>
           </div>
         </article>
+      `;
+      }).join('');
+
+      return `
+        <section class="print-page ${pageIndex < pages.length - 1 ? 'page-break' : ''}">
+          <div class="page-title">${escapeHtml(title)}</div>
+          <div class="page-grid">${cards}</div>
+        </section>
       `;
     })
     .join('');
@@ -56,21 +97,31 @@ export function buildCardCasePrintHtml(works: StudentWork[], title: string): str
         <style>
           @page { size: A4 landscape; margin: 10mm; }
           body { margin: 0; font-family: Arial, sans-serif; color: #111; }
+          .print-page { min-height: 190mm; }
+          .page-break { page-break-after: always; }
           .page-title { padding: 0 0 6mm; font-size: 16pt; font-weight: 700; }
-          .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5mm; }
-          .card { border: 1px solid #ddd; min-height: 88mm; display: flex; flex-direction: column; overflow: hidden; }
-          .image { width: 100%; height: 48mm; object-fit: cover; background: #f3f4f6; }
+          .page-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5mm; }
+          .card { border: 1px solid #ddd; min-height: 88mm; display: flex; flex-direction: column; overflow: hidden; background: #fff; }
+          .media { position: relative; height: 48mm; overflow: hidden; background: #e5e7eb; }
+          .image { width: 100%; height: 100%; object-fit: cover; background: #f3f4f6; }
           .fallback { background: linear-gradient(135deg, #1d4ed8 0%, #a855f7 100%); }
+          .overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.88), rgba(0,0,0,0.1)); }
+          .icon-shell { position: absolute; top: 4mm; left: 4mm; width: 12mm; height: 12mm; border-radius: 999px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+          .icon-image { width: 100%; height: 100%; object-fit: cover; }
+          .icon-placeholder { width: 100%; height: 100%; }
+          .hero-copy { position: absolute; left: 4mm; bottom: 4mm; color: #fff; }
+          .target-label { font-size: 7pt; text-transform: uppercase; letter-spacing: 0.12em; opacity: 0.65; margin-bottom: 1mm; }
+          .target-value { font-size: 9pt; font-weight: 700; }
           .body { padding: 4mm; display: flex; flex-direction: column; gap: 2mm; font-size: 9pt; }
           .meta { color: #666; font-size: 8pt; text-transform: uppercase; }
           h2 { margin: 0; font-size: 11pt; line-height: 1.25; }
-          .student { font-weight: 700; }
-          .target { color: #444; }
+          .keywords { display: flex; flex-wrap: wrap; gap: 1.2mm; min-height: 8mm; }
+          .keyword { padding: 0.5mm 1.5mm; border-radius: 999px; border: 1px solid #d4d4d8; font-size: 7pt; text-transform: uppercase; letter-spacing: 0.08em; }
+          .student { font-weight: 700; margin-top: auto; }
         </style>
       </head>
       <body>
-        <div class="page-title">${escapeHtml(title)}</div>
-        <section class="grid">${cards}</section>
+        ${pageHtml}
       </body>
     </html>
   `;

@@ -7,7 +7,7 @@ import { Header } from '../Header';
 import { Footer } from '../Footer';
 import { Filter, Star, ChevronDown, Download } from 'lucide-react';
 import { collectKeywordTags, collectThemeTags, filterAndSortWorksForDisplay } from './courseDetailViewModel';
-import { buildCardCasePrintHtml, collectCardCaseMemberNames, filterCardCaseWorksByStudent, getCardCaseStudentLabel } from './cardCaseUtils';
+import { buildCardCasePrintHtml, collectCardCaseMemberNames, filterCardCaseWorksByStudent, getCardCaseAvailableYears, getCardCaseStudentLabel } from './cardCaseUtils';
 
 interface CourseDetailTemplateProps {
   course: Course;
@@ -60,32 +60,34 @@ export const CourseDetailTemplate = ({
   const [selectedCardCaseStudent, setSelectedCardCaseStudent] = useState<string | undefined>(undefined);
 
   const isCardCaseProject = activeProject?.displayStyle === 'card-case';
+  const isCardCaseGroupView = isCardCaseProject && !selectedCardCaseGroup;
   const supportsThemeFilter = activeProject?.displayStyle === 'blog-post' || activeProject?.displayStyle === 'activity-event';
   const supportsKeywordFilter = activeProject?.displayStyle === 'gallery-story';
-
-  const availableYears = useMemo(() => {
-    const years = new Set(works.map((work) => work.year).filter(Boolean));
-    return ['ALL', ...Array.from(years).sort().reverse()];
-  }, [works]);
 
   const availableThemeTags = useMemo(() => ['ALL', ...collectThemeTags(works)], [works]);
   const availableKeywordTags = useMemo(() => ['ALL', ...collectKeywordTags(works)], [works]);
 
   const filteredWorks = useMemo(
-    () =>
-      filterAndSortWorksForDisplay(works, {
+    () => {
+      if (isCardCaseProject) return works;
+      return filterAndSortWorksForDisplay(works, {
         displayStyle: activeProject?.displayStyle,
         selectedYear,
         selectedThemeTag,
         selectedKeywordTag,
         starredOnly,
-      }),
-    [works, activeProject?.displayStyle, selectedYear, selectedThemeTag, selectedKeywordTag, starredOnly],
+      });
+    },
+    [works, isCardCaseProject, activeProject?.displayStyle, selectedYear, selectedThemeTag, selectedKeywordTag, starredOnly],
   );
 
   const cardCaseGroupWorks = useMemo(
-    () => filteredWorks.filter((work) => work.cardCaseRecordType === 'group'),
-    [filteredWorks],
+    () => {
+      const groupWorks = filteredWorks.filter((work) => work.cardCaseRecordType === 'group');
+      if (selectedYear === 'ALL') return groupWorks;
+      return groupWorks.filter((work) => work.year === selectedYear);
+    },
+    [filteredWorks, selectedYear],
   );
 
   const cardCaseWorks = useMemo(
@@ -112,6 +114,14 @@ export const CourseDetailTemplate = ({
     () => filterCardCaseWorksByStudent(visibleCardCaseWorks, selectedCardCaseStudent),
     [visibleCardCaseWorks, selectedCardCaseStudent],
   );
+
+  const availableYears = useMemo(() => {
+    if (isCardCaseProject) {
+      return getCardCaseAvailableYears(works);
+    }
+    const years = new Set(works.map((work) => work.year).filter(Boolean));
+    return ['ALL', ...Array.from(years).sort().reverse()];
+  }, [works, isCardCaseProject]);
 
   useEffect(() => {
     setSelectedCardCaseGroup(undefined);
@@ -141,8 +151,10 @@ export const CourseDetailTemplate = ({
     printWindow.document.open();
     printWindow.document.write(buildCardCasePrintHtml(filteredVisibleCardCaseWorks, title));
     printWindow.document.close();
-    printWindow.focus();
-    printWindow.print();
+    printWindow.onload = () => {
+      printWindow.focus();
+      printWindow.print();
+    };
   };
 
   return (
@@ -236,26 +248,28 @@ export const CourseDetailTemplate = ({
         </div>
 
         <div className="flex flex-col md:flex-row md:items-center gap-6 md:gap-8 mb-12 py-6 border-y border-black/5">
-          <div className="flex items-center justify-between md:justify-start gap-6">
-            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-black/30">
-              <Filter size={12} />
-              <span>Filter by Year</span>
+          {(!isCardCaseProject || isCardCaseGroupView) && (
+            <div className="flex items-center justify-between md:justify-start gap-6">
+              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-black/30">
+                <Filter size={12} />
+                <span>Filter by Year</span>
+              </div>
+              <div className="relative group">
+                <select
+                  value={selectedYear}
+                  onChange={(event) => setSelectedYear(event.target.value)}
+                  className="appearance-none bg-white border border-black/10 rounded-lg px-4 py-2 pr-10 text-[11px] font-bold uppercase tracking-wider focus:outline-none focus:border-black cursor-pointer min-w-[120px]"
+                >
+                  {availableYears.map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-black/30" />
+              </div>
             </div>
-            <div className="relative group">
-              <select
-                value={selectedYear}
-                onChange={(event) => setSelectedYear(event.target.value)}
-                className="appearance-none bg-white border border-black/10 rounded-lg px-4 py-2 pr-10 text-[11px] font-bold uppercase tracking-wider focus:outline-none focus:border-black cursor-pointer min-w-[120px]"
-              >
-                {availableYears.map((year) => (
-                  <option key={year} value={year}>
-                    {year}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-black/30" />
-            </div>
-          </div>
+          )}
 
           {!isCardCaseProject && (
             <div className="flex items-center justify-between md:justify-start gap-6 md:pl-8 md:border-l border-black/5">
@@ -449,28 +463,6 @@ export const CourseDetailTemplate = ({
                     )}
                   </div>
                 </div>
-                {cardCaseStudentNames.length > 0 && (
-                  <div className="mt-8 pt-6 border-t border-black/5">
-                    <div className="text-[10px] font-bold uppercase tracking-widest text-black/35 mb-3">Browse By Student</div>
-                    <div className="flex flex-wrap gap-2">
-                      {cardCaseStudentNames.map((studentName) => (
-                        <button
-                          key={studentName}
-                          type="button"
-                          onClick={() => setSelectedCardCaseStudent((current) => (current === studentName ? undefined : studentName))}
-                          className={cn(
-                            'px-3 py-2 rounded-full border text-[11px] font-bold tracking-wide transition-colors',
-                            selectedCardCaseStudent === studentName
-                              ? 'bg-black text-white border-black'
-                              : 'bg-white text-black/60 border-black/10 hover:text-black hover:border-black/30',
-                          )}
-                        >
-                          {studentName}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             )}
 

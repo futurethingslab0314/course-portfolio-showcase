@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { StudentWork } from '../../types';
-import { buildCardCasePrintHtml, collectCardCaseMemberNames, filterCardCaseWorksByStudent, getCardCaseStudentLabel } from './cardCaseUtils';
+import { buildCardCasePrintHtml, collectCardCaseMemberNames, filterCardCaseWorksByStudent, getCardCaseAvailableYears, getCardCaseStudentLabel } from './cardCaseUtils';
 
 const caseWorks: StudentWork[] = [
   {
@@ -14,6 +14,7 @@ const caseWorks: StudentWork[] = [
     ],
     description: '',
     mainImage: 'https://example.com/a.jpg',
+    interactionPart: 'https://example.com/hand.png',
     targetUser: 'Stroke Patient',
     designTeam: 'Team Alpha',
     year: '2026',
@@ -67,4 +68,48 @@ test('buildCardCasePrintHtml includes student labels and card names for print ou
   assert.match(html, /Foot Trainer/);
   assert.match(html, /Alice, Bob/);
   assert.match(html, /Group A/);
+  assert.match(html, /page-grid/);
+  assert.match(html, /page-break-after: always/);
+  assert.match(html, /hand\.png/);
+  assert.match(html, /rehab/);
+});
+
+test('getCardCaseAvailableYears only uses group-level years', () => {
+  const works: StudentWork[] = [
+    {
+      id: 'group-a',
+      assignmentName: 'Group A',
+      members: [],
+      description: '',
+      mainImage: '',
+      sourceDatabaseId: 'student-db',
+      cardCaseRecordType: 'group',
+      group: 'A',
+      year: '2024',
+    },
+    {
+      id: 'group-b',
+      assignmentName: 'Group B',
+      members: [],
+      description: '',
+      mainImage: '',
+      sourceDatabaseId: 'student-db',
+      cardCaseRecordType: 'group',
+      group: 'B',
+      year: '2026',
+    },
+    {
+      id: 'case-99',
+      assignmentName: 'Case 99',
+      members: [],
+      description: '',
+      mainImage: '',
+      sourceDatabaseId: 'student-db',
+      cardCaseRecordType: 'case',
+      group: 'B',
+      year: '2030',
+    },
+  ];
+
+  assert.deepEqual(getCardCaseAvailableYears(works), ['ALL', '2026', '2024']);
 });
