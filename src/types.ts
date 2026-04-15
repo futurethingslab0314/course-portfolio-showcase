@@ -51,6 +51,9 @@ export interface StudentWork {
   assignmentName: string;
   members: string[];
   studentIds?: string[];
+  group?: string;
+  cardCaseRecordType?: 'group' | 'case';
+  caseIds?: string[];
   description: string;
   mainImage: string;
   moreImages?: string[];
@@ -72,6 +75,11 @@ export interface StudentWork {
   publicationName?: string;
   sourceDatabaseId: string;
   gridLocation?: string;
+  interactionPart?: string;
+  targetUser?: string;
+  designTeam?: string;
+  foundBy?: string;
+  memberDetails?: { name: string; id: string }[];
 }
 
 export interface Project {
@@ -82,7 +90,7 @@ export interface Project {
   tabName: string;
   order: number;
   sourceDatabaseId: string; // Used to filter student works
-  displayStyle: 'gallery-story' | 'generic-card' | 'gallery-slide' | 'card-spec' | 'data-matrix' | 'blog-post' | 'activity-event';
+  displayStyle: 'gallery-story' | 'generic-card' | 'gallery-slide' | 'card-spec' | 'data-matrix' | 'blog-post' | 'activity-event' | 'card-case';
   visibility: 'published' | 'draft';
 }
 

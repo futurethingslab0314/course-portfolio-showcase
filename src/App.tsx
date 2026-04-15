@@ -13,6 +13,7 @@ import { GenericCard } from './components/projects/GenericCard';
 import { DataMatrix } from './components/projects/DataMatrix';
 import { BlogPost } from './components/projects/BlogPost';
 import { ActivityEvent } from './components/projects/ActivityEvent';
+import { CardCase } from './components/projects/CardCase';
 
 // Templates
 import { HomePageTemplate } from './components/templates/HomePageTemplate';
@@ -35,6 +36,8 @@ const StudentWorkItem = ({ work, style }: { work: StudentWork; style: Project['d
       return <BlogPost work={work} />;
     case 'activity-event':
       return <ActivityEvent work={work} />;
+    case 'card-case':
+      return <CardCase work={work} />;
     default:
       return <GenericCard work={work} />;
   }

@@ -196,6 +196,9 @@ function parseMaybeBlogContent(value: unknown): StudentWork['blogContent'] {
 function buildStudentWorkMetadata(work: StudentWork): Record<string, unknown> {
   return {
     studentIds: work.studentIds || null,
+    group: work.group || null,
+    cardCaseRecordType: work.cardCaseRecordType || null,
+    caseIds: work.caseIds || null,
     moreImages: work.moreImages || null,
     url: work.url || null,
     video: work.video || null,
@@ -213,6 +216,11 @@ function buildStudentWorkMetadata(work: StudentWork): Record<string, unknown> {
     grant: work.grant || null,
     publicationName: work.publicationName || null,
     gridLocation: work.gridLocation || null,
+    interactionPart: work.interactionPart || null,
+    targetUser: work.targetUser || null,
+    designTeam: work.designTeam || null,
+    foundBy: work.foundBy || null,
+    memberDetails: work.memberDetails || null,
   };
 }
 
@@ -248,6 +256,12 @@ function mapWorkRowToStudentWork(row: SupabaseStudentWorkRow): StudentWork {
     createdAt: row.created_at || undefined,
     assignmentName: row.assignment_name || 'Untitled Assignment',
     members: parseMaybeStringArray(row.members),
+    group: typeof metadata.group === 'string' ? metadata.group : undefined,
+    cardCaseRecordType:
+      metadata.cardCaseRecordType === 'group' || metadata.cardCaseRecordType === 'case'
+        ? metadata.cardCaseRecordType
+        : undefined,
+    caseIds: parseMaybeStringArray(metadata.caseIds),
     description: row.description || '',
     mainImage: row.main_image_url || '',
     blogContent: parseMaybeBlogContent(row.blog_content),
@@ -270,6 +284,11 @@ function mapWorkRowToStudentWork(row: SupabaseStudentWorkRow): StudentWork {
     grant: typeof metadata.grant === 'string' ? metadata.grant : undefined,
     publicationName: typeof metadata.publicationName === 'string' ? metadata.publicationName : undefined,
     gridLocation: typeof metadata.gridLocation === 'string' ? metadata.gridLocation : undefined,
+    interactionPart: typeof metadata.interactionPart === 'string' ? metadata.interactionPart : undefined,
+    targetUser: typeof metadata.targetUser === 'string' ? metadata.targetUser : undefined,
+    designTeam: typeof metadata.designTeam === 'string' ? metadata.designTeam : undefined,
+    foundBy: typeof metadata.foundBy === 'string' ? metadata.foundBy : undefined,
+    memberDetails: Array.isArray(metadata.memberDetails) ? (metadata.memberDetails as any) : undefined,
   };
 }
 

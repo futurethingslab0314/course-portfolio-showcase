@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { blockToBlogSectionForTest, fetchAllCourses } from './notion';
+import { blockToBlogSectionForTest, fetchAllCourses, fetchStudentWorksForProject } from './notion';
+import { Project } from '../../src/types';
 
 const originalFetch = globalThis.fetch;
 const originalEnv = {
@@ -286,4 +287,107 @@ test('fetchAllCourses returns only published courses for homepage fallback', asy
   assert.equal(courses.length, 1);
   assert.equal(courses[0]?.slug, 'published-course');
   assert.equal(courses[0]?.courseName, 'Published Course');
+});
+
+test('fetchStudentWorksForProject expands card-case student, case, and body relations', async () => {
+  const project: Project = {
+    id: 'project-card-case',
+    courseId: 'course-1',
+    projectName: 'Card Case Project',
+    projectDescription: 'Card case description',
+    tabName: 'Card Case',
+    order: 0,
+    sourceDatabaseId: 'student-db',
+    displayStyle: 'card-case',
+    visibility: 'published',
+  };
+
+  globalThis.fetch = async (input) => {
+    const url = String(input);
+
+    if (url.includes('/databases/student-db/query')) {
+      return new Response(
+        JSON.stringify({
+          results: [
+            {
+              id: 'student-page-1',
+              properties: {
+                group: { type: 'select', select: { name: 'Group A' } },
+                StudentName: { type: 'title', title: [{ plain_text: 'Alice' }] },
+                StudentID: { type: 'rich_text', rich_text: [{ plain_text: 'S001' }] },
+                year: { type: 'rich_text', rich_text: [{ plain_text: '2026' }] },
+                CaseCards: { type: 'relation', relation: [{ id: 'case-page-1' }] },
+              },
+            },
+            {
+              id: 'student-page-2',
+              properties: {
+                group: { type: 'select', select: { name: 'Group A' } },
+                StudentName: { type: 'title', title: [{ plain_text: 'Bob' }] },
+                StudentID: { type: 'rich_text', rich_text: [{ plain_text: 'S002' }] },
+                year: { type: 'rich_text', rich_text: [{ plain_text: '2026' }] },
+                CaseCards: { type: 'relation', relation: [{ id: 'case-page-1' }] },
+              },
+            },
+          ],
+          has_more: false,
+        }),
+      );
+    }
+
+    if (url.includes('/pages/case-page-1')) {
+      return new Response(
+        JSON.stringify({
+          id: 'case-page-1',
+          properties: {
+            CaseName: { type: 'title', title: [{ plain_text: 'Rehab Glove' }] },
+            BodyPart: { type: 'relation', relation: [{ id: 'body-page-1' }] },
+            mainImage: { type: 'files', files: [{ type: 'external', external: { url: 'https://example.com/case.jpg' } }] },
+            TargetUser: { type: 'rich_text', rich_text: [{ plain_text: 'Stroke Patient' }] },
+            CaseYear: { type: 'rich_text', rich_text: [{ plain_text: '2026' }] },
+            DesignTeam: { type: 'rich_text', rich_text: [{ plain_text: 'Team Alpha' }] },
+            Keywords: { type: 'multi_select', multi_select: [{ name: 'Rehab' }, { name: 'Wearable' }] },
+            StudentName: { type: 'relation', relation: [{ id: 'student-page-1' }, { id: 'student-page-2' }] },
+          },
+        }),
+      );
+    }
+
+    if (url.includes('/pages/body-page-1')) {
+      return new Response(
+        JSON.stringify({
+          id: 'body-page-1',
+          properties: {
+            Icon: { type: 'files', files: [{ type: 'external', external: { url: 'https://example.com/icon.png' } }] },
+          },
+        }),
+      );
+    }
+
+    throw new Error(`Unexpected fetch URL: ${url}`);
+  };
+
+  const warnings: Array<{ level: 'warning' | 'error'; code: string; message: string }> = [];
+  const works = await fetchStudentWorksForProject(project, {}, warnings);
+
+  const groupRecord = works.find((work) => work.cardCaseRecordType === 'group');
+  const caseRecord = works.find((work) => work.cardCaseRecordType === 'case');
+
+  assert.equal(groupRecord?.group, 'Group A');
+  assert.deepEqual(groupRecord?.memberDetails, [
+    { name: 'Alice', id: 'S001' },
+    { name: 'Bob', id: 'S002' },
+  ]);
+  assert.deepEqual(groupRecord?.caseIds, ['case-page-1']);
+
+  assert.equal(caseRecord?.assignmentName, 'Rehab Glove');
+  assert.equal(caseRecord?.interactionPart, 'https://example.com/icon.png');
+  assert.equal(caseRecord?.targetUser, 'Stroke Patient');
+  assert.equal(caseRecord?.designTeam, 'Team Alpha');
+  assert.deepEqual(caseRecord?.tags, ['Rehab', 'Wearable']);
+  assert.deepEqual(caseRecord?.memberDetails, [
+    { name: 'Alice', id: 'S001' },
+    { name: 'Bob', id: 'S002' },
+  ]);
+  assert.equal(warnings.length, 0);
 });

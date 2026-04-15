@@ -553,6 +553,160 @@ function normalizeSourceRecord(page: NotionPage): Record<string, unknown> {
   return result;
 }
 
+function pageFileOrCoverUrl(page: NotionPage, ...names: string[]): string {
+  const fileUrl = asFiles(property(page, ...names))[0];
+  if (fileUrl) return fileUrl;
+  if (page.cover?.type === 'external') return page.cover.external?.url || '';
+  if (page.cover?.type === 'file') return page.cover.file?.url || '';
+  return '';
+}
+
+function relationIds(page: NotionPage, ...names: string[]): string[] {
+  return asStringArray(property(page, ...names));
+}
+
+async function fetchPagesByIds(pageIds: string[]): Promise<NotionPage[]> {
+  const uniqueIds = [...new Set(pageIds.map((id) => normalizeNotionId(id)).filter(Boolean))];
+  if (!uniqueIds.length) return [];
+  return Promise.all(uniqueIds.map((pageId) => fetchPageById(pageId)));
+}
+
+interface CardCaseMember {
+  pageId: string;
+  name: string;
+  id: string;
+  group: string;
+  year: string;
+}
+
+async function fetchCardCaseWorksForProject(
+  project: Project,
+  warnings: NormalizationWarning[],
+): Promise<StudentWork[]> {
+  const studentPages = await queryDatabase(normalizeNotionId(project.sourceDatabaseId));
+  const studentById = new Map<string, CardCaseMember>();
+  const groupSummaries = new Map<string, StudentWork>();
+
+  for (const studentPage of studentPages) {
+    const group = asText(property(studentPage, 'group', 'Group')).trim() || 'Ungrouped';
+    const member: CardCaseMember = {
+      pageId: studentPage.id,
+      name: asText(property(studentPage, 'StudentName', 'Student Name', 'Name', 'Title')).trim() || 'Unnamed Student',
+      id: asText(property(studentPage, 'StudentID', 'Student Id', 'ID')).trim(),
+      group,
+      year: asText(property(studentPage, 'year', 'Year')).trim(),
+    };
+
+    studentById.set(stripNotionId(studentPage.id), member);
+
+    const summary = groupSummaries.get(group) ?? {
+      id: `card-case-group:${project.id}:${group}`,
+      assignmentName: group,
+      members: [],
+      studentIds: [],
+      memberDetails: [],
+      caseIds: [],
+      group,
+      cardCaseRecordType: 'group',
+      description: project.projectDescription || '',
+      mainImage: '',
+      year: member.year,
+      sourceDatabaseId: project.sourceDatabaseId,
+    };
+
+    const nextMemberDetails = summary.memberDetails || [];
+    if (!nextMemberDetails.some((item) => item.name === member.name && item.id === member.id)) {
+      nextMemberDetails.push({ name: member.name, id: member.id || 'N/A' });
+    }
+
+    summary.memberDetails = nextMemberDetails;
+    summary.members = nextMemberDetails.map((item) => item.name);
+    summary.studentIds = [...new Set([...(summary.studentIds || []), stripNotionId(member.pageId)])];
+    summary.year = summary.year || member.year;
+    groupSummaries.set(group, summary);
+  }
+
+  const allCaseIds = studentPages.flatMap((page) => relationIds(page, 'CaseCards', 'Case Cards'));
+  const casePages = await fetchPagesByIds(allCaseIds);
+  const caseById = new Map(casePages.map((page) => [stripNotionId(page.id), page]));
+  const allBodyIds = casePages.flatMap((page) => relationIds(page, 'BodyPart', 'Body Part'));
+  const bodyPages = await fetchPagesByIds(allBodyIds);
+  const bodyIconById = new Map(bodyPages.map((page) => [stripNotionId(page.id), pageFileOrCoverUrl(page, 'Icon')]));
+
+  const caseWorks: StudentWork[] = [];
+  const seenGroupCases = new Set<string>();
+
+  for (const studentPage of studentPages) {
+    const group = asText(property(studentPage, 'group', 'Group')).trim() || 'Ungrouped';
+    const summary = groupSummaries.get(group);
+    const groupMemberDetails = summary?.memberDetails || [];
+    const linkedCaseIds = relationIds(studentPage, 'CaseCards', 'Case Cards');
+
+    for (const rawCaseId of linkedCaseIds) {
+      const casePage = caseById.get(stripNotionId(rawCaseId));
+      if (!casePage) {
+        warnings.push({
+          level: 'warning',
+          code: 'CARD_CASE_PAGE_MISSING',
+          message: `Card case page missing for relation ${rawCaseId}.`,
+          courseId: project.courseId,
+          projectId: project.id,
+          sourceDatabaseId: project.sourceDatabaseId,
+        });
+        continue;
+      }
+
+      const uniqueGroupCaseKey = `${group}:${stripNotionId(casePage.id)}`;
+      if (seenGroupCases.has(uniqueGroupCaseKey)) {
+        continue;
+      }
+      seenGroupCases.add(uniqueGroupCaseKey);
+
+      const relatedStudents = relationIds(casePage, 'StudentName', 'Student Name')
+        .map((id) => studentById.get(stripNotionId(id)))
+        .filter((item): item is CardCaseMember => Boolean(item));
+      const memberDetails = (relatedStudents.length ? relatedStudents : groupMemberDetails.map((item) => ({
+        pageId: '',
+        name: item.name,
+        id: item.id,
+        group,
+        year: summary?.year || '',
+      }))).map((member) => ({
+        name: member.name,
+        id: member.id || 'N/A',
+      }));
+
+      const bodyIcons = relationIds(casePage, 'BodyPart', 'Body Part')
+        .map((id) => bodyIconById.get(stripNotionId(id)) || '')
+        .filter(Boolean);
+
+      caseWorks.push({
+        id: casePage.id,
+        assignmentName: asText(property(casePage, 'CaseName', 'Name', 'Title')).trim() || 'Untitled Case',
+        members: memberDetails.map((member) => member.name),
+        studentIds: relatedStudents.map((member) => stripNotionId(member.pageId)),
+        memberDetails,
+        description: asText(property(casePage, 'Description')).trim(),
+        mainImage: pageFileOrCoverUrl(casePage, 'mainImage', 'MainImage', 'Main Image', 'Image', 'CoverImage', 'Cover'),
+        tags: asStringArray(property(casePage, 'Keywords', 'Keyword', 'Tags')),
+        year: asText(property(casePage, 'CaseYear', 'Year')).trim() || summary?.year || '',
+        targetUser: asText(property(casePage, 'TargetUser', 'Target User')).trim(),
+        designTeam: asText(property(casePage, 'DesignTeam', 'Design Team')).trim(),
+        interactionPart: bodyIcons[0] || '',
+        group,
+        cardCaseRecordType: 'case',
+        sourceDatabaseId: project.sourceDatabaseId,
+      });
+
+      if (summary) {
+        summary.caseIds = [...new Set([...(summary.caseIds || []), casePage.id])];
+      }
+    }
+  }
+
+  return [...groupSummaries.values(), ...caseWorks];
+}
+
 export async function fetchStudentWorksForProject(
   project: Project,
   fieldMapping: FieldMapping,
@@ -560,6 +714,10 @@ export async function fetchStudentWorksForProject(
 ): Promise<StudentWork[]> {
   if (!project.sourceDatabaseId) {
     return [];
+  }
+
+  if (project.displayStyle === 'card-case') {
+    return fetchCardCaseWorksForProject(project, warnings);
   }
 
   const sourceDatabaseId = normalizeNotionId(project.sourceDatabaseId);

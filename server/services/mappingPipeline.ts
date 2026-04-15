@@ -38,7 +38,7 @@ export type FileMappingRecord = {
   updatedAt: string;
 };
 
-const UI_PATTERNS: UiPattern[] = ['card-spec', 'data-matrix', 'gallery-slide', 'gallery-story', 'generic-card', 'blog-post', 'activity-event'];
+const UI_PATTERNS: UiPattern[] = ['card-spec', 'data-matrix', 'gallery-slide', 'gallery-story', 'generic-card', 'blog-post', 'activity-event', 'card-case'];
 const TARGET_SCHEMA_FIELDS: Array<keyof StudentWork> = [
   'id',
   'assignmentName',
@@ -64,6 +64,14 @@ const TARGET_SCHEMA_FIELDS: Array<keyof StudentWork> = [
   'publicationName',
   'sourceDatabaseId',
   'gridLocation',
+  'group',
+  'cardCaseRecordType',
+  'caseIds',
+  'interactionPart',
+  'targetUser',
+  'designTeam',
+  'foundBy',
+  'memberDetails',
 ];
 const BASE_TEMPLATE_FIELDS: Array<keyof StudentWork> = ['assignmentName', 'members', 'description', 'mainImage'];
 const TEMPLATE_FIELDS_BY_PATTERN: Record<UiPattern, Array<keyof StudentWork>> = {
@@ -74,6 +82,7 @@ const TEMPLATE_FIELDS_BY_PATTERN: Record<UiPattern, Array<keyof StudentWork>> = 
   'data-matrix': [...BASE_TEMPLATE_FIELDS, 'gridLocation', 'year', 'tags'],
   'blog-post': [...BASE_TEMPLATE_FIELDS, 'url', 'storyButtons', 'tags', 'year', 'isStarred'],
   'activity-event': [...BASE_TEMPLATE_FIELDS, 'moreImages', 'year', 'tags', 'themeTag', 'startDate', 'endDate', 'country', 'city', 'grant', 'publicationName', 'url'],
+  'card-case': [...BASE_TEMPLATE_FIELDS, 'group', 'cardCaseRecordType', 'caseIds', 'interactionPart', 'targetUser', 'designTeam', 'tags', 'year', 'memberDetails'],
 };
 
 const mappingStorePath = path.resolve(process.cwd(), 'server/data/filemapping-records.json');
@@ -133,10 +142,9 @@ function getSourceValue(record: UnknownRecord, candidates: string[]): unknown {
 }
 
 function inferTransformFromField(field: keyof StudentWork): MappingRule['transform'] {
-  if (['members', 'studentIds', 'moreImages', 'tags', 'methodologies'].includes(field)) return 'string[]';
+  if (['members', 'studentIds', 'moreImages', 'tags', 'methodologies', 'caseIds'].includes(field)) return 'string[]';
   if (field === 'isStarred') return 'boolean';
-  if (field === 'storyButtons') return 'json';
-  if (field === 'dataSpecs') return 'json';
+  if (field === 'storyButtons' || field === 'dataSpecs' || field === 'memberDetails') return 'json';
   return 'string';
 }
 

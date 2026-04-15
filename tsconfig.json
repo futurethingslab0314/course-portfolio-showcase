@@ -23,5 +23,5 @@
     "allowImportingTsExtensions": true,
     "noEmit": true
   },
-  "exclude": ["docs/plans/**/*"]
+  "exclude": ["docs/plans/**/*", "src/**/*_ref.ts", "src/**/*_ref.tsx"]
 }
