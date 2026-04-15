@@ -7,7 +7,7 @@ import { Header } from '../Header';
 import { Footer } from '../Footer';
 import { Filter, Star, ChevronDown, Download } from 'lucide-react';
 import { collectKeywordTags, collectThemeTags, filterAndSortWorksForDisplay } from './courseDetailViewModel';
-import { buildCardCasePrintHtml, collectCardCaseMemberNames, filterCardCaseWorksByStudent, getCardCaseAvailableYears, getCardCaseStudentLabel, waitForPrintDocumentAssets } from './cardCaseUtils';
+import { buildCardCasePrintHtml, collectCardCaseMemberNames, filterCardCaseWorksByStudent, getCardCaseAvailableYears, getCardCaseStudentLabel, inlinePrintDocumentImages, waitForPrintDocumentAssets } from './cardCaseUtils';
 
 interface CourseDetailTemplateProps {
   course: Course;
@@ -177,6 +177,7 @@ export const CourseDetailTemplate = ({
 
     printWindow.onafterprint = cleanup;
     window.setTimeout(async () => {
+      await inlinePrintDocumentImages(printDocument);
       await waitForPrintDocumentAssets(printDocument);
       printWindow.focus();
       printWindow.print();

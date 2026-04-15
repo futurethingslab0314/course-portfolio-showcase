@@ -36,6 +36,49 @@ export function getCardCaseStudentLabel(work: StudentWork): string {
   return names.length ? names.join(', ') : 'Unknown Student';
 }
 
+async function blobToDataUrl(blob: Blob): Promise<string> {
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+  let binary = '';
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte);
+  }
+
+  const base64 =
+    typeof btoa === 'function'
+      ? btoa(binary)
+      : Buffer.from(bytes).toString('base64');
+
+  return `data:${blob.type || 'application/octet-stream'};base64,${base64}`;
+}
+
+export async function inlinePrintDocumentImages(
+  doc: Document,
+  fetchImpl: typeof fetch = fetch,
+): Promise<void> {
+  const images = Array.from(doc.images || []);
+
+  await Promise.all(
+    images.map(async (image) => {
+      const source = image.getAttribute('src') || '';
+      if (!source || source.startsWith('data:')) return;
+
+      try {
+        const response = await fetchImpl(source, {
+          mode: 'cors',
+          credentials: 'omit',
+          referrerPolicy: 'no-referrer',
+        });
+        if (!response.ok) return;
+        const blob = await response.blob();
+        const dataUrl = await blobToDataUrl(blob);
+        image.setAttribute('src', dataUrl);
+      } catch {
+        // Keep the original src when inlining fails.
+      }
+    }),
+  );
+}
+
 export function waitForPrintDocumentAssets(doc: Document, timeoutMs = 1500): Promise<void> {
   const images = Array.from(doc.images || []).filter((image) => !image.complete);
   if (!images.length) return Promise.resolve();

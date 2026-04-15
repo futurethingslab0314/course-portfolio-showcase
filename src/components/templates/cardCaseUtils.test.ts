@@ -7,6 +7,7 @@ import {
   filterCardCaseWorksByStudent,
   getCardCaseAvailableYears,
   getCardCaseStudentLabel,
+  inlinePrintDocumentImages,
   waitForPrintDocumentAssets,
 } from './cardCaseUtils';
 
@@ -142,4 +143,30 @@ test('waitForPrintDocumentAssets resolves after print images finish loading', as
   assert.ok(loadHandler);
   loadHandler?.();
   await pending;
+});
+
+test('inlinePrintDocumentImages rewrites remote image sources to data URLs', async () => {
+  const image = {
+    src: 'https://example.com/image.png',
+    getAttribute: (name: string) => (name === 'src' ? 'https://example.com/image.png' : null),
+    setAttribute: function (name: string, value: string) {
+      if (name === 'src') {
+        this.src = value;
+      }
+    },
+  };
+
+  const documentLike = {
+    images: [image],
+  } as unknown as Document;
+
+  await inlinePrintDocumentImages(
+    documentLike,
+    async () =>
+      new Response(new Blob(['abc'], { type: 'image/png' }), {
+        status: 200,
+      }),
+  );
+
+  assert.match(image.src, /^data:image\/png;base64,/);
 });
