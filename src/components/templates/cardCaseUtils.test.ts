@@ -1,7 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { StudentWork } from '../../types';
-import { buildCardCasePrintHtml, collectCardCaseMemberNames, filterCardCaseWorksByStudent, getCardCaseAvailableYears, getCardCaseStudentLabel } from './cardCaseUtils';
+import {
+  buildCardCasePrintHtml,
+  collectCardCaseMemberNames,
+  filterCardCaseWorksByStudent,
+  getCardCaseAvailableYears,
+  getCardCaseStudentLabel,
+  waitForPrintDocumentAssets,
+} from './cardCaseUtils';
 
 const caseWorks: StudentWork[] = [
   {
@@ -72,6 +79,9 @@ test('buildCardCasePrintHtml includes student labels and card names for print ou
   assert.match(html, /page-break-after: always/);
   assert.match(html, /hand\.png/);
   assert.match(html, /rehab/);
+  assert.match(html, /referrerpolicy="no-referrer"/);
+  assert.match(html, /\.keyword \{[^}]*display: inline-flex;/);
+  assert.match(html, /\.keyword \{[^}]*line-height: 1;/);
 });
 
 test('getCardCaseAvailableYears only uses group-level years', () => {
@@ -112,4 +122,24 @@ test('getCardCaseAvailableYears only uses group-level years', () => {
   ];
 
   assert.deepEqual(getCardCaseAvailableYears(works), ['ALL', '2026', '2024']);
+});
+
+test('waitForPrintDocumentAssets resolves after print images finish loading', async () => {
+  let loadHandler: (() => void) | undefined;
+  const documentLike = {
+    images: [
+      {
+        complete: false,
+        addEventListener: (_event: string, handler: () => void) => {
+          loadHandler = handler;
+        },
+        removeEventListener: () => {},
+      },
+    ],
+  } as unknown as Document;
+
+  const pending = waitForPrintDocumentAssets(documentLike, 20);
+  assert.ok(loadHandler);
+  loadHandler?.();
+  await pending;
 });

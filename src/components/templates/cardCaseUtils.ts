@@ -36,6 +36,36 @@ export function getCardCaseStudentLabel(work: StudentWork): string {
   return names.length ? names.join(', ') : 'Unknown Student';
 }
 
+export function waitForPrintDocumentAssets(doc: Document, timeoutMs = 1500): Promise<void> {
+  const images = Array.from(doc.images || []).filter((image) => !image.complete);
+  if (!images.length) return Promise.resolve();
+
+  return new Promise((resolve) => {
+    let settled = false;
+    let remaining = images.length;
+
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      resolve();
+    };
+
+    const handleAssetDone = () => {
+      remaining -= 1;
+      if (remaining <= 0) {
+        finish();
+      }
+    };
+
+    images.forEach((image) => {
+      image.addEventListener('load', handleAssetDone, { once: true });
+      image.addEventListener('error', handleAssetDone, { once: true });
+    });
+
+    setTimeout(finish, timeoutMs);
+  });
+}
+
 export function buildCardCasePrintHtml(works: StudentWork[], title: string): string {
   const pages = works.reduce<StudentWork[][]>((accumulator, work, index) => {
     const pageIndex = Math.floor(index / 8);
@@ -49,10 +79,10 @@ export function buildCardCasePrintHtml(works: StudentWork[], title: string): str
       const cards = pageWorks.map((work) => {
       const studentLabel = getCardCaseStudentLabel(work);
       const imageSection = work.mainImage
-        ? `<img src="${escapeHtml(work.mainImage)}" alt="${escapeHtml(work.assignmentName)}" class="image" />`
+        ? `<img src="${escapeHtml(work.mainImage)}" alt="${escapeHtml(work.assignmentName)}" class="image" referrerpolicy="no-referrer" />`
         : `<div class="image fallback"></div>`;
       const iconSection = work.interactionPart
-        ? `<img src="${escapeHtml(work.interactionPart)}" alt="" class="icon-image" />`
+        ? `<img src="${escapeHtml(work.interactionPart)}" alt="" class="icon-image" referrerpolicy="no-referrer" />`
         : `<div class="icon-placeholder"></div>`;
       const keywords = (work.tags || [])
         .map((tag) => `<span class="keyword">${escapeHtml(tag)}</span>`)
@@ -116,7 +146,7 @@ export function buildCardCasePrintHtml(works: StudentWork[], title: string): str
           .meta { color: #666; font-size: 8pt; text-transform: uppercase; }
           h2 { margin: 0; font-size: 11pt; line-height: 1.25; }
           .keywords { display: flex; flex-wrap: wrap; gap: 1.2mm; min-height: 8mm; }
-          .keyword { padding: 0.5mm 1.5mm; border-radius: 999px; border: 1px solid #d4d4d8; font-size: 7pt; text-transform: uppercase; letter-spacing: 0.08em; }
+          .keyword { display: inline-flex; align-items: center; padding: 0.7mm 1.8mm; border-radius: 2.6mm; border: 1px solid #d4d4d8; font-size: 7pt; line-height: 1; text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap; }
           .student { font-weight: 700; margin-top: auto; }
         </style>
       </head>
