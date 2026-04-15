@@ -5,8 +5,9 @@ import { cn } from '../../lib/utils';
 import { DataMatrix } from '../projects/DataMatrix';
 import { Header } from '../Header';
 import { Footer } from '../Footer';
-import { Filter, Star, ChevronDown } from 'lucide-react';
+import { Filter, Star, ChevronDown, Download } from 'lucide-react';
 import { collectKeywordTags, collectThemeTags, filterAndSortWorksForDisplay } from './courseDetailViewModel';
+import { buildCardCasePrintHtml, collectCardCaseMemberNames, filterCardCaseWorksByStudent, getCardCaseStudentLabel } from './cardCaseUtils';
 
 interface CourseDetailTemplateProps {
   course: Course;
@@ -56,6 +57,7 @@ export const CourseDetailTemplate = ({
   const [selectedKeywordTag, setSelectedKeywordTag] = useState<string>('ALL');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [selectedCardCaseGroup, setSelectedCardCaseGroup] = useState<string | undefined>(undefined);
+  const [selectedCardCaseStudent, setSelectedCardCaseStudent] = useState<string | undefined>(undefined);
 
   const isCardCaseProject = activeProject?.displayStyle === 'card-case';
   const supportsThemeFilter = activeProject?.displayStyle === 'blog-post' || activeProject?.displayStyle === 'activity-event';
@@ -101,9 +103,23 @@ export const CourseDetailTemplate = ({
     [cardCaseWorks, selectedCardCaseGroup],
   );
 
+  const cardCaseStudentNames = useMemo(
+    () => collectCardCaseMemberNames(visibleCardCaseWorks),
+    [visibleCardCaseWorks],
+  );
+
+  const filteredVisibleCardCaseWorks = useMemo(
+    () => filterCardCaseWorksByStudent(visibleCardCaseWorks, selectedCardCaseStudent),
+    [visibleCardCaseWorks, selectedCardCaseStudent],
+  );
+
   useEffect(() => {
     setSelectedCardCaseGroup(undefined);
   }, [activeProjectId]);
+
+  useEffect(() => {
+    setSelectedCardCaseStudent(undefined);
+  }, [selectedCardCaseGroup]);
 
   useEffect(() => {
     if (selectedCardCaseGroup && !cardCaseGroupWorks.some((work) => work.group === selectedCardCaseGroup)) {
@@ -113,9 +129,21 @@ export const CourseDetailTemplate = ({
 
   const summaryLabel = isCardCaseProject
     ? selectedCardCaseGroup
-      ? `Showing ${visibleCardCaseWorks.length} cases`
+      ? `Showing ${filteredVisibleCardCaseWorks.length} cases`
       : `Showing ${cardCaseGroupWorks.length} groups`
     : `Showing ${filteredWorks.length} works`;
+
+  const handlePrintCardCase = () => {
+    if (!filteredVisibleCardCaseWorks.length) return;
+    const printWindow = window.open('', '_blank', 'noopener,noreferrer');
+    if (!printWindow) return;
+    const title = activeCardCaseGroup?.group || selectedCardCaseGroup || activeProject?.projectName || 'Card Case';
+    printWindow.document.open();
+    printWindow.document.write(buildCardCasePrintHtml(filteredVisibleCardCaseWorks, title));
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+  };
 
   return (
     <div className="min-h-screen bg-white">
@@ -294,6 +322,19 @@ export const CourseDetailTemplate = ({
               </div>
             </div>
           )}
+
+          {isCardCaseProject && selectedCardCaseGroup && (
+            <div className="flex items-center gap-2 md:pl-8 md:border-l border-black/5 md:ml-auto">
+              <button
+                type="button"
+                onClick={handlePrintCardCase}
+                className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-black/80 transition-all"
+              >
+                <Download size={14} />
+                <span>Print Cards (A4)</span>
+              </button>
+            </div>
+          )}
         </div>
 
         {isCardCaseProject && !selectedCardCaseGroup ? (
@@ -368,11 +409,30 @@ export const CourseDetailTemplate = ({
                   <div>
                     <div className="text-[10px] font-bold uppercase tracking-widest text-black/35 mb-4">Group Members</div>
                     <div className="flex flex-wrap gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedCardCaseStudent(undefined)}
+                        className={cn(
+                          'bg-white px-4 py-3 rounded-2xl border shadow-sm text-left transition-colors',
+                          !selectedCardCaseStudent ? 'border-black text-black' : 'border-black/5 text-black/50 hover:text-black',
+                        )}
+                      >
+                        <div className="text-sm font-bold">All Students</div>
+                        <div className="text-[10px] font-mono mt-1">{visibleCardCaseWorks.length} cards</div>
+                      </button>
                       {(activeCardCaseGroup.memberDetails || []).map((member, index) => (
-                        <div key={`${member.name}-${index}`} className="bg-white px-4 py-3 rounded-2xl border border-black/5 shadow-sm">
+                        <button
+                          type="button"
+                          key={`${member.name}-${index}`}
+                          onClick={() => setSelectedCardCaseStudent(member.name)}
+                          className={cn(
+                            'bg-white px-4 py-3 rounded-2xl border shadow-sm text-left transition-colors',
+                            selectedCardCaseStudent === member.name ? 'border-black text-black' : 'border-black/5 text-black/60 hover:text-black',
+                          )}
+                        >
                           <div className="text-sm font-bold">{member.name}</div>
                           <div className="text-[10px] font-mono text-black/40 mt-1">{member.id}</div>
-                        </div>
+                        </button>
                       ))}
                     </div>
                   </div>
@@ -380,16 +440,49 @@ export const CourseDetailTemplate = ({
                     <div className="text-[10px] font-bold uppercase tracking-widest text-black/35 mb-2">Collection</div>
                     <div className="text-3xl font-bold tracking-tight">{activeCardCaseGroup.group || activeCardCaseGroup.assignmentName}</div>
                     <div className="text-[11px] font-bold text-black/40 mt-2 uppercase tracking-widest">
-                      {visibleCardCaseWorks.length} cases • Academic Year {activeCardCaseGroup.year || 'N/A'}
+                      {filteredVisibleCardCaseWorks.length} cases • Academic Year {activeCardCaseGroup.year || 'N/A'}
                     </div>
+                    {selectedCardCaseStudent && (
+                      <div className="text-[11px] font-bold text-black/50 mt-2 uppercase tracking-widest">
+                        Filtered by {selectedCardCaseStudent}
+                      </div>
+                    )}
                   </div>
                 </div>
+                {cardCaseStudentNames.length > 0 && (
+                  <div className="mt-8 pt-6 border-t border-black/5">
+                    <div className="text-[10px] font-bold uppercase tracking-widest text-black/35 mb-3">Browse By Student</div>
+                    <div className="flex flex-wrap gap-2">
+                      {cardCaseStudentNames.map((studentName) => (
+                        <button
+                          key={studentName}
+                          type="button"
+                          onClick={() => setSelectedCardCaseStudent((current) => (current === studentName ? undefined : studentName))}
+                          className={cn(
+                            'px-3 py-2 rounded-full border text-[11px] font-bold tracking-wide transition-colors',
+                            selectedCardCaseStudent === studentName
+                              ? 'bg-black text-white border-black'
+                              : 'bg-white text-black/60 border-black/10 hover:text-black hover:border-black/30',
+                          )}
+                        >
+                          {studentName}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
             <div className="grid gap-12 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-              {visibleCardCaseWorks.map((work) => (
-                <StudentWorkItem key={work.id} work={work} style="card-case" />
+              {filteredVisibleCardCaseWorks.map((work) => (
+                <div key={work.id} className="space-y-3">
+                  <StudentWorkItem work={work} style="card-case" />
+                  <div className="px-1">
+                    <div className="text-[10px] font-bold uppercase tracking-widest text-black/30 mb-1">Student</div>
+                    <div className="text-sm font-semibold text-black/70">{getCardCaseStudentLabel(work)}</div>
+                  </div>
+                </div>
               ))}
             </div>
           </>
