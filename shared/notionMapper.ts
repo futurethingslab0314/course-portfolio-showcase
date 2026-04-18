@@ -238,11 +238,33 @@ function ensureStoryButtons(value: unknown): { label: string; url: string }[] {
 function collectStoryButtonsFromSource(source: UnknownRecord): { label: string; url: string }[] {
   const buffer = new Map<string, { label?: string; url?: string }>();
 
-  for (const [key, rawValue] of Object.entries(source)) {
-    const labelMatch = key.match(/^button[\s_-]*(\d+)$/i);
-    const urlMatch = key.match(/^url[\s_-]*button[\s_-]*(\d+)$/i);
+  const parseButtonLabelIndex = (key: string): string | null => {
+    const match = key.match(/^button(?:[\s_-]*(\d+))?$/i);
+    if (!match) return null;
+    return (match[1] || '0').padStart(4, '0');
+  };
 
-    if (!labelMatch && !urlMatch) {
+  const parseButtonUrlIndex = (key: string): string | null => {
+    const normalized = key.replace(/[\s_-]+/g, '').toLowerCase();
+
+    let match = normalized.match(/^urlbutton(\d+)$/);
+    if (match) return match[1].padStart(4, '0');
+
+    match = normalized.match(/^buttonurl(\d+)$/);
+    if (match) return match[1].padStart(4, '0');
+
+    if (normalized === 'urlbutton' || normalized === 'buttonurl' || normalized.startsWith('buttonurl') || normalized.startsWith('urlbutton')) {
+      return '0000';
+    }
+
+    return null;
+  };
+
+  for (const [key, rawValue] of Object.entries(source)) {
+    const labelIndex = parseButtonLabelIndex(key);
+    const urlIndex = parseButtonUrlIndex(key);
+
+    if (!labelIndex && !urlIndex) {
       continue;
     }
 
@@ -251,13 +273,13 @@ function collectStoryButtonsFromSource(source: UnknownRecord): { label: string; 
       continue;
     }
 
-    const index = (labelMatch?.[1] ?? urlMatch?.[1] ?? '').padStart(4, '0');
+    const index = labelIndex ?? urlIndex ?? '0000';
     const current = buffer.get(index) ?? {};
 
-    if (labelMatch) {
+    if (labelIndex) {
       current.label = value;
     }
-    if (urlMatch) {
+    if (urlIndex) {
       current.url = value;
     }
 

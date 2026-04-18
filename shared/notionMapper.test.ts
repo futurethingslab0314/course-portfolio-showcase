@@ -74,3 +74,33 @@ test('normalizeStudentWork infers multiple story buttons from button and URL pai
   ]);
   assert.equal(warnings.length, 0);
 });
+
+test('normalizeStudentWork infers story buttons from flexible button field variants', () => {
+  const warnings: Array<{ level: 'warning' | 'error'; code: string; message: string }> = [];
+  const work = normalizeStudentWork(
+    {
+      id: 'blog-2',
+      title: 'Blog With Flexible Links',
+      description: 'Testing CTA aliases.',
+      mainImage: 'https://example.com/cover.jpg',
+      button: 'Read Article',
+      buttonURL_database: 'https://example.com/article',
+      button2: 'View Prototype',
+      buttonUrl2: 'https://example.com/prototype',
+    },
+    'db-blog',
+    {},
+    warnings,
+    {
+      projectId: 'project-blog',
+      courseId: 'course-1',
+      sourceDatabaseId: 'db-blog',
+    },
+  );
+
+  assert.deepEqual(work.storyButtons, [
+    { label: 'Read Article', url: 'https://example.com/article' },
+    { label: 'View Prototype', url: 'https://example.com/prototype' },
+  ]);
+  assert.equal(warnings.length, 0);
+});
