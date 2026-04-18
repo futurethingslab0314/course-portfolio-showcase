@@ -231,6 +231,54 @@ app.get('/api/courses', async (_req, res) => {
   }
 });
 
+app.get('/api/image-proxy', async (req, res) => {
+  const rawUrl = String(req.query.url || '').trim();
+  if (!rawUrl) {
+    res.status(400).json({ error: 'Missing required query param: url' });
+    return;
+  }
+
+  let targetUrl: URL;
+  try {
+    targetUrl = new URL(rawUrl);
+  } catch {
+    res.status(400).json({ error: 'Invalid image URL' });
+    return;
+  }
+
+  if (!['http:', 'https:'].includes(targetUrl.protocol)) {
+    res.status(400).json({ error: 'Only http/https image URLs are supported' });
+    return;
+  }
+
+  try {
+    const upstream = await fetch(targetUrl, {
+      headers: {
+        Accept: 'image/*,*/*;q=0.8',
+      },
+    });
+
+    if (!upstream.ok) {
+      res.status(upstream.status).json({ error: `Image fetch failed with status ${upstream.status}` });
+      return;
+    }
+
+    const contentType = upstream.headers.get('content-type') || 'application/octet-stream';
+    const cacheControl = upstream.headers.get('cache-control') || 'public, max-age=3600, s-maxage=3600';
+    const buffer = Buffer.from(await upstream.arrayBuffer());
+
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Cache-Control', cacheControl);
+    res.setHeader('Content-Length', String(buffer.byteLength));
+    res.send(buffer);
+  } catch (error) {
+    res.status(502).json({
+      error: 'Failed to fetch image',
+      detail: error instanceof Error ? error.message : String(error),
+    });
+  }
+});
+
 app.post('/api/generate', async (req, res) => {
   const slug = String(req.body?.slug || '').trim();
   if (!slug) {

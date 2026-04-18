@@ -66,6 +66,28 @@ export async function rewriteBlogContentImagesToR2ForTest(
   return rewriteBlogContentImagesToR2(blogContent, rewriteUrl);
 }
 
+async function rewriteWorkMediaToR2(
+  work: StudentWork,
+  rewriteUrl: (sourceUrl: string) => Promise<string>,
+): Promise<void> {
+  const mainImage = String(work.mainImage || '').trim();
+  if (mainImage) {
+    work.mainImage = await rewriteUrl(mainImage);
+  }
+
+  const interactionPart = String(work.interactionPart || '').trim();
+  if (interactionPart) {
+    work.interactionPart = await rewriteUrl(interactionPart);
+  }
+}
+
+export async function rewriteWorkMediaToR2ForTest(
+  work: StudentWork,
+  rewriteUrl: (sourceUrl: string) => Promise<string>,
+): Promise<void> {
+  return rewriteWorkMediaToR2(work, rewriteUrl);
+}
+
 async function rewriteCourseCoverToR2(payload: CoursePayload, runId: string): Promise<{ uploaded: number; skipped: number }> {
   if (!isR2ImageSyncEnabled()) {
     return { uploaded: 0, skipped: 1 };
@@ -138,7 +160,7 @@ async function rewriteWorkImagesToR2(payload: CoursePayload, runId: string): Pro
       continue;
     }
 
-    const rewriteOne = async (sourceUrl: string, label: 'mainImage' | 'moreImage', index?: number): Promise<string> => {
+    const rewriteOne = async (sourceUrl: string, label: 'mainImage' | 'moreImage' | 'interactionPart', index?: number): Promise<string> => {
       const trimmed = String(sourceUrl || '').trim();
       if (!trimmed) {
         skipped += 1;
@@ -181,7 +203,17 @@ async function rewriteWorkImagesToR2(payload: CoursePayload, runId: string): Pro
       }
     };
 
-    work.mainImage = await rewriteOne(work.mainImage, 'mainImage');
+    const originalMainImage = String(work.mainImage || '').trim();
+    const originalInteractionPart = String(work.interactionPart || '').trim();
+    await rewriteWorkMediaToR2(work, async (sourceUrl) => {
+      if (sourceUrl === originalMainImage) {
+        return rewriteOne(sourceUrl, 'mainImage');
+      }
+      if (sourceUrl === originalInteractionPart) {
+        return rewriteOne(sourceUrl, 'interactionPart');
+      }
+      return rewriteOne(sourceUrl, 'moreImage');
+    });
 
     if (Array.isArray(work.moreImages) && work.moreImages.length > 0) {
       const next: string[] = [];

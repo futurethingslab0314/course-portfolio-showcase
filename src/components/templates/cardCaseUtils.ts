@@ -9,6 +9,23 @@ function escapeHtml(input: string): string {
     .replaceAll("'", '&#39;');
 }
 
+function toPrintImageSrc(source: string): string {
+  const trimmed = source.trim();
+  if (!trimmed) return '';
+  if (trimmed.startsWith('data:') || trimmed.startsWith('/')) return trimmed;
+
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+      return `/api/image-proxy?url=${encodeURIComponent(trimmed)}`;
+    }
+  } catch {
+    return trimmed;
+  }
+
+  return trimmed;
+}
+
 export function collectCardCaseMemberNames(works: StudentWork[]): string[] {
   return [...new Set(works.flatMap((work) => (work.memberDetails || []).map((member) => member.name).filter(Boolean)))].sort((left, right) =>
     left.localeCompare(right),
@@ -122,10 +139,10 @@ export function buildCardCasePrintHtml(works: StudentWork[], title: string): str
       const cards = pageWorks.map((work) => {
       const studentLabel = getCardCaseStudentLabel(work);
       const imageSection = work.mainImage
-        ? `<img src="${escapeHtml(work.mainImage)}" alt="${escapeHtml(work.assignmentName)}" class="image" referrerpolicy="no-referrer" />`
+        ? `<img src="${escapeHtml(toPrintImageSrc(work.mainImage))}" alt="${escapeHtml(work.assignmentName)}" class="image" referrerpolicy="no-referrer" />`
         : `<div class="image fallback"></div>`;
       const iconSection = work.interactionPart
-        ? `<img src="${escapeHtml(work.interactionPart)}" alt="" class="icon-image" referrerpolicy="no-referrer" />`
+        ? `<img src="${escapeHtml(toPrintImageSrc(work.interactionPart))}" alt="" class="icon-image" referrerpolicy="no-referrer" />`
         : `<div class="icon-placeholder"></div>`;
       const keywords = (work.tags || [])
         .map((tag) => `<span class="keyword">${escapeHtml(tag)}</span>`)

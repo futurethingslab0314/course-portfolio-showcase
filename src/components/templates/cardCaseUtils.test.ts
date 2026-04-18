@@ -81,6 +81,7 @@ test('buildCardCasePrintHtml includes student labels and card names for print ou
   assert.match(html, /hand\.png/);
   assert.match(html, /rehab/);
   assert.match(html, /referrerpolicy="no-referrer"/);
+  assert.match(html, /\/api\/image-proxy\?url=/);
   assert.match(html, /\.keyword \{[^}]*display: inline-flex;/);
   assert.match(html, /\.keyword \{[^}]*line-height: 1;/);
 });
