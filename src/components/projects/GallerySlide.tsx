@@ -7,13 +7,15 @@ import { memberRows } from '../../lib/memberRows';
 
 interface GallerySlideProps {
   work: StudentWork;
+  courseTitle?: string;
 }
 
-export const GallerySlide = ({ work }: GallerySlideProps) => {
+export const GallerySlide = ({ work, courseTitle }: GallerySlideProps) => {
   const allImages = [work.mainImage, ...(work.moreImages || [])];
   const members = memberRows(work);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isZoomed, setIsZoomed] = useState(false);
+  const courseBadgeLabel = courseTitle?.trim() || 'Gallery Slide';
 
   const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % allImages.length);
   const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + allImages.length) % allImages.length);
@@ -33,7 +35,7 @@ export const GallerySlide = ({ work }: GallerySlideProps) => {
         <div className="lg:col-span-5">
           <div className="mb-12">
             <div className="flex items-center gap-3 mb-4">
-              <h4 className="text-[11px] font-bold uppercase tracking-[0.3em] text-blue-600">Visual Narrative</h4>
+              <h4 className="text-[11px] font-bold uppercase tracking-[0.3em] text-blue-600">{courseBadgeLabel}</h4>
               <span className="text-black/20 font-mono text-xs tracking-widest">/ {work.year || '2026'}</span>
             </div>
             <h2 className="text-6xl font-bold tracking-tighter mb-8 leading-[0.9]">{work.assignmentName}</h2>

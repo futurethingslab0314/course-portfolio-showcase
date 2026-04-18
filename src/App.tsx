@@ -29,7 +29,7 @@ const StudentWorkItem = ({ work, style, courseTitle }: { work: StudentWork; styl
     case 'gallery-story':
       return <GalleryStory work={work} courseTitle={courseTitle} isExpanded={isExpanded} setIsExpanded={setIsExpanded} zoomedImage={zoomedImage} setZoomedImage={setZoomedImage} />;
     case 'gallery-slide':
-      return <GallerySlide work={work} />;
+      return <GallerySlide work={work} courseTitle={courseTitle} />;
     case 'generic-card':
       return <GenericCard work={work} />;
     case 'blog-post':

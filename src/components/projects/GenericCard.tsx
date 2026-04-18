@@ -6,9 +6,10 @@ import { memberRows } from '../../lib/memberRows';
 
 interface GenericCardProps {
   work: StudentWork;
+  courseTitle?: string;
 }
 
-export const GenericCard = ({ work }: GenericCardProps) => {
+export const GenericCard = ({ work, courseTitle }: GenericCardProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const members = memberRows(work);
@@ -19,6 +20,7 @@ export const GenericCard = ({ work }: GenericCardProps) => {
   }, [work.mainImage, work.moreImages]);
 
   const hasMultipleImages = images.length > 1;
+  const courseBadgeLabel = courseTitle?.trim() || 'Generic Card';
 
   const openModal = () => {
     setCurrentImageIndex(0);
@@ -170,7 +172,7 @@ export const GenericCard = ({ work }: GenericCardProps) => {
                 <div className="p-8 md:p-16">
                   <div className="flex items-center gap-4 mb-8">
                     <span className="bg-black text-white text-[10px] font-bold px-3 py-1 uppercase tracking-wider">
-                      Quick Prototype
+                      {courseBadgeLabel}
                     </span>
                     <span className="text-black/30 font-mono text-xs">{yearLabel}</span>
                     {work.tags && work.tags.length > 0 && (
