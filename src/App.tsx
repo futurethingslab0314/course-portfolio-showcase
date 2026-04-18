@@ -19,7 +19,7 @@ import { CardCase } from './components/projects/CardCase';
 import { HomePageTemplate } from './components/templates/HomePageTemplate';
 import { CourseDetailTemplate } from './components/templates/CourseDetailTemplate';
 
-const StudentWorkItem = ({ work, style }: { work: StudentWork; style: Project['displayStyle'] }) => {
+const StudentWorkItem = ({ work, style, courseTitle }: { work: StudentWork; style: Project['displayStyle']; courseTitle: string }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
 
@@ -27,7 +27,7 @@ const StudentWorkItem = ({ work, style }: { work: StudentWork; style: Project['d
     case 'card-spec':
       return <CardSpec work={work} zoomedImage={zoomedImage} setZoomedImage={setZoomedImage} />;
     case 'gallery-story':
-      return <GalleryStory work={work} isExpanded={isExpanded} setIsExpanded={setIsExpanded} zoomedImage={zoomedImage} setZoomedImage={setZoomedImage} />;
+      return <GalleryStory work={work} courseTitle={courseTitle} isExpanded={isExpanded} setIsExpanded={setIsExpanded} zoomedImage={zoomedImage} setZoomedImage={setZoomedImage} />;
     case 'gallery-slide':
       return <GallerySlide work={work} />;
     case 'generic-card':
@@ -180,6 +180,7 @@ const CourseDetailPage = () => {
       setActiveProjectId={setActiveProjectId}
       works={works}
       StudentWorkItem={StudentWorkItem}
+      courseTitle={course.courseName}
       onSyncData={handleSyncData}
       isSyncing={isSyncing}
     />

@@ -11,11 +11,12 @@ import { buildCardCasePrintHtml, collectCardCaseMemberNames, filterCardCaseWorks
 
 interface CourseDetailTemplateProps {
   course: Course;
+  courseTitle: string;
   projects: Project[];
   activeProjectId: string | undefined;
   setActiveProjectId: (id: string) => void;
   works: StudentWork[];
-  StudentWorkItem: React.ComponentType<{ work: StudentWork; style: Project['displayStyle'] }>;
+  StudentWorkItem: React.ComponentType<{ work: StudentWork; style: Project['displayStyle']; courseTitle: string }>;
   onSyncData?: () => void;
   isSyncing?: boolean;
 }
@@ -42,6 +43,7 @@ function groupCardBackground(group: string): string {
 
 export const CourseDetailTemplate = ({
   course,
+  courseTitle,
   projects,
   activeProjectId,
   setActiveProjectId,
@@ -497,7 +499,7 @@ export const CourseDetailTemplate = ({
             <div className="grid gap-12 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
               {filteredVisibleCardCaseWorks.map((work) => (
                 <div key={work.id} className="space-y-3">
-                  <StudentWorkItem work={work} style="card-case" />
+                  <StudentWorkItem work={work} style="card-case" courseTitle={courseTitle} />
                   <div className="px-1">
                     <div className="text-[10px] font-bold uppercase tracking-widest text-black/30 mb-1">Student</div>
                     <div className="text-sm font-semibold text-black/70">{getCardCaseStudentLabel(work)}</div>
@@ -520,7 +522,7 @@ export const CourseDetailTemplate = ({
             )}
           >
             {filteredWorks.map((work) => (
-              <StudentWorkItem key={work.id} work={work} style={activeProject?.displayStyle || 'generic-card'} />
+              <StudentWorkItem key={work.id} work={work} style={activeProject?.displayStyle || 'generic-card'} courseTitle={courseTitle} />
             ))}
           </div>
         )}

@@ -13,18 +13,20 @@ import {
 
 interface GalleryStoryProps {
   work: StudentWork;
+  courseTitle: string;
   isExpanded: boolean;
   setIsExpanded: (expanded: boolean) => void;
   zoomedImage: string | null;
   setZoomedImage: (img: string | null) => void;
 }
 
-export const GalleryStory = ({ work, isExpanded, setIsExpanded, zoomedImage, setZoomedImage }: GalleryStoryProps) => {
+export const GalleryStory = ({ work, courseTitle, isExpanded, setIsExpanded, zoomedImage, setZoomedImage }: GalleryStoryProps) => {
   const members = memberRows(work);
   const storyButtons = (work.storyButtons ?? []).filter((button) => button.label && button.url);
   const images = useMemo(() => getGalleryStoryImages(work.mainImage, work.moreImages), [work.mainImage, work.moreImages]);
   const currentZoomedIndex = getGalleryStoryImageIndex(images, zoomedImage);
   const hasMultipleImages = images.length > 1;
+  const headerTag = work.tags?.[0]?.trim() || courseTitle;
 
   const openZoomedImage = useCallback((image: string) => {
     setZoomedImage(image);
@@ -77,7 +79,7 @@ export const GalleryStory = ({ work, isExpanded, setIsExpanded, zoomedImage, set
         <div>
           <div className="flex items-center gap-4 mb-4">
             <span className="bg-blue-600 text-white text-[10px] font-bold px-3 py-1 uppercase tracking-wider rounded">
-              主題二：EVERYDAY TRACKING
+              {headerTag}
             </span>
             <span className="text-black/20 font-mono text-xs uppercase tracking-widest">Class of {work.year}</span>
           </div>

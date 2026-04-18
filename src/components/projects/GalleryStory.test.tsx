@@ -16,6 +16,7 @@ const work = {
   description: 'A story-driven gallery about everyday tracking.',
   mainImage: 'https://example.com/main.jpg',
   moreImages: ['https://example.com/detail-1.jpg', 'https://example.com/detail-2.jpg'],
+  tags: ['Everyday Tracking', 'Mapping'],
   sourceDatabaseId: 'db-gallery-story',
   methodologies: ['Mapping'],
   storyButtons: [{ label: 'Read More', url: 'https://example.com/story' }],
@@ -41,6 +42,7 @@ test('GalleryStory modal renders previous and next controls when multiple images
   const html = renderToStaticMarkup(
     <GalleryStory
       work={work}
+      courseTitle="Critical Making"
       isExpanded={true}
       setIsExpanded={() => undefined}
       zoomedImage={work.mainImage}
@@ -50,4 +52,34 @@ test('GalleryStory modal renders previous and next controls when multiple images
 
   assert.match(html, /aria-label="Previous image"/);
   assert.match(html, /aria-label="Next image"/);
+});
+
+test('GalleryStory header label prefers the first keyword tag', () => {
+  const html = renderToStaticMarkup(
+    <GalleryStory
+      work={work}
+      courseTitle="Critical Making"
+      isExpanded={false}
+      setIsExpanded={() => undefined}
+      zoomedImage={null}
+      setZoomedImage={() => undefined}
+    />,
+  );
+
+  assert.match(html, /Everyday Tracking/i);
+});
+
+test('GalleryStory header label falls back to the course title when no keyword tags exist', () => {
+  const html = renderToStaticMarkup(
+    <GalleryStory
+      work={{ ...work, tags: undefined }}
+      courseTitle="Critical Making"
+      isExpanded={false}
+      setIsExpanded={() => undefined}
+      zoomedImage={null}
+      setZoomedImage={() => undefined}
+    />,
+  );
+
+  assert.match(html, /Critical Making/i);
 });
