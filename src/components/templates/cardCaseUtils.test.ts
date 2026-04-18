@@ -84,6 +84,12 @@ test('buildCardCasePrintHtml includes student labels and card names for print ou
   assert.match(html, /\/api\/image-proxy\?url=/);
   assert.match(html, /\.keyword \{[^}]*display: inline-flex;/);
   assert.match(html, /\.keyword \{[^}]*line-height: 1;/);
+  assert.match(html, /\.card \{[^}]*position: relative;/);
+  assert.match(html, /\.media \{[^}]*position: absolute;/);
+  assert.match(html, /\.media \{[^}]*inset: 0;/);
+  assert.match(html, /\.body \{[^}]*position: absolute;/);
+  assert.match(html, /\.body \{[^}]*color: #fff;/);
+  assert.doesNotMatch(html, /\.body \{[^}]*background: #fff;/);
 });
 
 test('getCardCaseAvailableYears only uses group-level years', () => {

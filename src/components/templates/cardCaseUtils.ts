@@ -154,16 +154,18 @@ export function buildCardCasePrintHtml(works: StudentWork[], title: string): str
             ${imageSection}
             <div class="overlay"></div>
             <div class="icon-shell">${iconSection}</div>
-            <div class="hero-copy">
-              <div class="target-label">Target User</div>
-              <div class="target-value">${escapeHtml(work.targetUser || 'N/A')}</div>
+            <div class="body">
+              <div class="target-block">
+                <div class="target-label">Target User</div>
+                <div class="target-value">${escapeHtml(work.targetUser || 'N/A')}</div>
+              </div>
+              <div class="content-block">
+                <div class="meta">${escapeHtml(work.year || 'N/A')} • ${escapeHtml(work.designTeam || 'N/A')}</div>
+                <h2>${escapeHtml(work.assignmentName)}</h2>
+                <div class="keywords">${keywords}</div>
+                <div class="student">${escapeHtml(studentLabel)}</div>
+              </div>
             </div>
-          </div>
-          <div class="body">
-            <div class="meta">${escapeHtml(work.year || 'N/A')} • ${escapeHtml(work.designTeam || 'N/A')}</div>
-            <h2>${escapeHtml(work.assignmentName)}</h2>
-            <div class="keywords">${keywords}</div>
-            <div class="student">${escapeHtml(studentLabel)}</div>
           </div>
         </article>
       `;
@@ -191,23 +193,24 @@ export function buildCardCasePrintHtml(works: StudentWork[], title: string): str
           .page-break { page-break-after: always; }
           .page-title { padding: 0 0 6mm; font-size: 16pt; font-weight: 700; }
           .page-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5mm; }
-          .card { border: 1px solid #ddd; min-height: 88mm; display: flex; flex-direction: column; overflow: hidden; background: #fff; }
-          .media { position: relative; height: 48mm; overflow: hidden; background: #e5e7eb; }
+          .card { position: relative; border: 1px solid #ddd; min-height: 88mm; overflow: hidden; background: #111; }
+          .media { position: absolute; inset: 0; overflow: hidden; background: #e5e7eb; }
           .image { width: 100%; height: 100%; object-fit: cover; background: #f3f4f6; }
           .fallback { background: linear-gradient(135deg, #1d4ed8 0%, #a855f7 100%); }
-          .overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.88), rgba(0,0,0,0.1)); }
+          .overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.94) 0%, rgba(0,0,0,0.52) 34%, rgba(0,0,0,0.1) 68%, rgba(0,0,0,0.03) 100%); }
           .icon-shell { position: absolute; top: 4mm; left: 4mm; width: 12mm; height: 12mm; border-radius: 999px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; overflow: hidden; }
           .icon-image { width: 100%; height: 100%; object-fit: cover; }
           .icon-placeholder { width: 100%; height: 100%; }
-          .hero-copy { position: absolute; left: 4mm; bottom: 4mm; color: #fff; }
-          .target-label { font-size: 7pt; text-transform: uppercase; letter-spacing: 0.12em; opacity: 0.65; margin-bottom: 1mm; }
+          .body { position: absolute; inset: auto 0 0 0; display: flex; flex-direction: column; gap: 4mm; padding: 4mm; color: #fff; font-size: 9pt; }
+          .target-block { display: flex; flex-direction: column; gap: 1mm; }
+          .target-label { font-size: 7pt; text-transform: uppercase; letter-spacing: 0.12em; opacity: 0.65; }
           .target-value { font-size: 9pt; font-weight: 700; }
-          .body { padding: 4mm; display: flex; flex-direction: column; gap: 2mm; font-size: 9pt; }
-          .meta { color: #666; font-size: 8pt; text-transform: uppercase; }
-          h2 { margin: 0; font-size: 11pt; line-height: 1.25; }
+          .content-block { display: flex; flex-direction: column; gap: 2mm; }
+          .meta { color: rgba(255,255,255,0.64); font-size: 8pt; text-transform: uppercase; }
+          h2 { margin: 0; font-size: 11pt; line-height: 1.25; color: #fff; }
           .keywords { display: flex; flex-wrap: wrap; gap: 1.2mm; min-height: 8mm; }
-          .keyword { display: inline-flex; align-items: center; padding: 0.7mm 1.8mm; border-radius: 2.6mm; border: 1px solid #d4d4d8; font-size: 7pt; line-height: 1; text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap; }
-          .student { font-weight: 700; margin-top: auto; }
+          .keyword { display: inline-flex; align-items: center; padding: 0.7mm 1.8mm; border-radius: 2.6mm; border: 1px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.08); font-size: 7pt; line-height: 1; color: #fff; text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap; }
+          .student { font-weight: 700; color: #fff; }
         </style>
       </head>
       <body>
