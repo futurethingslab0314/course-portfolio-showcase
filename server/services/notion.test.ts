@@ -248,6 +248,41 @@ test('blockToBlogSectionForTest maps Notion code blocks with language metadata',
   });
 });
 
+test('blockToBlogSectionForTest maps embedded video blocks into playable video sections', async () => {
+  const section = await blockToBlogSectionForTest({
+    id: 'embed-block',
+    type: 'embed',
+    embed: {
+      url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    },
+  } as any);
+
+  assert.deepEqual(section, {
+    type: 'video',
+    content: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    provider: 'youtube',
+  });
+});
+
+test('blockToBlogSectionForTest maps Notion video files into playable video sections', async () => {
+  const section = await blockToBlogSectionForTest({
+    id: 'video-block',
+    type: 'video',
+    video: {
+      type: 'external',
+      external: {
+        url: 'https://example.com/demo.mp4',
+      },
+    },
+  } as any);
+
+  assert.deepEqual(section, {
+    type: 'video',
+    content: 'https://example.com/demo.mp4',
+    provider: 'direct',
+  });
+});
+
 test('fetchAllCourses returns only published courses for homepage fallback', async () => {
   globalThis.fetch = async () =>
     new Response(

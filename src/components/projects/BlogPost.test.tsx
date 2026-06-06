@@ -63,6 +63,37 @@ test('renderBlogSection renders rich-text links in paragraphs and table cells as
   assert.match(tableHtml, /rel="noopener noreferrer"/);
 });
 
+test('renderBlogSection renders playable video embeds and direct video files', () => {
+  const embedHtml = renderToStaticMarkup(
+    renderBlogSection(
+      {
+        type: 'video',
+        content: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        provider: 'youtube',
+      },
+      0,
+    ),
+  );
+
+  const directHtml = renderToStaticMarkup(
+    renderBlogSection(
+      {
+        type: 'video',
+        content: 'https://example.com/demo.mp4',
+        provider: 'direct',
+      },
+      1,
+    ),
+  );
+
+  assert.match(embedHtml, /<iframe/);
+  assert.match(embedHtml, /youtube\.com\/embed\/dQw4w9WgXcQ/);
+  assert.match(embedHtml, /allowFullScreen/);
+  assert.match(directHtml, /<video/);
+  assert.match(directHtml, /controls/);
+  assert.match(directHtml, /demo\.mp4/);
+});
+
 test('renderBlogSection renders rich-text color annotations', () => {
   const html = renderToStaticMarkup(
     renderBlogSection(

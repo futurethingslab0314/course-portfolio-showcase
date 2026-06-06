@@ -228,6 +228,49 @@ function asImageUrlFromBlock(block: NotionBlock): string {
   return '';
 }
 
+function asVideoUrlFromBlock(block: NotionBlock): string {
+  const video = block.video;
+  if (video) {
+    if (video.type === 'external') return video.external?.url || '';
+    if (video.type === 'file') return video.file?.url || '';
+    if (typeof video.url === 'string') return video.url;
+  }
+
+  const embed = block.embed;
+  if (embed) {
+    if (typeof embed.url === 'string') return embed.url;
+    if (embed.type === 'external') return embed.external?.url || '';
+    if (embed.type === 'file') return embed.file?.url || '';
+  }
+
+  return '';
+}
+
+function inferVideoProvider(url: string): 'youtube' | 'vimeo' | 'direct' | 'embed' {
+  const normalized = url.trim().toLowerCase();
+
+  if (/\.(mp4|webm|ogg|mov|m4v)(\?|#|$)/i.test(normalized)) {
+    return 'direct';
+  }
+
+  if (normalized.includes('youtu.be/') || normalized.includes('youtube.com/')) {
+    return 'youtube';
+  }
+
+  if (normalized.includes('vimeo.com/')) {
+    return 'vimeo';
+  }
+
+  return 'embed';
+}
+
+function asVideoCaptionFromBlock(block: NotionBlock): string | undefined {
+  const videoCaption = richTextToPlainText(block.video?.caption);
+  if (videoCaption) return videoCaption;
+  const embedCaption = richTextToPlainText(block.embed?.caption);
+  return embedCaption || undefined;
+}
+
 function asTableRows(blocks: NotionBlock[]): string[][] {
   return blocks
     .filter((block) => block.type === 'table_row')
@@ -284,6 +327,18 @@ async function blockToBlogSection(block: NotionBlock): Promise<StudentWork['blog
     if (!url) return null;
     const caption = richTextToPlainText(block.image?.caption);
     return { type: 'image', content: url, caption: caption || undefined };
+  }
+
+  if (block.type === 'embed' || block.type === 'video') {
+    const url = asVideoUrlFromBlock(block);
+    if (!url) return null;
+    const caption = asVideoCaptionFromBlock(block);
+    return {
+      type: 'video',
+      content: url,
+      ...(caption ? { caption } : {}),
+      provider: inferVideoProvider(url),
+    };
   }
 
   if (block.type === 'code') {

@@ -22,6 +22,13 @@ export interface BlogImageSection {
   caption?: string;
 }
 
+export interface BlogVideoSection {
+  type: 'video';
+  content: string;
+  caption?: string;
+  provider?: 'youtube' | 'vimeo' | 'direct' | 'embed';
+}
+
 export interface BlogCodeSection {
   type: 'code';
   content: string;
@@ -43,7 +50,7 @@ export interface BlogToggleSection {
   children: BlogContentSection[];
 }
 
-export type BlogContentSection = BlogTextSection | BlogImageSection | BlogCodeSection | BlogTableSection | BlogToggleSection;
+export type BlogContentSection = BlogTextSection | BlogImageSection | BlogVideoSection | BlogCodeSection | BlogTableSection | BlogToggleSection;
 
 export interface StudentWork {
   id: string;

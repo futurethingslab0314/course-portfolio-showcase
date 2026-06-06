@@ -79,6 +79,80 @@ function renderRichText(spans: BlogRichTextSpan[] | undefined, fallback: string)
   return spans.map((span, index) => wrapSpan(span, index));
 }
 
+function isDirectVideoUrl(url: string) {
+  return /\.(mp4|webm|ogg|mov|m4v)(\?|#|$)/i.test(url);
+}
+
+function getEmbeddedVideoSrc(url: string) {
+  const trimmed = url.trim();
+
+  const youtubeShort = trimmed.match(/^https?:\/\/(?:www\.)?youtu\.be\/([^?&#/]+)/i);
+  if (youtubeShort?.[1]) {
+    return `https://www.youtube.com/embed/${youtubeShort[1]}`;
+  }
+
+  const youtubeWatch = trimmed.match(/[?&]v=([^?&#/]+)/i);
+  if (youtubeWatch?.[1] && /youtube\.com/i.test(trimmed)) {
+    return `https://www.youtube.com/embed/${youtubeWatch[1]}`;
+  }
+
+  const youtubeEmbed = trimmed.match(/youtube\.com\/embed\/([^?&#/]+)/i);
+  if (youtubeEmbed?.[1]) {
+    return `https://www.youtube.com/embed/${youtubeEmbed[1]}`;
+  }
+
+  const youtubeShorts = trimmed.match(/youtube\.com\/shorts\/([^?&#/]+)/i);
+  if (youtubeShorts?.[1]) {
+    return `https://www.youtube.com/embed/${youtubeShorts[1]}`;
+  }
+
+  const vimeoMatch = trimmed.match(/vimeo\.com\/(?:video\/)?(\d+)/i);
+  if (vimeoMatch?.[1]) {
+    return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
+  }
+
+  return trimmed;
+}
+
+function renderVideoSection(
+  section: Extract<BlogContentSection, { type: 'video' }>,
+  index: number,
+) {
+  const caption = section.caption?.trim();
+  const isDirect = section.provider === 'direct' || isDirectVideoUrl(section.content);
+  const src = isDirect ? section.content : getEmbeddedVideoSrc(section.content);
+
+  return (
+    <div key={index} className="blog-section">
+      <figure className="my-8">
+        <div className="overflow-hidden bg-black/5">
+          {isDirect ? (
+            <video
+              controls
+              playsInline
+              className="w-full h-auto bg-black"
+              src={src}
+            />
+          ) : (
+            <iframe
+              src={src}
+              title={caption || 'Embedded video'}
+              className="aspect-video w-full border-0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+            />
+          )}
+        </div>
+        {caption && (
+          <figcaption className="mt-4 text-center text-sm text-black/40 font-medium italic">
+            - {caption}
+          </figcaption>
+        )}
+      </figure>
+    </div>
+  );
+}
+
 function renderTextSection(
   section: Extract<BlogContentSection, { type: 'text' }>,
   index: number,
@@ -145,6 +219,10 @@ export function renderBlogSection(section: BlogContentSection, index: number, op
         </figure>
       </div>
     );
+  }
+
+  if (section.type === 'video') {
+    return renderVideoSection(section, index);
   }
 
   if (section.type === 'code') {

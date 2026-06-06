@@ -17,9 +17,10 @@ export interface StudentWork {
   sourceDatabaseId: string;
   gridLocation?: string;
   blogContent?: {
-    type: 'text' | 'image';
+    type: 'text' | 'image' | 'video';
     content: string;
     caption?: string;
+    provider?: 'youtube' | 'vimeo' | 'direct' | 'embed';
   }[];
   // Shop Catalog Fields
   purpose?: string;
