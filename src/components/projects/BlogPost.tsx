@@ -143,17 +143,6 @@ function BlogPostArticleContent({
             </div>
           </div>
 
-          {work.url && (
-            <a
-              href={work.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 bg-black text-white px-6 py-3 text-xs font-bold uppercase tracking-widest hover:scale-105 transition-transform active:scale-95"
-            >
-              View Full Project
-              <ExternalLink size={14} />
-            </a>
-          )}
         </div>
       </div>
     </article>
