@@ -104,3 +104,33 @@ test('normalizeStudentWork infers story buttons from flexible button field varia
   ]);
   assert.equal(warnings.length, 0);
 });
+
+test('normalizeStudentWork supports descriptive suffixes on story button field names', () => {
+  const warnings: Array<{ level: 'warning' | 'error'; code: string; message: string }> = [];
+  const work = normalizeStudentWork(
+    {
+      id: 'blog-3',
+      title: 'Blog With Descriptive Buttons',
+      description: 'Testing suffix labels on CTA fields.',
+      mainImage: 'https://example.com/cover.jpg',
+      button01_videoButtons: 'Watch Video',
+      URLbutton01_videoLink: 'https://example.com/video',
+      button02_readMore: 'Read More',
+      URLbutton02_readMore: 'https://example.com/read-more',
+    },
+    'db-blog',
+    {},
+    warnings,
+    {
+      projectId: 'project-blog',
+      courseId: 'course-1',
+      sourceDatabaseId: 'db-blog',
+    },
+  );
+
+  assert.deepEqual(work.storyButtons, [
+    { label: 'Watch Video', url: 'https://example.com/video' },
+    { label: 'Read More', url: 'https://example.com/read-more' },
+  ]);
+  assert.equal(warnings.length, 0);
+});

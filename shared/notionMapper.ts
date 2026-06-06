@@ -239,23 +239,19 @@ function collectStoryButtonsFromSource(source: UnknownRecord): { label: string; 
   const buffer = new Map<string, { label?: string; url?: string }>();
 
   const parseButtonLabelIndex = (key: string): string | null => {
-    const match = key.match(/^button(?:[\s_-]*(\d+))?$/i);
+    const match = key.match(/^button(?:[\s_-]*(\d+))?(?:[\s_-]+.*)?$/i);
     if (!match) return null;
     return (match[1] || '0').padStart(4, '0');
   };
 
   const parseButtonUrlIndex = (key: string): string | null => {
-    const normalized = key.replace(/[\s_-]+/g, '').toLowerCase();
+    const normalized = key.trim();
 
-    let match = normalized.match(/^urlbutton(\d+)$/);
-    if (match) return match[1].padStart(4, '0');
+    let match = normalized.match(/^urlbutton(?:[\s_-]*(\d+))?(?:[\s_-]+.*)?$/i);
+    if (match) return (match[1] || '0').padStart(4, '0');
 
-    match = normalized.match(/^buttonurl(\d+)$/);
-    if (match) return match[1].padStart(4, '0');
-
-    if (normalized === 'urlbutton' || normalized === 'buttonurl' || normalized.startsWith('buttonurl') || normalized.startsWith('urlbutton')) {
-      return '0000';
-    }
+    match = normalized.match(/^buttonurl(?:[\s_-]*(\d+))?(?:[\s_-]+.*)?$/i);
+    if (match) return (match[1] || '0').padStart(4, '0');
 
     return null;
   };
