@@ -11,7 +11,7 @@ const mapping: FieldMapping = {
   assignmentName: { sourceCandidates: findCandidate(propertyList, ['title', 'assignment', 'name']), transform: 'string' },
   members: { sourceCandidates: findCandidate(propertyList, ['member', 'author', 'student']), transform: 'string[]' },
   description: { sourceCandidates: findCandidate(propertyList, ['description', 'summary']), transform: 'string' },
-  mainImage: { sourceCandidates: findCandidate(propertyList, ['image', 'cover', 'thumbnail']), transform: 'string' },
+  mainImage: { sourceCandidates: findCandidate(propertyList, ['image', 'cover', 'thumbnail', 'file', 'files', 'media']), transform: 'string' },
   tags: { sourceCandidates: findCandidate(propertyList, ['tag', 'category']), transform: 'string[]' },
   year: { sourceCandidates: findCandidate(propertyList, ['year', 'semester', 'date']), transform: 'string' },
 };

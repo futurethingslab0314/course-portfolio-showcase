@@ -93,7 +93,7 @@ const FIELD_ALIASES: Partial<Record<keyof StudentWork, string[]>> = {
   members: ['members', 'studentname', 'membername', 'authors', 'team'],
   studentIds: ['studentid', 'memberid', 'idnumber', '學號'],
   description: ['description', 'projectintro', 'summary', 'brief', 'overview', 'abstract'],
-  mainImage: ['mainimage', 'cover', 'thumbnail', 'heroimage'],
+  mainImage: ['mainimage', 'main image', 'cover', 'thumbnail', 'heroimage', 'files', 'file', 'media', 'files&media', 'files and media'],
   moreImages: ['moreimages', 'gallery', 'slides', 'imageset'],
   themeTag: ['themetag', 'theme tag', 'activitytype'],
   startDate: ['startdate', 'start date'],
@@ -186,7 +186,7 @@ function keywordCandidates(field: keyof StudentWork): string[] {
     case 'description':
       return ['description', 'projectintro', 'project intro', 'summary', 'brief', 'abstract', 'overview', 'content', 'story'];
     case 'mainImage':
-      return ['mainimage', 'main image', 'cover', 'image', 'thumbnail'];
+      return ['mainimage', 'main image', 'cover', 'image', 'thumbnail', 'files', 'file', 'media', 'files & media', 'files and media'];
     case 'moreImages':
       return ['moreimages', 'more image', 'images', 'gallery', 'slides'];
     case 'url':
