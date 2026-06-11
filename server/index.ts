@@ -9,6 +9,7 @@ import { fetchCoursePayloadBySlugFromSupabase, fetchCoursesFromSupabase, shouldR
 import { syncAllCoursesToSupabase, syncCourseToSupabase } from './services/syncToSupabase';
 import { syncCourseLink, syncProjectMappings, validateSyncSecret } from './services/webhookSync';
 import { resolveSyncButtonAuth } from './services/syncButtonAuth';
+import { getCourseSyncJob, startCourseSyncJob } from './services/syncCourseButtonJobs';
 import { CoursePayload } from '../shared/contracts';
 import { Course } from '../src/types';
 
@@ -431,6 +432,7 @@ app.get('/api/admin/sync-course-button', async (req, res) => {
   const slug = pickFromRequest(req, ['slug', 'Slug']);
   const token = pickFromRequest(req, ['token', 'Token', 'syncToken', 'SyncToken']);
   const secret = String(req.get('x-sync-secret') || req.query?.secret || req.query?.sync_secret || '').trim();
+  const waitForSync = parseBooleanLike(req.body?.wait ?? req.query?.wait, false);
 
   if (!slug) {
     res.status(400).json({ error: 'Missing required query param: slug' });
@@ -454,15 +456,45 @@ app.get('/api/admin/sync-course-button', async (req, res) => {
       return;
     }
 
-    const result = await syncCourseToSupabase({ slug });
-    invalidateAllApiCache();
-    res.json({ ok: true, authMethod: auth.method, ...result });
+    if (waitForSync) {
+      const result = await syncCourseToSupabase({ slug });
+      invalidateAllApiCache();
+      res.json({ ok: true, authMethod: auth.method, ...result });
+      return;
+    }
+
+    const job = startCourseSyncJob({
+      slug,
+      authMethod: auth.method,
+      syncCourse: syncCourseToSupabase,
+      onSuccess: () => {
+        invalidateAllApiCache();
+      },
+    });
+
+    res.status(202).json({
+      ok: true,
+      accepted: true,
+      authMethod: auth.method,
+      jobId: job.jobId,
+      status: job.status,
+      statusUrl: `/api/admin/sync-course-button/jobs/${encodeURIComponent(job.jobId)}`,
+    });
   } catch (error) {
     res.status(500).json({
       error: 'Failed to sync course by button token',
       detail: error instanceof Error ? error.message : String(error),
     });
   }
+});
+
+app.get('/api/admin/sync-course-button/jobs/:jobId', (req, res) => {
+  const job = getCourseSyncJob(String(req.params.jobId || '').trim());
+  if (!job) {
+    res.status(404).json({ error: 'Sync job not found' });
+    return;
+  }
+  res.json({ ok: true, job });
 });
 
 if (hasFrontendBuild) {
