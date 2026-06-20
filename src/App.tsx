@@ -18,6 +18,7 @@ import { CardCase } from './components/projects/CardCase';
 // Templates
 import { HomePageTemplate } from './components/templates/HomePageTemplate';
 import { CourseDetailTemplate } from './components/templates/CourseDetailTemplate';
+import { AdminSyncCourseTemplate } from './components/templates/AdminSyncCourseTemplate';
 
 const StudentWorkItem = ({ work, style, courseTitle }: { work: StudentWork; style: Project['displayStyle']; courseTitle: string }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -193,6 +194,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/course/:id" element={<CourseDetailPage />} />
+        <Route path="/admin/sync-course" element={<AdminSyncCourseTemplate />} />
       </Routes>
     </Router>
   );
