@@ -12,7 +12,7 @@ export interface BlogRichTextSpan {
 export interface BlogTextSection {
   type: 'text';
   content: string;
-  blockType?: 'paragraph' | 'heading_1' | 'heading_2' | 'heading_3' | 'quote' | 'callout' | 'bulleted_list_item' | 'numbered_list_item';
+  blockType?: 'paragraph' | 'heading_1' | 'heading_2' | 'heading_3' | 'heading_4' | 'quote' | 'callout' | 'bulleted_list_item' | 'numbered_list_item';
   richText?: BlogRichTextSpan[];
 }
 
@@ -46,11 +46,21 @@ export interface BlogTableSection {
 export interface BlogToggleSection {
   type: 'toggle';
   content: string;
+  blockType?: 'toggle' | 'heading_1' | 'heading_2' | 'heading_3' | 'heading_4';
   richText?: BlogRichTextSpan[];
   children: BlogContentSection[];
 }
 
-export type BlogContentSection = BlogTextSection | BlogImageSection | BlogVideoSection | BlogCodeSection | BlogTableSection | BlogToggleSection;
+export interface BlogColumnSection {
+  children: BlogContentSection[];
+}
+
+export interface BlogColumnListSection {
+  type: 'column_list';
+  columns: BlogColumnSection[];
+}
+
+export type BlogContentSection = BlogTextSection | BlogImageSection | BlogVideoSection | BlogCodeSection | BlogTableSection | BlogToggleSection | BlogColumnListSection;
 
 export interface StudentWork {
   id: string;

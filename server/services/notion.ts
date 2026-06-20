@@ -298,9 +298,30 @@ async function blockToBlogSection(block: NotionBlock): Promise<StudentWork['blog
     return { type: 'text', blockType: 'paragraph', content: text, richText: richTextToSpans(block.paragraph?.rich_text) };
   }
 
-  if (block.type === 'heading_1' || block.type === 'heading_2' || block.type === 'heading_3') {
+  const mapChildBlocks = async (blocks: NotionBlock[]): Promise<NonNullable<StudentWork['blogContent']>> => {
+    const children: NonNullable<StudentWork['blogContent']> = [];
+    for (const childBlock of blocks) {
+      const section = await blockToBlogSection(childBlock);
+      if (section) {
+        children.push(section);
+      }
+    }
+    return children;
+  };
+
+  if (block.type === 'heading_1' || block.type === 'heading_2' || block.type === 'heading_3' || block.type === 'heading_4') {
     const heading = richTextToPlainText(block[block.type]?.rich_text);
     if (!heading) return null;
+    if (Boolean(block[block.type]?.is_toggleable)) {
+      const childBlocks = Array.isArray(block.children) ? block.children : await fetchBlockChildren(block.id);
+      return {
+        type: 'toggle',
+        blockType: block.type,
+        content: heading,
+        richText: richTextToSpans(block[block.type]?.rich_text),
+        children: await mapChildBlocks(childBlocks),
+      };
+    }
     return { type: 'text', blockType: block.type, content: heading, richText: richTextToSpans(block[block.type]?.rich_text) };
   }
 
@@ -317,8 +338,8 @@ async function blockToBlogSection(block: NotionBlock): Promise<StudentWork['blog
     return {
       type: 'text',
       blockType: block.type,
-      content: `- ${text}`,
-      richText: spans ? [{ text: '- ' }, ...spans] : undefined,
+      content: text,
+      richText: spans,
     };
   }
 
@@ -370,19 +391,27 @@ async function blockToBlogSection(block: NotionBlock): Promise<StudentWork['blog
     const text = richTextToPlainText(block.toggle?.rich_text);
     if (!text) return null;
     const childBlocks = Array.isArray(block.children) ? block.children : await fetchBlockChildren(block.id);
-    const children: NonNullable<StudentWork['blogContent']> = [];
-    for (const childBlock of childBlocks) {
-      const section = await blockToBlogSection(childBlock);
-      if (section) {
-        children.push(section);
-      }
-    }
     return {
       type: 'toggle',
       content: text,
       richText: richTextToSpans(block.toggle?.rich_text),
-      children,
+      children: await mapChildBlocks(childBlocks),
     };
+  }
+
+  if (block.type === 'column_list') {
+    const childBlocks = Array.isArray(block.children) ? block.children : await fetchBlockChildren(block.id);
+    const columns = [];
+
+    for (const columnBlock of childBlocks.filter((childBlock) => childBlock.type === 'column')) {
+      const columnChildren = Array.isArray(columnBlock.children) ? columnBlock.children : await fetchBlockChildren(columnBlock.id);
+      const children = await mapChildBlocks(columnChildren);
+      if (children.length) {
+        columns.push({ children });
+      }
+    }
+
+    return columns.length ? { type: 'column_list', columns } : null;
   }
 
   return null;

@@ -173,11 +173,28 @@ function renderTextSection(
     return <h3 id={anchorId} key={index} className="mt-8 mb-6 text-[20px] leading-tight font-semibold tracking-tight text-black/90 scroll-mt-24">{content}</h3>;
   }
 
+  if (section.blockType === 'heading_4') {
+    return <h4 id={anchorId} key={index} className="mt-7 mb-4 text-[17px] leading-snug font-semibold tracking-tight text-black/85 scroll-mt-24">{content}</h4>;
+  }
+
   if (section.blockType === 'quote' || section.blockType === 'callout') {
     return (
       <blockquote key={index} className="mb-6 border-l-4 border-black/15 pl-5 text-black/70 italic">
         {content}
       </blockquote>
+    );
+  }
+
+  if (section.blockType === 'bulleted_list_item' || section.blockType === 'numbered_list_item') {
+    const ListTag = section.blockType === 'numbered_list_item' ? 'ol' : 'ul';
+    const listClass = section.blockType === 'numbered_list_item' ? 'list-decimal' : 'list-disc';
+    const listContent = section.richText?.length ? renderRichText(section.richText, section.content) : section.content;
+    return (
+      <div key={index} className="blog-section">
+        <ListTag className={`${listClass} my-3 pl-6 text-black/80 leading-[1.65]`}>
+          <li className="pl-1">{listContent}</li>
+        </ListTag>
+      </div>
     );
   }
 
@@ -192,6 +209,22 @@ function renderTextSection(
       </div>
     </div>
   );
+}
+
+function getToggleSummaryClass(blockType: Extract<BlogContentSection, { type: 'toggle' }>['blockType']) {
+  if (blockType === 'heading_1') {
+    return 'text-[32px] leading-tight font-bold tracking-tight text-black';
+  }
+  if (blockType === 'heading_2') {
+    return 'text-[24px] leading-tight font-bold tracking-tight text-black';
+  }
+  if (blockType === 'heading_3') {
+    return 'text-[20px] leading-tight font-semibold tracking-tight text-black/90';
+  }
+  if (blockType === 'heading_4') {
+    return 'text-[17px] leading-snug font-semibold tracking-tight text-black/85';
+  }
+  return 'text-base font-semibold text-black';
 }
 
 export function renderBlogSection(section: BlogContentSection, index: number, options?: RenderBlogSectionOptions) {
@@ -248,7 +281,10 @@ export function renderBlogSection(section: BlogContentSection, index: number, op
   if (section.type === 'toggle') {
     return (
       <details key={index} className="blog-section my-6 overflow-hidden rounded-2xl border border-black/10 bg-black/[0.02]">
-        <summary className="cursor-pointer list-none px-5 py-4 text-base font-semibold text-black marker:content-none">
+        <summary
+          className={`cursor-pointer list-none px-5 py-4 marker:content-none ${getToggleSummaryClass(section.blockType)}`}
+          aria-label={`Toggle ${section.content}`}
+        >
           <span className="inline-flex items-center gap-3">
             <span className="text-xs uppercase tracking-[0.2em] text-black/35">Toggle</span>
             <span>{renderRichText(section.richText, section.content)}</span>
@@ -260,6 +296,20 @@ export function renderBlogSection(section: BlogContentSection, index: number, op
           </div>
         </div>
       </details>
+    );
+  }
+
+  if (section.type === 'column_list') {
+    return (
+      <div key={index} className="blog-section my-8">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          {section.columns.map((column, columnIndex) => (
+            <div key={columnIndex} className="min-w-0 space-y-4">
+              {column.children.map((child, childIndex) => renderBlogSection(child, childIndex))}
+            </div>
+          ))}
+        </div>
+      </div>
     );
   }
 

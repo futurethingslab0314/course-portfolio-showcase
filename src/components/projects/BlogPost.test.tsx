@@ -165,6 +165,72 @@ test('renderBlogSection renders toggle sections with nested content', () => {
   assert.match(html, /Nested detail/);
 });
 
+test('renderBlogSection renders toggle heading summaries and nested lists', () => {
+  const html = renderToStaticMarkup(
+    renderBlogSection(
+      {
+        type: 'toggle',
+        blockType: 'heading_2',
+        content: 'Open findings',
+        richText: [{ text: 'Open findings' }],
+        children: [
+          {
+            type: 'text',
+            blockType: 'bulleted_list_item',
+            content: 'Interview synthesis',
+            richText: [{ text: 'Interview synthesis' }],
+          },
+          {
+            type: 'text',
+            blockType: 'numbered_list_item',
+            content: 'Prototype audit',
+            richText: [{ text: 'Prototype audit' }],
+          },
+        ],
+      },
+      1,
+    ),
+  );
+
+  assert.match(html, /<details/);
+  assert.match(html, /aria-label="Toggle Open findings"/);
+  assert.match(html, /text-\[24px\]/);
+  assert.match(html, /<ul/);
+  assert.match(html, /<ol/);
+  assert.match(html, /<li[^>]*>Interview synthesis<\/li>/);
+  assert.match(html, /<li[^>]*>Prototype audit<\/li>/);
+});
+
+test('renderBlogSection renders Notion column lists as responsive columns', () => {
+  const html = renderToStaticMarkup(
+    renderBlogSection(
+      {
+        type: 'column_list',
+        columns: [
+          {
+            children: [
+              { type: 'text', blockType: 'heading_3', content: 'Left' },
+              { type: 'text', blockType: 'paragraph', content: 'Left body' },
+            ],
+          },
+          {
+            children: [
+              { type: 'text', blockType: 'heading_3', content: 'Right' },
+              { type: 'text', blockType: 'paragraph', content: 'Right body' },
+            ],
+          },
+        ],
+      },
+      2,
+    ),
+  );
+
+  assert.match(html, /grid-cols-1/);
+  assert.match(html, /md:grid-cols-2/);
+  assert.match(html, /Left body/);
+  assert.match(html, /Right body/);
+});
+
 test('renderBlogSection renders code blocks with preformatted content and language label', () => {
   const html = renderToStaticMarkup(
     renderBlogSection(

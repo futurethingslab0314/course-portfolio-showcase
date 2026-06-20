@@ -185,9 +185,27 @@ function parseMaybeBlogContent(value: unknown): StudentWork['blogContent'] {
       rows.push({
         type: 'toggle',
         content: content.trim(),
+        blockType: typeof (item as any).blockType === 'string' ? (item as any).blockType : undefined,
         richText: parseRichText((item as any).richText),
         children: parseChildren((item as any).children) || [],
       });
+      continue;
+    }
+
+    if (type === 'column_list' && Array.isArray((item as any).columns)) {
+      const columns = (item as any).columns
+        .filter((column: unknown) => column && typeof column === 'object')
+        .map((column: unknown) => ({
+          children: parseChildren((column as any).children) || [],
+        }))
+        .filter((column: { children: NonNullable<StudentWork['blogContent']> }) => column.children.length > 0);
+
+      if (columns.length) {
+        rows.push({
+          type: 'column_list',
+          columns,
+        });
+      }
     }
   }
   return rows.length ? rows : undefined;

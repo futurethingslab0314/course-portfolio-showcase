@@ -229,6 +229,128 @@ test('blockToBlogSectionForTest maps toggle blocks with nested children', async 
   });
 });
 
+test('blockToBlogSectionForTest maps toggle heading blocks with nested list children', async () => {
+  const section = await blockToBlogSectionForTest({
+    id: 'toggle-heading-block',
+    type: 'heading_2',
+    heading_2: {
+      is_toggleable: true,
+      rich_text: [
+        { plain_text: 'Open findings' },
+      ],
+    },
+    children: [
+      {
+        id: 'bullet-child',
+        type: 'bulleted_list_item',
+        bulleted_list_item: {
+          rich_text: [
+            { plain_text: 'Interview synthesis' },
+          ],
+        },
+      },
+      {
+        id: 'number-child',
+        type: 'numbered_list_item',
+        numbered_list_item: {
+          rich_text: [
+            { plain_text: 'Prototype audit' },
+          ],
+        },
+      },
+    ],
+  } as any);
+
+  assert.deepEqual(section, {
+    type: 'toggle',
+    blockType: 'heading_2',
+    content: 'Open findings',
+    richText: [{ text: 'Open findings' }],
+    children: [
+      {
+        type: 'text',
+        blockType: 'bulleted_list_item',
+        content: 'Interview synthesis',
+        richText: [{ text: 'Interview synthesis' }],
+      },
+      {
+        type: 'text',
+        blockType: 'numbered_list_item',
+        content: 'Prototype audit',
+        richText: [{ text: 'Prototype audit' }],
+      },
+    ],
+  });
+});
+
+test('blockToBlogSectionForTest maps column lists with column children', async () => {
+  const section = await blockToBlogSectionForTest({
+    id: 'column-list-block',
+    type: 'column_list',
+    column_list: {},
+    children: [
+      {
+        id: 'left-column',
+        type: 'column',
+        column: {},
+        children: [
+          {
+            id: 'left-paragraph',
+            type: 'paragraph',
+            paragraph: {
+              rich_text: [
+                { plain_text: 'Left body' },
+              ],
+            },
+          },
+        ],
+      },
+      {
+        id: 'right-column',
+        type: 'column',
+        column: {},
+        children: [
+          {
+            id: 'right-paragraph',
+            type: 'paragraph',
+            paragraph: {
+              rich_text: [
+                { plain_text: 'Right body' },
+              ],
+            },
+          },
+        ],
+      },
+    ],
+  } as any);
+
+  assert.deepEqual(section, {
+    type: 'column_list',
+    columns: [
+      {
+        children: [
+          {
+            type: 'text',
+            blockType: 'paragraph',
+            content: 'Left body',
+            richText: [{ text: 'Left body' }],
+          },
+        ],
+      },
+      {
+        children: [
+          {
+            type: 'text',
+            blockType: 'paragraph',
+            content: 'Right body',
+            richText: [{ text: 'Right body' }],
+          },
+        ],
+      },
+    ],
+  });
+});
+
 test('blockToBlogSectionForTest maps Notion code blocks with language metadata', async () => {
   const section = await blockToBlogSectionForTest({
     id: 'code-block',
