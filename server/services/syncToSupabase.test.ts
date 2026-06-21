@@ -14,6 +14,14 @@ test('rewriteBlogContentImagesToR2ForTest rewrites nested blog image sections to
         { type: 'image', content: 'https://notion.site/image-2', caption: 'Nested' },
       ],
     },
+    {
+      type: 'text',
+      blockType: 'callout',
+      content: 'Field note',
+      children: [
+        { type: 'image', content: 'https://notion.site/image-3', caption: 'Callout nested' },
+      ],
+    },
   ];
 
   const uploaded: string[] = [];
@@ -23,8 +31,8 @@ test('rewriteBlogContentImagesToR2ForTest rewrites nested blog image sections to
     return `https://r2.example/${uploaded.length}`;
   });
 
-  assert.deepEqual(uploaded, ['https://notion.site/image-1', 'https://notion.site/image-2']);
-  assert.equal(result.uploaded, 2);
+  assert.deepEqual(uploaded, ['https://notion.site/image-1', 'https://notion.site/image-2', 'https://notion.site/image-3']);
+  assert.equal(result.uploaded, 3);
   assert.equal(result.skipped, 0);
   assert.deepEqual(result.blogContent, [
     { type: 'text', content: 'Intro', blockType: 'paragraph' },
@@ -34,6 +42,14 @@ test('rewriteBlogContentImagesToR2ForTest rewrites nested blog image sections to
       content: 'Details',
       children: [
         { type: 'image', content: 'https://r2.example/2', caption: 'Nested' },
+      ],
+    },
+    {
+      type: 'text',
+      blockType: 'callout',
+      content: 'Field note',
+      children: [
+        { type: 'image', content: 'https://r2.example/3', caption: 'Callout nested' },
       ],
     },
   ]);

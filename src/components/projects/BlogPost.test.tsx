@@ -133,6 +133,44 @@ test('renderBlogSection renders callouts as highlighted content blocks', () => {
   assert.match(html, /Remember/);
 });
 
+test('renderBlogSection renders headings and bullet lists inside callouts', () => {
+  const html = renderToStaticMarkup(
+    renderBlogSection(
+      {
+        type: 'text',
+        blockType: 'callout',
+        content: 'Field note',
+        children: [
+          {
+            type: 'text',
+            blockType: 'heading_3',
+            content: 'What changed',
+          },
+          {
+            type: 'text',
+            blockType: 'bulleted_list_item',
+            content: 'Participants reframed the goal',
+          },
+          {
+            type: 'text',
+            blockType: 'bulleted_list_item',
+            content: 'Prototype language became simpler',
+          },
+        ],
+      },
+      0,
+    ),
+  );
+
+  assert.match(html, /<aside/);
+  assert.match(html, /<h3/);
+  assert.match(html, /What changed/);
+  assert.equal((html.match(/<ul/g) || []).length, 1);
+  assert.equal((html.match(/<li/g) || []).length, 2);
+  assert.match(html, /Participants reframed the goal/);
+  assert.match(html, /Prototype language became simpler/);
+});
+
 test('renderBlogSection renders headings and inline annotations', () => {
   const html = renderToStaticMarkup(
     renderBlogSection(

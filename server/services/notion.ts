@@ -328,7 +328,21 @@ async function blockToBlogSection(block: NotionBlock): Promise<StudentWork['blog
   if (block.type === 'quote' || block.type === 'callout') {
     const text = richTextToPlainText(block[block.type]?.rich_text);
     if (!text) return null;
-    return { type: 'text', blockType: block.type, content: text, richText: richTextToSpans(block[block.type]?.rich_text) };
+    const childBlocks = block.type === 'callout'
+      ? Array.isArray(block.children)
+        ? block.children
+        : block.has_children
+          ? await fetchBlockChildren(block.id)
+          : []
+      : [];
+    const children = childBlocks.length ? await mapChildBlocks(childBlocks) : [];
+    return {
+      type: 'text',
+      blockType: block.type,
+      content: text,
+      richText: richTextToSpans(block[block.type]?.rich_text),
+      ...(children.length ? { children } : {}),
+    };
   }
 
   if (block.type === 'bulleted_list_item' || block.type === 'numbered_list_item') {

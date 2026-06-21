@@ -182,6 +182,11 @@ function renderTextSection(
       <aside key={index} className="blog-section my-6 border border-[#e8dfc8] bg-[#f7f3e8] px-5 py-4 text-black/75 shadow-sm">
         <div className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-black/35">Callout</div>
         <div className="leading-[1.65]">{content}</div>
+        {section.children?.length ? (
+          <div className="mt-4 space-y-4">
+            {renderBlogSections(section.children)}
+          </div>
+        ) : null}
       </aside>
     );
   }

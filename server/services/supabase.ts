@@ -153,6 +153,7 @@ function parseMaybeBlogContent(value: unknown): StudentWork['blogContent'] {
             blockType: type === 'text' && typeof (item as any).blockType === 'string' ? (item as any).blockType : undefined,
             caption: type === 'image' && typeof (item as any).caption === 'string' ? (item as any).caption : undefined,
             richText: type === 'text' ? parseRichText((item as any).richText) : undefined,
+            children: type === 'text' && (item as any).blockType === 'callout' ? parseChildren((item as any).children) : undefined,
             language: type === 'code' && typeof (item as any).language === 'string' ? (item as any).language : undefined,
           }).filter(([, entryValue]) => entryValue !== undefined),
         ) as StudentWork['blogContent'][number],

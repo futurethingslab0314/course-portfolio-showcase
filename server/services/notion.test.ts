@@ -215,6 +215,74 @@ test('blockToBlogSectionForTest maps Notion callout blocks into blog callout sec
   });
 });
 
+test('blockToBlogSectionForTest maps Notion callout children into nested blog sections', async () => {
+  const section = await blockToBlogSectionForTest({
+    id: 'callout-with-children',
+    type: 'callout',
+    callout: {
+      rich_text: [
+        { plain_text: 'Field note' },
+      ],
+    },
+    children: [
+      {
+        id: 'callout-heading',
+        type: 'heading_3',
+        heading_3: {
+          rich_text: [
+            { plain_text: 'What changed' },
+          ],
+        },
+      },
+      {
+        id: 'callout-bullet-1',
+        type: 'bulleted_list_item',
+        bulleted_list_item: {
+          rich_text: [
+            { plain_text: 'Participants reframed the goal' },
+          ],
+        },
+      },
+      {
+        id: 'callout-bullet-2',
+        type: 'bulleted_list_item',
+        bulleted_list_item: {
+          rich_text: [
+            { plain_text: 'Prototype language became simpler' },
+          ],
+        },
+      },
+    ],
+  } as any);
+
+  assert.deepEqual(section, {
+    type: 'text',
+    blockType: 'callout',
+    content: 'Field note',
+    richText: [{ text: 'Field note' }],
+    children: [
+      {
+        type: 'text',
+        blockType: 'heading_3',
+        content: 'What changed',
+        richText: [{ text: 'What changed' }],
+      },
+      {
+        type: 'text',
+        blockType: 'bulleted_list_item',
+        content: 'Participants reframed the goal',
+        richText: [{ text: 'Participants reframed the goal' }],
+      },
+      {
+        type: 'text',
+        blockType: 'bulleted_list_item',
+        content: 'Prototype language became simpler',
+        richText: [{ text: 'Prototype language became simpler' }],
+      },
+    ],
+  });
+});
+
 test('blockToBlogSectionForTest maps toggle blocks with nested children', async () => {
   const section = await blockToBlogSectionForTest({
     id: 'toggle-block',

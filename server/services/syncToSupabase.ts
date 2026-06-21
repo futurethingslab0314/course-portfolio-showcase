@@ -52,6 +52,20 @@ async function rewriteBlogContentImagesToR2(
       return { ...section, children };
     }
 
+    if (section.type === 'text' && section.blockType === 'callout' && Array.isArray(section.children)) {
+      const children = await Promise.all(section.children.map((child) => rewriteSection(child)));
+      return { ...section, children };
+    }
+
+    if (section.type === 'column_list') {
+      const columns = await Promise.all(
+        section.columns.map(async (column) => ({
+          children: await Promise.all(column.children.map((child) => rewriteSection(child))),
+        })),
+      );
+      return { ...section, columns };
+    }
+
     return section;
   };
 
@@ -144,6 +158,10 @@ async function rewriteWorkImagesToR2(payload: CoursePayload, runId: string): Pro
         return sections.reduce((count, section) => {
           if (section.type === 'image') return count + 1;
           if (section.type === 'toggle') return count + countBlogImages(section.children);
+          if (section.type === 'text' && section.blockType === 'callout') return count + countBlogImages(section.children);
+          if (section.type === 'column_list') {
+            return count + section.columns.reduce((columnCount, column) => columnCount + countBlogImages(column.children), 0);
+          }
           return count;
         }, 0);
       };

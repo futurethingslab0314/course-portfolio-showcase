@@ -14,6 +14,7 @@ export interface BlogTextSection {
   content: string;
   blockType?: 'paragraph' | 'heading_1' | 'heading_2' | 'heading_3' | 'heading_4' | 'quote' | 'callout' | 'bulleted_list_item' | 'numbered_list_item';
   richText?: BlogRichTextSpan[];
+  children?: BlogContentSection[];
 }
 
 export interface BlogImageSection {
