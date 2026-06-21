@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { ArrowUp, ExternalLink, Plus, User, X } from 'lucide-react';
 import { StudentWork } from '../../types';
 import { memberRows } from '../../lib/memberRows';
-import { renderBlogSection } from './BlogPostContent';
+import { renderBlogSections } from './BlogPostContent';
 import { buildBlogQuickJumpItems } from './blogPostNavigation';
 import { BlogQuickJumpNav } from './BlogPostQuickJump';
 import { findActiveHeadingAnchorId } from './blogPostScroll';
@@ -122,7 +122,7 @@ function BlogPostArticleContent({
         <BlogQuickJumpNav items={quickJumpItems} activeAnchorId={activeAnchorId} />
 
         <div className="space-y-4 mb-16">
-          {work.blogContent?.map((section, index) => renderBlogSection(section, index, { anchorId: quickJumpIdByIndex.get(index) }))}
+          {renderBlogSections(work.blogContent ?? [], (_section, index) => ({ anchorId: quickJumpIdByIndex.get(index) }))}
         </div>
 
         <div className="pt-12 border-t border-black/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-8">

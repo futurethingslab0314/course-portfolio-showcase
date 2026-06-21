@@ -211,6 +211,60 @@ function renderTextSection(
   );
 }
 
+function isListTextSection(
+  section: BlogContentSection,
+): section is Extract<BlogContentSection, { type: 'text' }> & { blockType: 'bulleted_list_item' | 'numbered_list_item' } {
+  return section.type === 'text' && (section.blockType === 'bulleted_list_item' || section.blockType === 'numbered_list_item');
+}
+
+function renderListItemContent(section: Extract<BlogContentSection, { type: 'text' }>) {
+  return section.richText?.length ? renderRichText(section.richText, section.content) : section.content;
+}
+
+export function renderBlogSections(
+  sections: BlogContentSection[],
+  getOptions?: (section: BlogContentSection, index: number) => RenderBlogSectionOptions | undefined,
+) {
+  const nodes: React.ReactNode[] = [];
+  let index = 0;
+
+  while (index < sections.length) {
+    const section = sections[index];
+
+    if (section && isListTextSection(section)) {
+      const blockType = section.blockType;
+      const listItems: typeof section[] = [];
+
+      while (index < sections.length) {
+        const nextSection = sections[index];
+        if (!nextSection || !isListTextSection(nextSection) || nextSection.blockType !== blockType) {
+          break;
+        }
+        listItems.push(nextSection);
+        index += 1;
+      }
+
+      const ListTag = blockType === 'numbered_list_item' ? 'ol' : 'ul';
+      const listClass = blockType === 'numbered_list_item' ? 'list-decimal' : 'list-disc';
+      nodes.push(
+        <div key={`list-${nodes.length}`} className="blog-section">
+          <ListTag className={`${listClass} my-3 pl-6 text-black/80 leading-[1.65]`}>
+            {listItems.map((item, itemIndex) => (
+              <li key={itemIndex} className="pl-1">{renderListItemContent(item)}</li>
+            ))}
+          </ListTag>
+        </div>,
+      );
+      continue;
+    }
+
+    nodes.push(renderBlogSection(section, index, getOptions?.(section, index)));
+    index += 1;
+  }
+
+  return nodes;
+}
+
 function getToggleSummaryClass(blockType: Extract<BlogContentSection, { type: 'toggle' }>['blockType']) {
   if (blockType === 'heading_1') {
     return 'text-[32px] leading-tight font-bold tracking-tight text-black';
@@ -292,7 +346,7 @@ export function renderBlogSection(section: BlogContentSection, index: number, op
         </summary>
         <div className="border-t border-black/8 px-5 py-5">
           <div className="space-y-5">
-            {section.children.map((child, childIndex) => renderBlogSection(child, childIndex))}
+            {renderBlogSections(section.children)}
           </div>
         </div>
       </details>
@@ -305,7 +359,7 @@ export function renderBlogSection(section: BlogContentSection, index: number, op
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           {section.columns.map((column, columnIndex) => (
             <div key={columnIndex} className="min-w-0 space-y-4">
-              {column.children.map((child, childIndex) => renderBlogSection(child, childIndex))}
+              {renderBlogSections(column.children)}
             </div>
           ))}
         </div>

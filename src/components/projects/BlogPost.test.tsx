@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { renderBlogSection } from './BlogPostContent';
+import { renderBlogSection, renderBlogSections } from './BlogPostContent';
 import { buildBlogQuickJumpItems } from './blogPostNavigation';
 
 test('renderBlogSection renders table sections with column headers and cell content', () => {
@@ -224,6 +224,67 @@ test('renderBlogSection renders toggle heading summaries and nested lists', () =
   assert.match(html, /<ol/);
   assert.match(html, /<li[^>]*>Interview synthesis<\/li>/);
   assert.match(html, /<li[^>]*>Prototype audit<\/li>/);
+});
+
+test('renderBlogSection groups consecutive numbered list items inside toggles', () => {
+  const html = renderToStaticMarkup(
+    renderBlogSection(
+      {
+        type: 'toggle',
+        content: 'Steps',
+        children: [
+          {
+            type: 'text',
+            blockType: 'numbered_list_item',
+            content: 'Research',
+          },
+          {
+            type: 'text',
+            blockType: 'numbered_list_item',
+            content: 'Prototype',
+          },
+          {
+            type: 'text',
+            blockType: 'numbered_list_item',
+            content: 'Test',
+          },
+        ],
+      },
+      1,
+    ),
+  );
+
+  assert.equal((html.match(/<ol/g) || []).length, 1);
+  assert.equal((html.match(/<li/g) || []).length, 3);
+  assert.match(html, /<li[^>]*>Research<\/li><li[^>]*>Prototype<\/li><li[^>]*>Test<\/li>/);
+});
+
+test('renderBlogSections groups consecutive top-level numbered list items', () => {
+  const html = renderToStaticMarkup(
+    <>
+      {renderBlogSections([
+        {
+          type: 'text',
+          blockType: 'numbered_list_item',
+          content: 'Collect',
+        },
+        {
+          type: 'text',
+          blockType: 'numbered_list_item',
+          content: 'Cluster',
+        },
+        {
+          type: 'text',
+          blockType: 'numbered_list_item',
+          content: 'Publish',
+        },
+      ])}
+    </>,
+  );
+
+  assert.equal((html.match(/<ol/g) || []).length, 1);
+  assert.equal((html.match(/<li/g) || []).length, 3);
+  assert.match(html, /<li[^>]*>Collect<\/li><li[^>]*>Cluster<\/li><li[^>]*>Publish<\/li>/);
 });
 
 test('renderBlogSection renders Notion column lists as responsive columns', () => {
