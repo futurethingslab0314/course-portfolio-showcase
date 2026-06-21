@@ -177,7 +177,16 @@ function renderTextSection(
     return <h4 id={anchorId} key={index} className="mt-7 mb-4 text-[17px] leading-snug font-semibold tracking-tight text-black/85 scroll-mt-24">{content}</h4>;
   }
 
-  if (section.blockType === 'quote' || section.blockType === 'callout') {
+  if (section.blockType === 'callout') {
+    return (
+      <aside key={index} className="blog-section my-6 border border-[#e8dfc8] bg-[#f7f3e8] px-5 py-4 text-black/75 shadow-sm">
+        <div className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-black/35">Callout</div>
+        <div className="leading-[1.65]">{content}</div>
+      </aside>
+    );
+  }
+
+  if (section.blockType === 'quote') {
     return (
       <blockquote key={index} className="mb-6 border-l-4 border-black/15 pl-5 text-black/70 italic">
         {content}

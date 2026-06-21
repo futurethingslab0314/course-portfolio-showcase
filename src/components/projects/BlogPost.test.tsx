@@ -113,6 +113,26 @@ test('renderBlogSection renders rich-text color annotations', () => {
   assert.match(html, /background-color:#fbf3db/);
 });
 
+test('renderBlogSection renders callouts as highlighted content blocks', () => {
+  const html = renderToStaticMarkup(
+    renderBlogSection(
+      {
+        type: 'text',
+        blockType: 'callout',
+        content: 'Remember the field context',
+        richText: [{ text: 'Remember', bold: true }, { text: ' the field context' }],
+      },
+      0,
+    ),
+  );
+
+  assert.match(html, /<aside/);
+  assert.match(html, /Callout/);
+  assert.match(html, /bg-\[#f7f3e8\]/);
+  assert.match(html, /<strong[^>]*>Remember<\/strong>/);
+  assert.match(html, /Remember/);
+});
+
 test('renderBlogSection renders headings and inline annotations', () => {
   const html = renderToStaticMarkup(
     renderBlogSection(

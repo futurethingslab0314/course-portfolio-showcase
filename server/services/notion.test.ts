@@ -183,6 +183,38 @@ test('blockToBlogSectionForTest preserves heading metadata and annotations', asy
   });
 });
 
+test('blockToBlogSectionForTest maps Notion callout blocks into blog callout sections', async () => {
+  const section = await blockToBlogSectionForTest({
+    id: 'callout-block',
+    type: 'callout',
+    callout: {
+      rich_text: [
+        {
+          plain_text: 'Remember',
+          annotations: {
+            bold: true,
+            italic: false,
+            underline: false,
+            strikethrough: false,
+            code: false,
+          },
+        },
+        { plain_text: ' the field context' },
+      ],
+    },
+  } as any);
+
+  assert.deepEqual(section, {
+    type: 'text',
+    blockType: 'callout',
+    content: 'Remember the field context',
+    richText: [
+      { text: 'Remember', bold: true },
+      { text: ' the field context' },
+    ],
+  });
+});
+
 test('blockToBlogSectionForTest maps toggle blocks with nested children', async () => {
   const section = await blockToBlogSectionForTest({
     id: 'toggle-block',
