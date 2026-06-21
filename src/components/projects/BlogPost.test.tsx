@@ -165,6 +165,31 @@ test('renderBlogSection renders toggle sections with nested content', () => {
   assert.match(html, /Nested detail/);
 });
 
+test('renderBlogSection renders image sections inside toggles', () => {
+  const html = renderToStaticMarkup(
+    renderBlogSection(
+      {
+        type: 'toggle',
+        content: 'Show process image',
+        children: [
+          {
+            type: 'image',
+            content: 'https://example.com/process.jpg',
+            caption: 'Process sketch',
+          },
+        ],
+      },
+      1,
+    ),
+  );
+
+  assert.match(html, /<details/);
+  assert.match(html, /Show process image/);
+  assert.match(html, /<img/);
+  assert.match(html, /src="https:\/\/example\.com\/process\.jpg"/);
+  assert.match(html, /Process sketch/);
+});
+
 test('renderBlogSection renders toggle heading summaries and nested lists', () => {
   const html = renderToStaticMarkup(
     renderBlogSection(
