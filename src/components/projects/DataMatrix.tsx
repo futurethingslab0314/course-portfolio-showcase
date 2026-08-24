@@ -26,6 +26,22 @@ const getYearValue = (year?: string): number => {
   return Number.isNaN(fallback) ? 0 : fallback;
 };
 
+const parseGridLocation = (gridLocation?: string): { row: number; col: number } => {
+  if (!gridLocation) {
+    return { row: Number.MAX_SAFE_INTEGER, col: Number.MAX_SAFE_INTEGER };
+  }
+
+  const match = gridLocation.trim().toUpperCase().match(/^([A-P])(\d{1,2})$/);
+  if (!match) {
+    return { row: Number.MAX_SAFE_INTEGER, col: Number.MAX_SAFE_INTEGER };
+  }
+
+  return {
+    row: match[1].charCodeAt(0) - 65,
+    col: Number(match[2]) - 1,
+  };
+};
+
 export const DataMatrix = ({ works }: DataMatrixProps) => {
   const [selectedWork, setSelectedWork] = useState<StudentWork | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('coordinate');
@@ -91,7 +107,28 @@ export const DataMatrix = ({ works }: DataMatrixProps) => {
       }
       groups[primaryTag].push(work);
     });
-    return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
+    return Object.entries(groups)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([tag, tagWorks]) => [
+        tag,
+        [...tagWorks].sort((a, b) => {
+          const aLocation = parseGridLocation(a.gridLocation);
+          const bLocation = parseGridLocation(b.gridLocation);
+          const rowDiff = aLocation.row - bLocation.row;
+          if (rowDiff !== 0) {
+            return rowDiff;
+          }
+          const colDiff = aLocation.col - bLocation.col;
+          if (colDiff !== 0) {
+            return colDiff;
+          }
+          const yearDiff = getYearValue(b.year) - getYearValue(a.year);
+          if (yearDiff !== 0) {
+            return yearDiff;
+          }
+          return a.id.localeCompare(b.id);
+        }),
+      ]) as [string, StudentWork[]][];
   }, [filteredWorks]);
 
   useEffect(() => {
@@ -258,7 +295,7 @@ export const DataMatrix = ({ works }: DataMatrixProps) => {
                       {tagWorks.length} works
                     </span>
                   </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-10 gap-4">
                     {tagWorks.map((work) => (
                       <motion.button
                         key={work.id}
