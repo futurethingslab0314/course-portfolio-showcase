@@ -134,3 +134,30 @@ test('normalizeStudentWork supports descriptive suffixes on story button field n
   ]);
   assert.equal(warnings.length, 0);
 });
+
+test('normalizeStudentWork turns files and media into download story buttons', () => {
+  const warnings: Array<{ level: 'warning' | 'error'; code: string; message: string }> = [];
+  const work = normalizeStudentWork(
+    {
+      id: 'blog-4',
+      title: 'Blog With Files',
+      description: 'Testing file download buttons.',
+      mainImage: 'https://example.com/cover.jpg',
+      'Files & media': ['https://example.com/assets/report.pdf', 'https://example.com/assets/source.zip'],
+    },
+    'db-blog',
+    {},
+    warnings,
+    {
+      projectId: 'project-blog',
+      courseId: 'course-1',
+      sourceDatabaseId: 'db-blog',
+    },
+  );
+
+  assert.deepEqual(work.storyButtons, [
+    { label: 'report.pdf', url: 'https://example.com/assets/report.pdf', download: true },
+    { label: 'source.zip', url: 'https://example.com/assets/source.zip', download: true },
+  ]);
+  assert.equal(warnings.length, 0);
+});

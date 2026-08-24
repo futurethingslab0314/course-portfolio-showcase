@@ -221,22 +221,45 @@ function ensureDataSpecs(value: unknown): string[] {
   return [];
 }
 
-function ensureStoryButtons(value: unknown): { label: string; url: string }[] {
+function ensureStoryButtons(value: unknown): { label: string; url: string; download?: boolean }[] {
   if (!Array.isArray(value)) {
     return [];
   }
 
   return value
     .filter((item): item is Record<string, unknown> => !!item && typeof item === 'object' && !Array.isArray(item))
-    .map((item) => ({
-      label: firstString(item.label).trim(),
-      url: firstString(item.url).trim(),
-    }))
+    .map((item) => {
+      const download = toBoolean(item.download);
+      return {
+        label: firstString(item.label).trim(),
+        url: firstString(item.url).trim(),
+        ...(download ? { download: true as const } : {}),
+      };
+    })
     .filter((item) => item.label && item.url);
 }
 
-function collectStoryButtonsFromSource(source: UnknownRecord): { label: string; url: string }[] {
-  const buffer = new Map<string, { label?: string; url?: string }>();
+function getFileNameFromUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    const raw = decodeURIComponent(parsed.pathname.split('/').filter(Boolean).pop() || '');
+    return raw || '';
+  } catch {
+    const raw = decodeURIComponent(url.split('?')[0].split('#')[0].split('/').filter(Boolean).pop() || '');
+    return raw || '';
+  }
+}
+
+function normalizeDownloadLabel(url: string, index: number): string {
+  const fileName = getFileNameFromUrl(url);
+  if (!fileName) {
+    return `Download File ${index + 1}`;
+  }
+  return fileName;
+}
+
+function collectStoryButtonsFromSource(source: UnknownRecord): { label: string; url: string; download?: boolean }[] {
+  const buffer = new Map<string, { label?: string; url?: string; download?: boolean }>();
 
   const parseButtonLabelIndex = (key: string): string | null => {
     const match = key.match(/^button(?:[\s_-]*(\d+))?(?:[\s_-]+.*)?$/i);
@@ -284,21 +307,40 @@ function collectStoryButtonsFromSource(source: UnknownRecord): { label: string; 
 
   return [...buffer.entries()]
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([, item]) => ({ label: String(item.label || '').trim(), url: String(item.url || '').trim() }))
+    .map(([, item]) => ({
+      label: String(item.label || '').trim(),
+      url: String(item.url || '').trim(),
+      ...(item.download ? { download: true as const } : {}),
+    }))
     .filter((item) => item.label && item.url);
 }
 
-function mergeStoryButtons(primary: { label: string; url: string }[], inferred: { label: string; url: string }[]): { label: string; url: string }[] {
-  const merged: { label: string; url: string }[] = [];
+function collectDownloadButtonsFromSource(source: UnknownRecord): { label: string; url: string; download: true }[] {
+  const files = pickAliasStringArray(source, ['Files & media', 'Files and media', 'files & media', 'files and media']);
+  if (!files.length) {
+    return [];
+  }
+
+  return files
+    .map((url, index) => ({ label: normalizeDownloadLabel(url, index), url, download: true as const }))
+    .filter((item) => item.label && item.url);
+}
+
+function mergeStoryButtons(primary: { label: string; url: string; download?: boolean }[], inferred: { label: string; url: string; download?: boolean }[]): { label: string; url: string; download?: boolean }[] {
+  const merged: { label: string; url: string; download?: boolean }[] = [];
   const seen = new Set<string>();
 
   for (const item of [...primary, ...inferred]) {
-    const key = `${item.label.trim()}|${item.url.trim()}`;
+    const key = `${item.label.trim()}|${item.url.trim()}|${item.download ? 'download' : 'link'}`;
     if (!item.label || !item.url || seen.has(key)) {
       continue;
     }
     seen.add(key);
-    merged.push({ label: item.label.trim(), url: item.url.trim() });
+    merged.push({
+      label: item.label.trim(),
+      url: item.url.trim(),
+      ...(item.download ? { download: true as const } : {}),
+    });
   }
 
   return merged;
@@ -483,7 +525,10 @@ export function normalizeStudentWork(
     year: firstString(pick('year')) || yearAlias || undefined,
     isStarred: toBoolean(pick('isStarred')),
     methodologies: ensureStringArray(pick('methodologies')),
-    storyButtons: mergeStoryButtons(ensureStoryButtons(pick('storyButtons')), collectStoryButtonsFromSource(source)),
+    storyButtons: mergeStoryButtons(
+      ensureStoryButtons(pick('storyButtons')),
+      mergeStoryButtons(collectStoryButtonsFromSource(source), collectDownloadButtonsFromSource(source)),
+    ),
     dataSpecs: mergeDataSpecs(ensureDataSpecs(pick('dataSpecs')), collectCardNamedSpecs(source)),
     themeTag: themeTagAlias || undefined,
     startDate: startDateAlias || undefined,

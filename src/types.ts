@@ -81,7 +81,7 @@ export interface StudentWork {
   year?: string;
   isStarred?: boolean;
   methodologies?: string[];
-  storyButtons?: { label: string; url: string }[];
+  storyButtons?: { label: string; url: string; download?: boolean }[];
   dataSpecs?: string[];
   blogContent?: BlogContentSection[];
   themeTag?: string;

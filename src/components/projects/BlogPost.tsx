@@ -85,6 +85,7 @@ function BlogPostArticleContent({
               <a
                 key={`${button.label}-${index}`}
                 href={button.url}
+                download={button.download ? '' : undefined}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 bg-black text-white px-4 py-2 text-[10px] font-bold uppercase tracking-widest hover:scale-105 transition-transform active:scale-95"
