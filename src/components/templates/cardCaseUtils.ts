@@ -141,9 +141,26 @@ export function buildCardCasePrintHtml(works: StudentWork[], title: string): str
       const imageSection = work.mainImage
         ? `<img src="${escapeHtml(toPrintImageSrc(work.mainImage))}" alt="${escapeHtml(work.assignmentName)}" class="image" referrerpolicy="no-referrer" />`
         : `<div class="image fallback"></div>`;
-      const iconSection = work.interactionPart
-        ? `<img src="${escapeHtml(toPrintImageSrc(work.interactionPart))}" alt="" class="icon-image" referrerpolicy="no-referrer" />`
-        : `<div class="icon-placeholder"></div>`;
+      const hasInteractionPart = Boolean(work.interactionPart?.trim());
+      const hasTargetUser = Boolean(work.targetUser?.trim());
+      const hasDesignTeam = Boolean(work.designTeam?.trim());
+      const hasFoundBy = Boolean(work.foundBy?.trim());
+      const iconSection = hasInteractionPart
+        ? `<img src="${escapeHtml(toPrintImageSrc(work.interactionPart || ''))}" alt="" class="icon-image" referrerpolicy="no-referrer" />`
+        : '';
+      const topSection = hasInteractionPart || hasTargetUser
+        ? `
+            <div class="top-row">
+              ${hasInteractionPart ? `<div class="icon-shell">${iconSection}</div>` : '<div class="icon-shell empty"></div>'}
+              ${hasTargetUser ? `
+                <div class="target-block">
+                  <div class="target-label">Target User</div>
+                  <div class="target-value">${escapeHtml(work.targetUser || '')}</div>
+                </div>
+              ` : ''}
+            </div>
+          `
+        : '';
       const keywords = (work.tags || [])
         .map((tag) => `<span class="keyword">${escapeHtml(tag)}</span>`)
         .join('');
@@ -153,17 +170,13 @@ export function buildCardCasePrintHtml(works: StudentWork[], title: string): str
           <div class="media">
             ${imageSection}
             <div class="overlay"></div>
-            <div class="icon-shell">${iconSection}</div>
             <div class="body">
-              <div class="target-block">
-                <div class="target-label">Target User</div>
-                <div class="target-value">${escapeHtml(work.targetUser || 'N/A')}</div>
-              </div>
+              ${topSection}
               <div class="content-block">
-                <div class="meta">${escapeHtml(work.year || 'N/A')} • ${escapeHtml(work.designTeam || 'N/A')}</div>
+                ${(work.year || hasDesignTeam) ? `<div class="meta">${escapeHtml(work.year || '')}${work.year && hasDesignTeam ? ' • ' : ''}${escapeHtml(work.designTeam || '')}</div>` : ''}
                 <h2>${escapeHtml(work.assignmentName)}</h2>
                 <div class="keywords">${keywords}</div>
-                <div class="student">${escapeHtml(studentLabel)}</div>
+                ${hasFoundBy ? `<div class="student">${escapeHtml(work.foundBy || '')}</div>` : `<div class="student">${escapeHtml(studentLabel)}</div>`}
               </div>
             </div>
           </div>
@@ -202,6 +215,7 @@ export function buildCardCasePrintHtml(works: StudentWork[], title: string): str
           .icon-image { width: 100%; height: 100%; object-fit: cover; }
           .icon-placeholder { width: 100%; height: 100%; }
           .body { position: absolute; inset: auto 0 0 0; display: flex; flex-direction: column; gap: 4mm; padding: 4mm; color: #fff; font-size: 9pt; }
+          .top-row { display: flex; align-items: flex-start; gap: 3mm; }
           .target-block { display: flex; flex-direction: column; gap: 1mm; }
           .target-label { font-size: 7pt; text-transform: uppercase; letter-spacing: 0.12em; opacity: 0.65; }
           .target-value { font-size: 9pt; font-weight: 700; }
