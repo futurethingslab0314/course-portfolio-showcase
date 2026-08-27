@@ -71,7 +71,7 @@ export const CardCase = ({ work, isPrintMode = false }: CardCaseProps) => {
           }
         }}
         className={cn(
-          'relative flex flex-col overflow-hidden group border border-black/5 text-left',
+          'relative flex w-full flex-col overflow-hidden group border border-black/5 text-left',
           isPrintMode ? 'w-full h-full' : 'aspect-[3/4] shadow-sm hover:shadow-xl transition-all duration-500',
           !isPrintMode && hasMainImage && 'cursor-zoom-in',
         )}
