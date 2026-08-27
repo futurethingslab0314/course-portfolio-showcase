@@ -496,7 +496,7 @@ export const CourseDetailTemplate = ({
               </div>
             )}
 
-            <div className="grid gap-12 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+            <div className="grid gap-8 justify-start [grid-template-columns:repeat(auto-fill,minmax(280px,280px))]">
               {filteredVisibleCardCaseWorks.map((work) => (
                 <div key={work.id} className="space-y-3">
                   <StudentWorkItem work={work} style="card-case" courseTitle={courseTitle} />
