@@ -255,7 +255,10 @@ function mapCourseRowToCourse(row: SupabaseCourseRow): Course {
 }
 
 function mapProjectRowToProject(row: SupabaseProjectRow, courseNotionPageId: string): Project {
+  const content = row.field_mapping?.projectContent as { contentType?: string; externalUrl?: string } | undefined;
   return {
+    contentType: content?.contentType === 'external' ? 'external' : 'database',
+    externalUrl: typeof content?.externalUrl === 'string' ? content.externalUrl : '',
     id: row.notion_page_id,
     projectName: row.project_name,
     projectDescription: row.project_description || '',
@@ -454,7 +457,12 @@ export async function upsertProjectsToSupabase(projects: Project[], courseId: st
     order: project.order,
     source_database_id: project.sourceDatabaseId || null,
     ui_pattern: project.displayStyle,
-    field_mapping: {},
+    field_mapping: {
+      projectContent: {
+        contentType: project.contentType || 'database',
+        externalUrl: project.externalUrl || '',
+      },
+    },
     is_published: project.visibility === 'published',
     last_synced_at: timestamp,
     updated_at: timestamp,

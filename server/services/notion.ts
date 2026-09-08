@@ -579,6 +579,8 @@ export async function fetchProjectsByCourse(coursePageId: string, courseRelation
       const context: FetchContext = { projectId: page.id };
       const sourceDbIdRaw = asText(property(page, 'SourceDatabaseId', 'SourceDatabaseID', 'Source Database Id', 'SourceDB'));
       const sourceDatabaseId = sourceDbIdRaw || asStringArray(property(page, 'SourceDatabase'))[0] || '';
+      const contentType = asText(property(page, 'ContentType')).trim().toLowerCase() === 'external' ? 'external' : 'database';
+      const externalUrl = asText(property(page, 'ExternalURL')).trim();
       const uiPatternRaw = asText(property(page, 'UiPattern', 'DisplayStyle', 'Pattern'));
       const visibilityRaw = asText(property(page, 'Visibility')).trim().toLowerCase();
       const project: Project = {
@@ -589,6 +591,8 @@ export async function fetchProjectsByCourse(coursePageId: string, courseRelation
         tabName: asText(property(page, 'TabName', 'Tab')) || asText(property(page, 'ProjectName', 'Name', 'Title')) || 'PROJECT',
         order: asNumber(property(page, 'Order')),
         sourceDatabaseId,
+        contentType,
+        externalUrl,
         displayStyle: mapUiPattern(uiPatternRaw, warnings, {
           courseId: coursePageId,
           projectId: page.id,
@@ -606,7 +610,7 @@ export async function fetchProjectsByCourse(coursePageId: string, courseRelation
       const relationConfigRaw = asText(property(page, 'RelationConfig', 'Relation Config')) || undefined;
       const relationConfig = parseRelationConfig(relationConfigRaw);
 
-      if (!project.sourceDatabaseId) {
+      if (project.contentType !== 'external' && !project.sourceDatabaseId) {
         warnings.push({
           level: 'warning',
           code: 'PROJECT_SOURCE_DB_MISSING',
@@ -842,7 +846,7 @@ export async function fetchStudentWorksForProject(
   relationConfig: CardCaseRelationConfig | undefined,
   warnings: NormalizationWarning[],
 ): Promise<StudentWork[]> {
-  if (!project.sourceDatabaseId) {
+  if (project.contentType === 'external' || !project.sourceDatabaseId) {
     return [];
   }
 

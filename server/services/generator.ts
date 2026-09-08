@@ -25,6 +25,7 @@ async function buildCoursePayloadBySlugWithOptions(
   const studentWorks = [];
 
   for (const row of projectRows) {
+    if (row.project.contentType === 'external') continue;
     logWithContext('Fetching project source records', {
       courseId: coursePageId,
       projectId: row.project.id,

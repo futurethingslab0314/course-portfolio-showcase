@@ -392,3 +392,27 @@ test('upsertStudentWorksToSupabase batches rows by object shape when blog_conten
   assert.equal(Object.hasOwn(payloads[0]?.[0] || {}, 'blog_content') || Object.hasOwn(payloads[1]?.[0] || {}, 'blog_content'), true);
   assert.equal(Object.hasOwn(payloads[0]?.[0] || {}, 'blog_content') && Object.hasOwn(payloads[1]?.[0] || {}, 'blog_content'), false);
 });
+
+test('external project settings survive Supabase serialization and loading', async () => {
+  let saved: any;
+  globalThis.fetch = async (input, init) => {
+    const url = String(input);
+    if (init?.method === 'POST') {
+      saved = JSON.parse(String(init.body))[0];
+      return new Response(JSON.stringify([{ ...saved, id: 'project-row' }]));
+    }
+    if (url.includes('/courses?')) return new Response(JSON.stringify([{
+      id: 'course-row', notion_page_id: 'course', slug: 'course', course_name: 'Course',
+    }]));
+    if (url.includes('/projects?')) return new Response(JSON.stringify([{ ...saved, id: 'project-row' }]));
+    return new Response('[]');
+  };
+  await upsertProjectsToSupabase([{
+    id: 'external', projectName: 'Exhibit', projectDescription: '', courseId: 'course',
+    tabName: 'Exhibit', order: 0, sourceDatabaseId: '', displayStyle: 'generic-card',
+    visibility: 'published', contentType: 'external', externalUrl: 'https://example.com/exhibit',
+  } as Project], 'course-row');
+  const result = await fetchCoursePayloadBySlugFromSupabase('course');
+  assert.equal(result?.projects[0].contentType, 'external');
+  assert.equal(result?.projects[0].externalUrl, 'https://example.com/exhibit');
+});

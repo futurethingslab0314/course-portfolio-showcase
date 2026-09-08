@@ -101,6 +101,8 @@ export interface StudentWork {
 }
 
 export interface Project {
+  contentType?: 'database' | 'external';
+  externalUrl?: string;
   id: string;
   projectName: string;
   projectDescription: string;

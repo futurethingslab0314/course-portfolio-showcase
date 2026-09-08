@@ -1,3 +1,4 @@
+import { ExternalProject } from '../projects/ExternalProject';
 import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Course, Project, StudentWork } from '../../types';
@@ -61,6 +62,7 @@ export const CourseDetailTemplate = ({
   const [selectedCardCaseGroup, setSelectedCardCaseGroup] = useState<string | undefined>(undefined);
   const [selectedCardCaseStudent, setSelectedCardCaseStudent] = useState<string | undefined>(undefined);
 
+  const isExternalProject = activeProject?.contentType === 'external';
   const isCardCaseProject = activeProject?.displayStyle === 'card-case';
   const isCardCaseGroupView = isCardCaseProject && !selectedCardCaseGroup;
   const supportsThemeFilter = activeProject?.displayStyle === 'blog-post' || activeProject?.displayStyle === 'activity-event';
@@ -274,10 +276,10 @@ export const CourseDetailTemplate = ({
             <h2 className="text-4xl md:text-5xl font-bold tracking-tighter mb-4">{activeProject?.projectName}</h2>
             <p className="text-black/50 max-w-2xl font-medium text-base md:text-lg">{activeProject?.projectDescription}</p>
           </div>
-          <div className="text-[10px] font-bold uppercase tracking-widest text-black/20">{summaryLabel}</div>
+          {!isExternalProject && <div className="text-[10px] font-bold uppercase tracking-widest text-black/20">{summaryLabel}</div>}
         </div>
 
-        <div className="flex flex-col md:flex-row md:items-center gap-6 md:gap-8 mb-12 py-6 border-y border-black/5">
+        {!isExternalProject && <div className="flex flex-col md:flex-row md:items-center gap-6 md:gap-8 mb-12 py-6 border-y border-black/5">
           {(!isCardCaseProject || isCardCaseGroupView) && (
             <div className="flex items-center justify-between md:justify-start gap-6">
               <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-black/30">
@@ -379,9 +381,11 @@ export const CourseDetailTemplate = ({
               </button>
             </div>
           )}
-        </div>
+        </div>}
 
-        {isCardCaseProject && !selectedCardCaseGroup ? (
+        {isExternalProject ? (
+          <ExternalProject title={activeProject.projectName} url={activeProject.externalUrl} />
+        ) : isCardCaseProject && !selectedCardCaseGroup ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8">
             {cardCaseGroupWorks.map((groupWork) => (
               <motion.button

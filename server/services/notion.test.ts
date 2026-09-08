@@ -648,3 +648,36 @@ test('fetchStudentWorksForProject expands card-case student, case, and body rela
   ]);
   assert.equal(warnings.length, 0);
 });
+
+test('external projects never fetch source records even with a stale database ID', async () => {
+  globalThis.fetch = async () => { throw new Error('Unexpected source fetch'); };
+  const works = await fetchStudentWorksForProject({
+    id: 'external', sourceDatabaseId: 'stale-db', contentType: 'external',
+    displayStyle: 'generic-card',
+  } as Project, {}, undefined, []);
+  assert.deepEqual(works, []);
+});
+
+test('project content properties default to database and accept External select', async () => {
+  const { fetchProjectsByCourse } = await import('./notion');
+  const previous = process.env.NOTION_DB_PROJECTS_ID;
+  process.env.NOTION_DB_PROJECTS_ID = 'projects-db';
+  globalThis.fetch = async () => new Response(JSON.stringify({ results: [
+    { id: 'external', properties: {
+      ContentType: { type: 'select', select: { name: ' External ' } },
+      ExternalURL: { type: 'url', url: 'https://example.com/exhibit' },
+    } },
+    { id: 'legacy', properties: {} },
+  ], has_more: false }), { status: 200 });
+  try {
+    const warnings: any[] = [];
+    const rows = await fetchProjectsByCourse('course', [], warnings);
+    assert.equal(rows[0].project.contentType, 'external');
+    assert.equal(rows[0].project.externalUrl, 'https://example.com/exhibit');
+    assert.equal(rows[1].project.contentType, 'database');
+    assert.equal(warnings.some(w => w.projectId === 'external' && w.code === 'PROJECT_SOURCE_DB_MISSING'), false);
+  } finally {
+    if (previous === undefined) delete process.env.NOTION_DB_PROJECTS_ID;
+    else process.env.NOTION_DB_PROJECTS_ID = previous;
+  }
+});
