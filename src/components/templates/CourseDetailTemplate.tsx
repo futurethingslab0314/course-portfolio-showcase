@@ -190,7 +190,7 @@ export const CourseDetailTemplate = ({
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className={cn("bg-white", isExternalProject ? "h-dvh flex flex-col overflow-hidden" : "min-h-screen")}>
       <Header
         title={course.courseName}
         titleLink={`/course/${course.slug || course.id}`}
@@ -203,7 +203,7 @@ export const CourseDetailTemplate = ({
 
       <div
         className={cn(
-          'sticky top-[124px] md:top-[73px] z-50 bg-white/80 backdrop-blur-xl border-b border-black/5',
+          'shrink-0 sticky top-[124px] md:top-[73px] z-50 bg-white/80 backdrop-blur-xl border-b border-black/5',
           !isMobileMenuOpen && 'hidden md:block',
         )}
       >
@@ -270,14 +270,14 @@ export const CourseDetailTemplate = ({
         </AnimatePresence>
       </div>
 
-      <main className="max-w-7xl mx-auto px-6 py-20">
-        <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
+      <main className={isExternalProject ? "w-full flex-1 min-h-0 flex flex-col" : "max-w-7xl mx-auto px-6 py-20"}>
+        {!isExternalProject && <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
             <h2 className="text-4xl md:text-5xl font-bold tracking-tighter mb-4">{activeProject?.projectName}</h2>
             <p className="text-black/50 max-w-2xl font-medium text-base md:text-lg">{activeProject?.projectDescription}</p>
           </div>
           {!isExternalProject && <div className="text-[10px] font-bold uppercase tracking-widest text-black/20">{summaryLabel}</div>}
-        </div>
+        </div>}
 
         {!isExternalProject && <div className="flex flex-col md:flex-row md:items-center gap-6 md:gap-8 mb-12 py-6 border-y border-black/5">
           {(!isCardCaseProject || isCardCaseGroupView) && (
@@ -531,7 +531,7 @@ export const CourseDetailTemplate = ({
           </div>
         )}
       </main>
-      <Footer />
+      {!isExternalProject && <Footer />}
     </div>
   );
 };
