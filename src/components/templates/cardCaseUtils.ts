@@ -128,7 +128,7 @@ export function waitForPrintDocumentAssets(doc: Document, timeoutMs = 1500): Pro
 
 export function buildCardCasePrintHtml(works: StudentWork[], title: string): string {
   const pages = works.reduce<StudentWork[][]>((accumulator, work, index) => {
-    const pageIndex = Math.floor(index / 8);
+    const pageIndex = Math.floor(index / 2);
     if (!accumulator[pageIndex]) accumulator[pageIndex] = [];
     accumulator[pageIndex].push(work);
     return accumulator;
@@ -166,7 +166,7 @@ export function buildCardCasePrintHtml(works: StudentWork[], title: string): str
         .join('');
 
       return `
-        <article class="card">
+        <article class="card portrait">
           <div class="media">
             ${imageSection}
             <div class="overlay"></div>
@@ -200,13 +200,16 @@ export function buildCardCasePrintHtml(works: StudentWork[], title: string): str
         <meta charset="UTF-8" />
         <title>${escapeHtml(title)}</title>
         <style>
-          @page { size: A4 landscape; margin: 10mm; }
-          body { margin: 0; font-family: Arial, sans-serif; color: #111; }
-          .print-page { min-height: 190mm; }
+          @page { size: A4 portrait; margin: 5mm; }
+          * { box-sizing: border-box; }
+          body { margin: 0; font-family: Arial, sans-serif; color: #111; background: #fff; }
+          .print-page { width: 200mm; min-height: 287mm; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5mm; padding: 0; }
           .page-break { page-break-after: always; }
-          .page-title { padding: 0 0 6mm; font-size: 16pt; font-weight: 700; }
-          .page-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5mm; }
-          .card { position: relative; border: 1px solid #ddd; min-height: 88mm; overflow: hidden; background: #111; }
+          .page-title { display: none; }
+          .page-grid { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 5mm; width: 100%; }
+          .card { position: relative; border: 0.25mm solid #d1d5db; overflow: hidden; background: #111; break-inside: avoid; page-break-inside: avoid; flex: 0 0 auto; }
+          .card.portrait { width: 4in; height: 6in; }
+          .card.landscape { width: 6in; height: 4in; }
           .media { position: absolute; inset: 0; overflow: hidden; background: #e5e7eb; }
           .image { width: 100%; height: 100%; object-fit: cover; background: #f3f4f6; }
           .fallback { background: linear-gradient(135deg, #1d4ed8 0%, #a855f7 100%); }
@@ -226,6 +229,21 @@ export function buildCardCasePrintHtml(works: StudentWork[], title: string): str
           .keyword { display: inline-flex; align-items: center; padding: 0.7mm 1.8mm; border-radius: 2.6mm; border: 1px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.08); font-size: 7pt; line-height: 1; color: #fff; text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap; }
           .student { font-weight: 700; color: #fff; }
         </style>
+        <script>
+          const updatePhotoOrientation = (image) => {
+            const card = image.closest('.card');
+            if (!card || !image.naturalWidth || !image.naturalHeight) return;
+            card.classList.toggle('landscape', image.naturalWidth > image.naturalHeight);
+            card.classList.toggle('portrait', image.naturalWidth <= image.naturalHeight);
+          };
+
+          window.addEventListener('load', () => {
+            document.querySelectorAll('.card .image').forEach((image) => {
+              updatePhotoOrientation(image);
+              image.addEventListener('load', () => updatePhotoOrientation(image));
+            });
+          });
+        </script>
       </head>
       <body>
         ${pageHtml}

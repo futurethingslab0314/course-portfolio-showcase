@@ -92,6 +92,16 @@ test('buildCardCasePrintHtml includes student labels and card names for print ou
   assert.doesNotMatch(html, /\.body \{[^}]*background: #fff;/);
 });
 
+test('buildCardCasePrintHtml lays card cases out as printable 4x6 photos on A4 pages', () => {
+  const html = buildCardCasePrintHtml([...caseWorks, { ...caseWorks[0], id: 'case-3', assignmentName: 'Third Case' }], 'Group A');
+
+  assert.match(html, /@page \{ size: A4 portrait; margin: 5mm; \}/);
+  assert.match(html, /page-break/);
+  assert.match(html, /\.card\.portrait \{[^}]*width: 4in;[^}]*height: 6in;/);
+  assert.match(html, /\.card\.landscape \{[^}]*width: 6in;[^}]*height: 4in;/);
+  assert.match(html, /image\.naturalWidth > image\.naturalHeight/);
+});
+
 test('getCardCaseAvailableYears only uses group-level years', () => {
   const works: StudentWork[] = [
     {
