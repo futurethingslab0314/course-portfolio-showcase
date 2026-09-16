@@ -8,7 +8,7 @@ import { Header } from '../Header';
 import { Footer } from '../Footer';
 import { Filter, Star, ChevronDown, Download } from 'lucide-react';
 import { collectKeywordTags, collectThemeTags, filterAndSortWorksForDisplay } from './courseDetailViewModel';
-import { buildCardCasePrintHtml, collectCardCaseMemberNames, filterCardCaseWorksByStudent, getCardCaseAvailableYears, getCardCaseStudentLabel, inlinePrintDocumentImages, waitForPrintDocumentAssets } from './cardCaseUtils';
+import { buildCardCasePrintHtml, CardCasePrintLayout, collectCardCaseMemberNames, filterCardCaseWorksByStudent, getCardCaseAvailableYears, getCardCaseStudentLabel, inlinePrintDocumentImages, waitForPrintDocumentAssets } from './cardCaseUtils';
 
 interface CourseDetailTemplateProps {
   course: Course;
@@ -61,6 +61,7 @@ export const CourseDetailTemplate = ({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [selectedCardCaseGroup, setSelectedCardCaseGroup] = useState<string | undefined>(undefined);
   const [selectedCardCaseStudent, setSelectedCardCaseStudent] = useState<string | undefined>(undefined);
+  const [cardCasePrintLayout, setCardCasePrintLayout] = useState<CardCasePrintLayout>('observation-photo');
 
   const isExternalProject = activeProject?.contentType === 'external';
   const isCardCaseProject = activeProject?.displayStyle === 'card-case';
@@ -170,7 +171,7 @@ export const CourseDetailTemplate = ({
     }
 
     printDocument.open();
-    printDocument.write(buildCardCasePrintHtml(filteredVisibleCardCaseWorks, title));
+    printDocument.write(buildCardCasePrintHtml(filteredVisibleCardCaseWorks, title, cardCasePrintLayout));
     printDocument.close();
 
     const cleanup = () => {
@@ -371,6 +372,18 @@ export const CourseDetailTemplate = ({
 
           {isCardCaseProject && selectedCardCaseGroup && (
             <div className="flex items-center gap-2 md:pl-8 md:border-l border-black/5 md:ml-auto">
+              <div className="relative">
+                <select
+                  value={cardCasePrintLayout}
+                  onChange={(event) => setCardCasePrintLayout(event.target.value as CardCasePrintLayout)}
+                  className="appearance-none bg-white border border-black/10 rounded-lg px-4 py-2 pr-10 text-[10px] font-bold uppercase tracking-widest focus:outline-none focus:border-black cursor-pointer min-w-[220px]"
+                  aria-label="Print card layout"
+                >
+                  <option value="observation-photo">路上觀察 照片版本</option>
+                  <option value="case-analysis">案例分析版本</option>
+                </select>
+                <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-black/30" />
+              </div>
               <button
                 type="button"
                 onClick={handlePrintCardCase}

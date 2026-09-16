@@ -126,59 +126,134 @@ export function waitForPrintDocumentAssets(doc: Document, timeoutMs = 1500): Pro
   });
 }
 
-export function buildCardCasePrintHtml(works: StudentWork[], title: string): string {
-  const pages = works.reduce<StudentWork[][]>((accumulator, work, index) => {
-    const pageIndex = Math.floor(index / 2);
+export type CardCasePrintLayout = 'observation-photo' | 'case-analysis';
+
+function paginateWorks(works: StudentWork[], perPage: number): StudentWork[][] {
+  return works.reduce<StudentWork[][]>((accumulator, work, index) => {
+    const pageIndex = Math.floor(index / perPage);
     if (!accumulator[pageIndex]) accumulator[pageIndex] = [];
     accumulator[pageIndex].push(work);
     return accumulator;
   }, []);
+}
+
+function buildCaseAnalysisPrintHtml(works: StudentWork[], title: string): string {
+  const pages = paginateWorks(works, 8);
 
   const pageHtml = pages
     .map((pageWorks, pageIndex) => {
       const cards = pageWorks.map((work) => {
-      const studentLabel = getCardCaseStudentLabel(work);
+        const studentLabel = getCardCaseStudentLabel(work);
+        const imageSection = work.mainImage
+          ? `<img src="${escapeHtml(toPrintImageSrc(work.mainImage))}" alt="${escapeHtml(work.assignmentName)}" class="image" referrerpolicy="no-referrer" />`
+          : `<div class="image fallback"></div>`;
+        const hasInteractionPart = Boolean(work.interactionPart?.trim());
+        const hasTargetUser = Boolean(work.targetUser?.trim());
+        const hasDesignTeam = Boolean(work.designTeam?.trim());
+        const hasFoundBy = Boolean(work.foundBy?.trim());
+        const iconSection = hasInteractionPart
+          ? `<img src="${escapeHtml(toPrintImageSrc(work.interactionPart || ''))}" alt="" class="icon-image" referrerpolicy="no-referrer" />`
+          : '';
+        const topSection = hasInteractionPart || hasTargetUser
+          ? `
+              <div class="top-row">
+                ${hasInteractionPart ? `<div class="icon-shell">${iconSection}</div>` : '<div class="icon-shell empty"></div>'}
+                ${hasTargetUser ? `
+                  <div class="target-block">
+                    <div class="target-label">Target User</div>
+                    <div class="target-value">${escapeHtml(work.targetUser || '')}</div>
+                  </div>
+                ` : ''}
+              </div>
+            `
+          : '';
+        const keywords = (work.tags || [])
+          .map((tag) => `<span class="keyword">${escapeHtml(tag)}</span>`)
+          .join('');
+
+        return `
+          <article class="card">
+            <div class="media">
+              ${imageSection}
+              <div class="overlay"></div>
+              <div class="body">
+                ${topSection}
+                <div class="content-block">
+                  ${(work.year || hasDesignTeam) ? `<div class="meta">${escapeHtml(work.year || '')}${work.year && hasDesignTeam ? ' • ' : ''}${escapeHtml(work.designTeam || '')}</div>` : ''}
+                  <h2>${escapeHtml(work.assignmentName)}</h2>
+                  <div class="keywords">${keywords}</div>
+                  ${hasFoundBy ? `<div class="student">${escapeHtml(work.foundBy || '')}</div>` : `<div class="student">${escapeHtml(studentLabel)}</div>`}
+                </div>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join('');
+
+      return `
+        <section class="print-page ${pageIndex < pages.length - 1 ? 'page-break' : ''}">
+          <div class="page-title">${escapeHtml(title)}</div>
+          <div class="page-grid">${cards}</div>
+        </section>
+      `;
+    })
+    .join('');
+
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="UTF-8" />
+        <title>${escapeHtml(title)}</title>
+        <style>
+          @page { size: A4 landscape; margin: 10mm; }
+          body { margin: 0; font-family: Arial, sans-serif; color: #111; }
+          .print-page { min-height: 190mm; }
+          .page-break { page-break-after: always; }
+          .page-title { padding: 0 0 6mm; font-size: 16pt; font-weight: 700; }
+          .page-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5mm; }
+          .card { position: relative; border: 1px solid #ddd; min-height: 88mm; overflow: hidden; background: #111; }
+          .media { position: absolute; inset: 0; overflow: hidden; background: #e5e7eb; }
+          .image { width: 100%; height: 100%; object-fit: cover; background: #f3f4f6; }
+          .fallback { background: linear-gradient(135deg, #1d4ed8 0%, #a855f7 100%); }
+          .overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.94) 0%, rgba(0,0,0,0.52) 34%, rgba(0,0,0,0.1) 68%, rgba(0,0,0,0.03) 100%); }
+          .icon-shell { position: absolute; top: 4mm; left: 4mm; width: 12mm; height: 12mm; border-radius: 999px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+          .icon-image { width: 100%; height: 100%; object-fit: cover; }
+          .icon-placeholder { width: 100%; height: 100%; }
+          .body { position: absolute; inset: auto 0 0 0; display: flex; flex-direction: column; gap: 4mm; padding: 4mm; color: #fff; font-size: 9pt; }
+          .top-row { display: flex; align-items: flex-start; gap: 3mm; }
+          .target-block { display: flex; flex-direction: column; gap: 1mm; }
+          .target-label { font-size: 7pt; text-transform: uppercase; letter-spacing: 0.12em; opacity: 0.65; }
+          .target-value { font-size: 9pt; font-weight: 700; }
+          .content-block { display: flex; flex-direction: column; gap: 2mm; }
+          .meta { color: rgba(255,255,255,0.64); font-size: 8pt; text-transform: uppercase; }
+          h2 { margin: 0; font-size: 11pt; line-height: 1.25; color: #fff; }
+          .keywords { display: flex; flex-wrap: wrap; gap: 1.2mm; min-height: 8mm; }
+          .keyword { display: inline-flex; align-items: center; padding: 0.7mm 1.8mm; border-radius: 2.6mm; border: 1px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.08); font-size: 7pt; line-height: 1; color: #fff; text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap; }
+          .student { font-weight: 700; color: #fff; }
+        </style>
+      </head>
+      <body>
+        ${pageHtml}
+      </body>
+    </html>
+  `;
+}
+
+function buildObservationPhotoPrintHtml(works: StudentWork[], title: string): string {
+  const pages = paginateWorks(works, 2);
+
+  const pageHtml = pages
+    .map((pageWorks, pageIndex) => {
+      const cards = pageWorks.map((work) => {
       const imageSection = work.mainImage
         ? `<img src="${escapeHtml(toPrintImageSrc(work.mainImage))}" alt="${escapeHtml(work.assignmentName)}" class="image" referrerpolicy="no-referrer" />`
         : `<div class="image fallback"></div>`;
-      const hasInteractionPart = Boolean(work.interactionPart?.trim());
-      const hasTargetUser = Boolean(work.targetUser?.trim());
-      const hasDesignTeam = Boolean(work.designTeam?.trim());
-      const hasFoundBy = Boolean(work.foundBy?.trim());
-      const iconSection = hasInteractionPart
-        ? `<img src="${escapeHtml(toPrintImageSrc(work.interactionPart || ''))}" alt="" class="icon-image" referrerpolicy="no-referrer" />`
-        : '';
-      const topSection = hasInteractionPart || hasTargetUser
-        ? `
-            <div class="top-row">
-              ${hasInteractionPart ? `<div class="icon-shell">${iconSection}</div>` : '<div class="icon-shell empty"></div>'}
-              ${hasTargetUser ? `
-                <div class="target-block">
-                  <div class="target-label">Target User</div>
-                  <div class="target-value">${escapeHtml(work.targetUser || '')}</div>
-                </div>
-              ` : ''}
-            </div>
-          `
-        : '';
-      const keywords = (work.tags || [])
-        .map((tag) => `<span class="keyword">${escapeHtml(tag)}</span>`)
-        .join('');
 
       return `
-        <article class="card portrait">
+        <article class="photo-card portrait card">
           <div class="media">
             ${imageSection}
-            <div class="overlay"></div>
-            <div class="body">
-              ${topSection}
-              <div class="content-block">
-                ${(work.year || hasDesignTeam) ? `<div class="meta">${escapeHtml(work.year || '')}${work.year && hasDesignTeam ? ' • ' : ''}${escapeHtml(work.designTeam || '')}</div>` : ''}
-                <h2>${escapeHtml(work.assignmentName)}</h2>
-                <div class="keywords">${keywords}</div>
-                ${hasFoundBy ? `<div class="student">${escapeHtml(work.foundBy || '')}</div>` : `<div class="student">${escapeHtml(studentLabel)}</div>`}
-              </div>
-            </div>
           </div>
         </article>
       `;
@@ -212,22 +287,7 @@ export function buildCardCasePrintHtml(works: StudentWork[], title: string): str
           .card.landscape { width: 6in; height: 4in; }
           .media { position: absolute; inset: 0; overflow: hidden; background: #e5e7eb; }
           .image { width: 100%; height: 100%; object-fit: cover; background: #f3f4f6; }
-          .fallback { background: linear-gradient(135deg, #1d4ed8 0%, #a855f7 100%); }
-          .overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.94) 0%, rgba(0,0,0,0.52) 34%, rgba(0,0,0,0.1) 68%, rgba(0,0,0,0.03) 100%); }
-          .icon-shell { position: absolute; top: 4mm; left: 4mm; width: 12mm; height: 12mm; border-radius: 999px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; overflow: hidden; }
-          .icon-image { width: 100%; height: 100%; object-fit: cover; }
-          .icon-placeholder { width: 100%; height: 100%; }
-          .body { position: absolute; inset: auto 0 0 0; display: flex; flex-direction: column; gap: 4mm; padding: 4mm; color: #fff; font-size: 9pt; }
-          .top-row { display: flex; align-items: flex-start; gap: 3mm; }
-          .target-block { display: flex; flex-direction: column; gap: 1mm; }
-          .target-label { font-size: 7pt; text-transform: uppercase; letter-spacing: 0.12em; opacity: 0.65; }
-          .target-value { font-size: 9pt; font-weight: 700; }
-          .content-block { display: flex; flex-direction: column; gap: 2mm; }
-          .meta { color: rgba(255,255,255,0.64); font-size: 8pt; text-transform: uppercase; }
-          h2 { margin: 0; font-size: 11pt; line-height: 1.25; color: #fff; }
-          .keywords { display: flex; flex-wrap: wrap; gap: 1.2mm; min-height: 8mm; }
-          .keyword { display: inline-flex; align-items: center; padding: 0.7mm 1.8mm; border-radius: 2.6mm; border: 1px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.08); font-size: 7pt; line-height: 1; color: #fff; text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap; }
-          .student { font-weight: 700; color: #fff; }
+          .fallback { background: #f3f4f6; }
         </style>
         <script>
           const updatePhotoOrientation = (image) => {
@@ -250,4 +310,12 @@ export function buildCardCasePrintHtml(works: StudentWork[], title: string): str
       </body>
     </html>
   `;
+}
+
+export function buildCardCasePrintHtml(works: StudentWork[], title: string, layout: CardCasePrintLayout = 'case-analysis'): string {
+  if (layout === 'observation-photo') {
+    return buildObservationPhotoPrintHtml(works, title);
+  }
+
+  return buildCaseAnalysisPrintHtml(works, title);
 }
