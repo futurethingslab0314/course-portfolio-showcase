@@ -235,6 +235,12 @@ test('fetchCoursePayloadBySlugFromSupabase returns only published projects and t
                 { text: ' note', color: 'yellow_background' },
               ],
             },
+            {
+              type: 'video',
+              content: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+              provider: 'youtube',
+              caption: 'Demo video',
+            },
           ],
           metadata: {
             themeTag: 'Conference',
@@ -289,6 +295,12 @@ test('fetchCoursePayloadBySlugFromSupabase returns only published projects and t
         { text: 'Alert', color: 'red' },
         { text: ' note', color: 'yellow_background' },
       ],
+    },
+    {
+      type: 'video',
+      content: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      provider: 'youtube',
+      caption: 'Demo video',
     },
   ]);
   assert.deepEqual(payload.studentWorks[0]?.moreImages, ['https://example.com/2.jpg']);

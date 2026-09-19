@@ -161,6 +161,21 @@ function parseMaybeBlogContent(value: unknown): StudentWork['blogContent'] {
       continue;
     }
 
+    if (type === 'video' && typeof content === 'string' && content.trim()) {
+      const provider = typeof (item as any).provider === 'string' ? (item as any).provider.trim() : '';
+      rows.push(
+        Object.fromEntries(
+          Object.entries({
+            type,
+            content: content.trim(),
+            caption: typeof (item as any).caption === 'string' ? (item as any).caption.trim() : undefined,
+            provider: ['youtube', 'vimeo', 'direct', 'embed'].includes(provider) ? provider : undefined,
+          }).filter(([, entryValue]) => entryValue !== undefined && entryValue !== ''),
+        ) as StudentWork['blogContent'][number],
+      );
+      continue;
+    }
+
     if (type === 'table' && Array.isArray((item as any).rows)) {
       const parsedRows = (item as any).rows
         .filter((row: unknown) => Array.isArray(row))
