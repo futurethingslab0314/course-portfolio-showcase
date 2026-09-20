@@ -101,15 +101,16 @@ test('buildCardCasePrintHtml keeps the case analysis layout as dense A4 cards', 
   assert.match(html, /\.card \{[^}]*min-height: 88mm;/);
 });
 
-test('buildCardCasePrintHtml lays observation photos as paired 4x6 prints with a single cut line', () => {
+test('buildCardCasePrintHtml stacks two 4x6 observation photos on portrait A4 with one cut line', () => {
   const html = buildCardCasePrintHtml([...caseWorks, { ...caseWorks[0], id: 'case-3', assignmentName: 'Third Case' }], 'Group A', 'observation-photo');
 
-  assert.match(html, /@page \{ size: A4 landscape; margin: 5mm; \}/);
+  assert.match(html, /@page \{ size: A4 portrait; margin: 5mm; \}/);
   assert.match(html, /page-break/);
-  assert.match(html, /\.page-grid \{[^}]*grid-template-columns: repeat\(2, 6in\);[^}]*gap: 0;/);
+  assert.match(html, /\.page-grid \{[^}]*grid-template-columns: 6in;[^}]*grid-template-rows: repeat\(2, 4in\);[^}]*gap: 0;/);
   assert.match(html, /class="photo-card landscape card"/);
   assert.match(html, /\.card \{[^}]*width: 6in;[^}]*height: 4in;/);
-  assert.match(html, /\.card \+ \.card \{[^}]*border-left: 0;/);
+  assert.match(html, /\.card \+ \.card \{[^}]*border-top: 0;/);
+  assert.match(html, /\.portrait \.image \{[^}]*width: 4in;[^}]*height: 6in;[^}]*transform: translate\(-50%, -50%\) rotate\(90deg\);/);
   assert.match(html, /image\.naturalWidth > image\.naturalHeight/);
   assert.doesNotMatch(html, /Target User/);
   assert.doesNotMatch(html, /Alice, Bob/);

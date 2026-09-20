@@ -275,17 +275,18 @@ function buildObservationPhotoPrintHtml(works: StudentWork[], title: string): st
         <meta charset="UTF-8" />
         <title>${escapeHtml(title)}</title>
         <style>
-          @page { size: A4 landscape; margin: 5mm; }
+          @page { size: A4 portrait; margin: 5mm; }
           * { box-sizing: border-box; }
           body { margin: 0; font-family: Arial, sans-serif; color: #111; background: #fff; }
-          .print-page { width: 287mm; min-height: 200mm; display: flex; align-items: center; justify-content: center; padding: 0; }
+          .print-page { width: 200mm; min-height: 287mm; display: flex; align-items: center; justify-content: center; padding: 0; }
           .page-break { page-break-after: always; }
           .page-title { display: none; }
-          .page-grid { display: grid; grid-template-columns: repeat(2, 6in); gap: 0; align-items: center; justify-content: center; }
+          .page-grid { display: grid; grid-template-columns: 6in; grid-template-rows: repeat(2, 4in); gap: 0; align-items: center; justify-content: center; }
           .card { position: relative; width: 6in; height: 4in; border: 0.25mm solid #d1d5db; overflow: hidden; background: #111; break-inside: avoid; page-break-inside: avoid; }
-          .card + .card { border-left: 0; }
+          .card + .card { border-top: 0; }
           .media { position: absolute; inset: 0; overflow: hidden; background: #e5e7eb; }
           .image { width: 100%; height: 100%; object-fit: cover; background: #f3f4f6; }
+          .portrait .image { position: absolute; left: 50%; top: 50%; width: 4in; height: 6in; transform: translate(-50%, -50%) rotate(90deg); }
           .fallback { background: #f3f4f6; }
         </style>
         <script>
