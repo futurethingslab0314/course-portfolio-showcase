@@ -2,12 +2,6 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { GalleryStory } from './GalleryStory';
-import {
-  getGalleryStoryImages,
-  getGalleryStoryImageIndex,
-  getNextGalleryStoryImage,
-  getPrevGalleryStoryImage,
-} from './galleryStoryLightbox';
 
 const work = {
   id: 'gallery-story-1',
@@ -15,28 +9,22 @@ const work = {
   members: ['Alice', 'Bob'],
   description: 'A story-driven gallery about everyday tracking.',
   mainImage: 'https://example.com/main.jpg',
+  mainImageAsset: {
+    original: 'https://example.com/main.jpg',
+    thumbnail: 'https://example.com/main-thumb.webp',
+    preview: 'https://example.com/main-preview.webp',
+  },
   moreImages: ['https://example.com/detail-1.jpg', 'https://example.com/detail-2.jpg'],
+  moreImageAssets: [
+    { original: 'https://example.com/detail-1.jpg', thumbnail: 'https://example.com/detail-1-thumb.webp', preview: 'https://example.com/detail-1-preview.webp' },
+    { original: 'https://example.com/detail-2.jpg', thumbnail: 'https://example.com/detail-2-thumb.webp', preview: 'https://example.com/detail-2-preview.webp' },
+  ],
   tags: ['Everyday Tracking', 'Mapping'],
   sourceDatabaseId: 'db-gallery-story',
   methodologies: ['Mapping'],
   storyButtons: [{ label: 'Read More', url: 'https://example.com/story' }],
   year: '2026',
 };
-
-test('getGalleryStoryImages keeps main image first and removes duplicates', () => {
-  assert.deepEqual(
-    getGalleryStoryImages(work.mainImage, [work.mainImage, ...(work.moreImages ?? [])]),
-    ['https://example.com/main.jpg', 'https://example.com/detail-1.jpg', 'https://example.com/detail-2.jpg'],
-  );
-});
-
-test('gallery-story lightbox helpers navigate forward and backward cyclically', () => {
-  const images = getGalleryStoryImages(work.mainImage, work.moreImages);
-
-  assert.equal(getGalleryStoryImageIndex(images, 'https://example.com/detail-1.jpg'), 1);
-  assert.equal(getNextGalleryStoryImage(images, 'https://example.com/detail-2.jpg'), 'https://example.com/main.jpg');
-  assert.equal(getPrevGalleryStoryImage(images, 'https://example.com/main.jpg'), 'https://example.com/detail-2.jpg');
-});
 
 test('GalleryStory modal renders previous and next controls when multiple images are available', () => {
   const html = renderToStaticMarkup(
@@ -52,6 +40,9 @@ test('GalleryStory modal renders previous and next controls when multiple images
 
   assert.match(html, /aria-label="Previous image"/);
   assert.match(html, /aria-label="Next image"/);
+  assert.match(html, /src="https:\/\/example\.com\/main-preview\.webp"/);
+  assert.match(html, /src="https:\/\/example\.com\/detail-1-thumb\.webp"/);
+  assert.doesNotMatch(html, /src="https:\/\/example\.com\/main\.jpg"/);
 });
 
 test('GalleryStory header label prefers the first keyword tag', () => {

@@ -1,17 +1,24 @@
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { StudentWork } from '../../types';
+import { ImageAsset, StudentWork } from '../../types';
 import { cn } from '../../lib/utils';
 import { memberRows } from '../../lib/memberRows';
+import { getMainImageAsset, getMoreImageAssets } from '../../lib/imageAssets';
+import { OptimizedImage } from '../OptimizedImage';
 
 interface GallerySlideProps {
   work: StudentWork;
   courseTitle?: string;
 }
 
+export function getGallerySlideAssets(work: StudentWork): ImageAsset[] {
+  const assets = [getMainImageAsset(work), ...getMoreImageAssets(work)];
+  return assets.filter((asset, index) => asset.original && assets.findIndex((item) => item.original === asset.original) === index);
+}
+
 export const GallerySlide = ({ work, courseTitle }: GallerySlideProps) => {
-  const allImages = [work.mainImage, ...(work.moreImages || [])];
+  const allImages = getGallerySlideAssets(work);
   const members = memberRows(work);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isZoomed, setIsZoomed] = useState(false);
@@ -66,16 +73,16 @@ export const GallerySlide = ({ work, courseTitle }: GallerySlideProps) => {
             onClick={() => setIsZoomed(true)}
           >
             <AnimatePresence mode="wait">
-              <motion.img
+              <motion.div
                 key={currentSlide}
-                src={allImages[currentSlide]}
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.4, ease: "easeOut" }}
                 className="w-full h-full object-cover"
-                referrerPolicy="no-referrer"
-              />
+              >
+                <OptimizedImage asset={allImages[currentSlide]} variant="preview" alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+              </motion.div>
             </AnimatePresence>
           </div>
 
@@ -134,8 +141,9 @@ export const GallerySlide = ({ work, courseTitle }: GallerySlideProps) => {
               exit={{ opacity: 0, scale: 0.9 }}
               className="relative w-full max-w-6xl aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl"
             >
-              <img 
-                src={allImages[currentSlide]} 
+              <OptimizedImage
+                asset={allImages[currentSlide]}
+                variant="preview"
                 alt="" 
                 className="w-full h-full object-contain" 
                 referrerPolicy="no-referrer" 

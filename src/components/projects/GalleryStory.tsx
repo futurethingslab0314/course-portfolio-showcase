@@ -5,11 +5,12 @@ import { StudentWork } from '../../types';
 import { cn } from '../../lib/utils';
 import { memberRows } from '../../lib/memberRows';
 import {
-  getGalleryStoryImages,
+  getAdjacentGalleryAsset,
+  getGalleryStoryAssets,
   getGalleryStoryImageIndex,
-  getNextGalleryStoryImage,
-  getPrevGalleryStoryImage,
 } from './galleryStoryLightbox';
+import { getMainImageAsset } from '../../lib/imageAssets';
+import { OptimizedImage } from '../OptimizedImage';
 
 interface GalleryStoryProps {
   work: StudentWork;
@@ -23,8 +24,10 @@ interface GalleryStoryProps {
 export const GalleryStory = ({ work, courseTitle, isExpanded, setIsExpanded, zoomedImage, setZoomedImage }: GalleryStoryProps) => {
   const members = memberRows(work);
   const storyButtons = (work.storyButtons ?? []).filter((button) => button.label && button.url);
-  const images = useMemo(() => getGalleryStoryImages(work.mainImage, work.moreImages), [work.mainImage, work.moreImages]);
+  const images = useMemo(() => getGalleryStoryAssets(work), [work]);
+  const processImages = images.slice(1);
   const currentZoomedIndex = getGalleryStoryImageIndex(images, zoomedImage);
+  const currentZoomedAsset = currentZoomedIndex === -1 ? null : images[currentZoomedIndex];
   const hasMultipleImages = images.length > 1;
   const headerTag = work.tags?.[0]?.trim() || courseTitle;
 
@@ -37,13 +40,13 @@ export const GalleryStory = ({ work, courseTitle, isExpanded, setIsExpanded, zoo
   }, [setZoomedImage]);
 
   const showNextImage = useCallback(() => {
-    const nextImage = getNextGalleryStoryImage(images, zoomedImage);
-    if (nextImage) setZoomedImage(nextImage);
+    const nextImage = getAdjacentGalleryAsset(images, zoomedImage, 1);
+    if (nextImage) setZoomedImage(nextImage.original);
   }, [images, setZoomedImage, zoomedImage]);
 
   const showPrevImage = useCallback(() => {
-    const prevImage = getPrevGalleryStoryImage(images, zoomedImage);
-    if (prevImage) setZoomedImage(prevImage);
+    const prevImage = getAdjacentGalleryAsset(images, zoomedImage, -1);
+    if (prevImage) setZoomedImage(prevImage.original);
   }, [images, setZoomedImage, zoomedImage]);
 
   useEffect(() => {
@@ -71,7 +74,7 @@ export const GalleryStory = ({ work, courseTitle, isExpanded, setIsExpanded, zoo
           className="aspect-[4/3] bg-black/5 rounded-lg overflow-hidden cursor-zoom-in group relative"
           onClick={() => openZoomedImage(work.mainImage)}
         >
-          <img src={work.mainImage} alt={work.assignmentName} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" referrerPolicy="no-referrer" />
+          <OptimizedImage asset={getMainImageAsset(work)} variant="preview" alt={work.assignmentName} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" referrerPolicy="no-referrer" />
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
             <Plus size={24} className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
@@ -176,17 +179,17 @@ export const GalleryStory = ({ work, courseTitle, isExpanded, setIsExpanded, zoo
               <div className="lg:col-span-2">
                 <h4 className="text-[11px] font-bold uppercase tracking-[0.2em] text-black/30 mb-8">Process Documentation</h4>
                 <div className="grid grid-cols-2 gap-4">
-                  {work.moreImages?.map((img, i) => (
+                  {processImages.map((asset, i) => (
                     <div
-                      key={i}
-                      onClick={() => openZoomedImage(img)}
+                      key={asset.original}
+                      onClick={() => openZoomedImage(asset.original)}
                       className={cn(
                         "rounded-lg overflow-hidden bg-black/5 cursor-zoom-in group relative",
                         i === 0 && "col-span-2 aspect-video",
                         i > 0 && "aspect-square"
                       )}
                     >
-                      <img src={img} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" referrerPolicy="no-referrer" />
+                      <OptimizedImage asset={asset} variant="thumbnail" loading="lazy" alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" referrerPolicy="no-referrer" />
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
                         <Plus size={20} className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                       </div>
@@ -219,12 +222,13 @@ export const GalleryStory = ({ work, courseTitle, isExpanded, setIsExpanded, zoo
               aria-modal="true"
               aria-label={work.assignmentName}
             >
-              <img
-                src={zoomedImage}
+              {currentZoomedAsset ? <OptimizedImage
+                asset={currentZoomedAsset}
+                variant="preview"
                 alt=""
                 className="max-w-full max-h-full object-contain"
                 referrerPolicy="no-referrer"
-              />
+              /> : null}
               {hasMultipleImages && currentZoomedIndex !== -1 ? (
                 <>
                   <button
