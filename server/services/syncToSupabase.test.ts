@@ -77,3 +77,27 @@ test('rewriteWorkMediaToR2ForTest rewrites interactionPart icon urls to R2', asy
   assert.equal(work.mainImage, 'https://r2.example/1');
   assert.equal(work.interactionPart, 'https://r2.example/2');
 });
+
+test('rewriteWorkMediaToR2ForTest stores generated card-case image variants from one main image', async () => {
+  const work: StudentWork = {
+    id: 'card-case-variants',
+    assignmentName: 'Case Variants',
+    members: [],
+    description: '',
+    mainImage: 'https://notion.site/original.jpg',
+    sourceDatabaseId: 'db-card-case',
+    cardCaseRecordType: 'case',
+  };
+
+  const rewrite = (async () => ({
+    originalUrl: 'https://r2.example/original.jpg',
+    thumbnailUrl: 'https://r2.example/thumbnail.webp',
+    previewUrl: 'https://r2.example/preview.webp',
+  })) as any;
+
+  await rewriteWorkMediaToR2ForTest(work, rewrite);
+
+  assert.equal(work.mainImage, 'https://r2.example/original.jpg');
+  assert.equal(work.mainImageThumbnail, 'https://r2.example/thumbnail.webp');
+  assert.equal(work.mainImagePreview, 'https://r2.example/preview.webp');
+});

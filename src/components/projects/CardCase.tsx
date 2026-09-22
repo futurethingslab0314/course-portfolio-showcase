@@ -33,6 +33,8 @@ function fallbackBackgroundForWork(work: StudentWork): string {
 export const CardCase = ({ work, isPrintMode = false }: CardCaseProps) => {
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const hasMainImage = Boolean(work.mainImage);
+  const cardImage = work.mainImageThumbnail || work.mainImagePreview || work.mainImage;
+  const previewImage = work.mainImagePreview || work.mainImage;
   const hasInteractionPart = Boolean(work.interactionPart);
   const hasTargetUser = Boolean(work.targetUser?.trim());
   const hasDesignTeam = Boolean(work.designTeam?.trim());
@@ -78,14 +80,17 @@ export const CardCase = ({ work, isPrintMode = false }: CardCaseProps) => {
         style={{
           fontSize: isPrintMode ? '9pt' : 'inherit',
         }}
+        data-preview-src={hasMainImage ? previewImage : undefined}
       >
         <div className="absolute inset-0 z-0">
           {hasMainImage ? (
             <img
-              src={work.mainImage}
+              src={cardImage}
               alt={work.assignmentName}
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
               referrerPolicy="no-referrer"
+              loading="lazy"
+              decoding="async"
             />
           ) : (
             <div className="w-full h-full" style={{ background: fallbackBackgroundForWork(work) }} />
@@ -181,10 +186,11 @@ export const CardCase = ({ work, isPrintMode = false }: CardCaseProps) => {
               </button>
               <div className="bg-black">
                 <img
-                  src={work.mainImage}
+                  src={previewImage}
                   alt={work.assignmentName}
                   className="max-h-[90vh] w-full object-contain"
                   referrerPolicy="no-referrer"
+                  decoding="async"
                 />
               </div>
             </motion.div>

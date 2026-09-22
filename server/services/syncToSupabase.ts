@@ -15,6 +15,12 @@ import {
 } from './supabase';
 import { BlogContentSection, StudentWork } from '../../src/types';
 
+type ImageRewriteResult = string | {
+  originalUrl: string;
+  thumbnailUrl?: string;
+  previewUrl?: string;
+};
+
 function logWithContext(message: string, context: Record<string, unknown>) {
   console.log(JSON.stringify({ message, ...context }));
 }
@@ -82,22 +88,30 @@ export async function rewriteBlogContentImagesToR2ForTest(
 
 async function rewriteWorkMediaToR2(
   work: StudentWork,
-  rewriteUrl: (sourceUrl: string) => Promise<string>,
+  rewriteUrl: (sourceUrl: string) => Promise<ImageRewriteResult>,
 ): Promise<void> {
   const mainImage = String(work.mainImage || '').trim();
   if (mainImage) {
-    work.mainImage = await rewriteUrl(mainImage);
+    const result = await rewriteUrl(mainImage);
+    if (typeof result === 'string') {
+      work.mainImage = result;
+    } else {
+      work.mainImage = result.originalUrl;
+      work.mainImageThumbnail = result.thumbnailUrl;
+      work.mainImagePreview = result.previewUrl;
+    }
   }
 
   const interactionPart = String(work.interactionPart || '').trim();
   if (interactionPart) {
-    work.interactionPart = await rewriteUrl(interactionPart);
+    const result = await rewriteUrl(interactionPart);
+    work.interactionPart = typeof result === 'string' ? result : result.originalUrl;
   }
 }
 
 export async function rewriteWorkMediaToR2ForTest(
   work: StudentWork,
-  rewriteUrl: (sourceUrl: string) => Promise<string>,
+  rewriteUrl: (sourceUrl: string) => Promise<ImageRewriteResult>,
 ): Promise<void> {
   return rewriteWorkMediaToR2(work, rewriteUrl);
 }
@@ -178,7 +192,7 @@ async function rewriteWorkImagesToR2(payload: CoursePayload, runId: string): Pro
       continue;
     }
 
-    const rewriteOne = async (sourceUrl: string, label: 'mainImage' | 'moreImage' | 'interactionPart', index?: number): Promise<string> => {
+    const rewriteOne = async (sourceUrl: string, label: 'mainImage' | 'moreImage' | 'interactionPart', index?: number): Promise<ImageRewriteResult> => {
       const trimmed = String(sourceUrl || '').trim();
       if (!trimmed) {
         skipped += 1;
@@ -191,11 +205,19 @@ async function rewriteWorkImagesToR2(payload: CoursePayload, runId: string): Pro
           courseSlug: payload.course.slug || payload.course.id,
           projectNotionId: project.id,
           workNotionId: work.id,
+          generateCardCaseVariants: label === 'mainImage' && work.cardCaseRecordType === 'case',
         });
         if (result.uploaded) {
           uploaded += 1;
         } else {
           skipped += 1;
+        }
+        if (label === 'mainImage' && work.cardCaseRecordType === 'case') {
+          return {
+            originalUrl: result.publicUrl,
+            thumbnailUrl: result.thumbnailUrl,
+            previewUrl: result.previewUrl,
+          };
         }
         return result.publicUrl;
       } catch (error) {
@@ -236,7 +258,7 @@ async function rewriteWorkImagesToR2(payload: CoursePayload, runId: string): Pro
     if (Array.isArray(work.moreImages) && work.moreImages.length > 0) {
       const next: string[] = [];
       for (let i = 0; i < work.moreImages.length; i += 1) {
-        next.push(await rewriteOne(work.moreImages[i], 'moreImage', i));
+        next.push(await rewriteOne(work.moreImages[i], 'moreImage', i) as string);
       }
       work.moreImages = next.filter((item) => item.trim().length > 0);
     }

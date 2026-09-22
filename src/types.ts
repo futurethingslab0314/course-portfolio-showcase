@@ -74,6 +74,8 @@ export interface StudentWork {
   caseIds?: string[];
   description: string;
   mainImage: string;
+  mainImageThumbnail?: string;
+  mainImagePreview?: string;
   moreImages?: string[];
   url?: string;
   video?: string;

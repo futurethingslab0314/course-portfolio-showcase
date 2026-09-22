@@ -22,6 +22,8 @@ const caseWorks: StudentWork[] = [
     ],
     description: '',
     mainImage: 'https://example.com/a.jpg',
+    mainImageThumbnail: 'https://example.com/a-thumbnail.webp',
+    mainImagePreview: 'https://example.com/a-preview.webp',
     interactionPart: 'https://example.com/hand.png',
     targetUser: 'Stroke Patient',
     designTeam: 'Team Alpha',
@@ -82,6 +84,9 @@ test('buildCardCasePrintHtml includes student labels and card names for print ou
   assert.match(html, /rehab/);
   assert.match(html, /referrerpolicy="no-referrer"/);
   assert.match(html, /\/api\/image-proxy\?url=/);
+  assert.match(html, /a\.jpg/);
+  assert.doesNotMatch(html, /a-thumbnail\.webp/);
+  assert.doesNotMatch(html, /a-preview\.webp/);
   assert.match(html, /\.keyword \{[^}]*display: inline-flex;/);
   assert.match(html, /\.keyword \{[^}]*line-height: 1;/);
   assert.match(html, /\.card \{[^}]*position: relative;/);

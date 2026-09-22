@@ -243,6 +243,8 @@ test('fetchCoursePayloadBySlugFromSupabase returns only published projects and t
             },
           ],
           metadata: {
+            mainImageThumbnail: 'https://example.com/thumb.webp',
+            mainImagePreview: 'https://example.com/preview.webp',
             themeTag: 'Conference',
             startDate: '2026-03-01',
             endDate: '2026-03-03',
@@ -279,6 +281,8 @@ test('fetchCoursePayloadBySlugFromSupabase returns only published projects and t
   assert.equal(payload.studentWorks.length, 1);
   assert.equal(payload.studentWorks[0]?.id, 'work-1');
   assert.equal(payload.studentWorks[0]?.createdAt, '2026-03-20T10:00:00.000Z');
+  assert.equal(payload.studentWorks[0]?.mainImageThumbnail, 'https://example.com/thumb.webp');
+  assert.equal(payload.studentWorks[0]?.mainImagePreview, 'https://example.com/preview.webp');
   assert.equal(payload.studentWorks[0]?.themeTag, 'Conference');
   assert.equal(payload.studentWorks[0]?.startDate, '2026-03-01');
   assert.equal(payload.studentWorks[0]?.endDate, '2026-03-03');

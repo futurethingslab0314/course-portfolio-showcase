@@ -1,4 +1,5 @@
 import { createHash, createHmac } from 'node:crypto';
+import sharp from 'sharp';
 
 function getEnv(name: string, required = true): string {
   const value = process.env[name];
@@ -142,14 +143,16 @@ export async function uploadImageUrlToR2(params: {
   courseSlug: string;
   projectNotionId: string;
   workNotionId: string;
-}): Promise<{ publicUrl: string; key: string; uploaded: boolean }> {
+  generateCardCaseVariants?: boolean;
+}): Promise<{ publicUrl: string; key: string; uploaded: boolean; thumbnailUrl?: string; previewUrl?: string }> {
   const sourceUrl = (params.sourceUrl || '').trim();
   if (!sourceUrl || !looksLikeHttpUrl(sourceUrl)) {
     return { publicUrl: sourceUrl, key: '', uploaded: false };
   }
 
   const cfg = r2Config();
-  if (sourceUrl.startsWith(`${cfg.publicBaseUrl}/`)) {
+  const isStoredOriginal = sourceUrl.startsWith(`${cfg.publicBaseUrl}/`);
+  if (isStoredOriginal && !params.generateCardCaseVariants) {
     return { publicUrl: sourceUrl, key: sourceUrl.slice(cfg.publicBaseUrl.length + 1), uploaded: false };
   }
 
@@ -169,19 +172,44 @@ export async function uploadImageUrlToR2(params: {
   const hash = sha256Hex(body).slice(0, 16);
   const ext = inferExtension(contentType, sourceUrl);
 
-  const key = [
+  const basePath = [
     'courses',
     sanitizePathSegment(params.courseSlug),
     'projects',
     sanitizePathSegment(params.projectNotionId),
-    `${sanitizePathSegment(params.workNotionId)}-${hash}.${sanitizePathSegment(ext)}`,
   ].join('/');
+  const fileStem = `${sanitizePathSegment(params.workNotionId)}-${hash}`;
+  const key = isStoredOriginal
+    ? sourceUrl.slice(cfg.publicBaseUrl.length + 1)
+    : `${basePath}/${fileStem}.${sanitizePathSegment(ext)}`;
 
-  await putObjectSigned({ key, body, contentType });
+  if (!isStoredOriginal) {
+    await putObjectSigned({ key, body, contentType });
+  }
+
+  if (!params.generateCardCaseVariants) {
+    return {
+      publicUrl: `${cfg.publicBaseUrl}/${key}`,
+      key,
+      uploaded: !isStoredOriginal,
+    };
+  }
+
+  const [thumbnailBody, previewBody] = await Promise.all([
+    sharp(body).rotate().resize({ width: 640, height: 640, fit: 'inside', withoutEnlargement: true }).webp({ quality: 80 }).toBuffer(),
+    sharp(body).rotate().resize({ width: 1600, height: 1600, fit: 'inside', withoutEnlargement: true }).webp({ quality: 85 }).toBuffer(),
+  ]);
+  const thumbnailKey = `${basePath}/${fileStem}-thumbnail.webp`;
+  const previewKey = `${basePath}/${fileStem}-preview.webp`;
+
+  await putObjectSigned({ key: thumbnailKey, body: thumbnailBody, contentType: 'image/webp' });
+  await putObjectSigned({ key: previewKey, body: previewBody, contentType: 'image/webp' });
 
   return {
     publicUrl: `${cfg.publicBaseUrl}/${key}`,
     key,
     uploaded: true,
+    thumbnailUrl: `${cfg.publicBaseUrl}/${thumbnailKey}`,
+    previewUrl: `${cfg.publicBaseUrl}/${previewKey}`,
   };
 }
