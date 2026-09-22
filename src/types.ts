@@ -63,6 +63,14 @@ export interface BlogColumnListSection {
 
 export type BlogContentSection = BlogTextSection | BlogImageSection | BlogVideoSection | BlogCodeSection | BlogTableSection | BlogToggleSection | BlogColumnListSection;
 
+export type ImageVariant = 'thumbnail' | 'preview' | 'original';
+
+export interface ImageAsset {
+  original: string;
+  thumbnail?: string;
+  preview?: string;
+}
+
 export interface StudentWork {
   id: string;
   createdAt?: string;
@@ -76,7 +84,9 @@ export interface StudentWork {
   mainImage: string;
   mainImageThumbnail?: string;
   mainImagePreview?: string;
+  mainImageAsset?: ImageAsset;
   moreImages?: string[];
+  moreImageAssets?: ImageAsset[];
   url?: string;
   video?: string;
   tags?: string[];
