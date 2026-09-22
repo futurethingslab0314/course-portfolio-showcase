@@ -2,7 +2,12 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { buildImageFallbackChain, getNextImageFallbackIndex, OptimizedImage } from './OptimizedImage';
+import {
+  buildImageFallbackChain,
+  getActiveImageFallbackIndex,
+  getNextImageFallbackIndex,
+  OptimizedImage,
+} from './OptimizedImage';
 
 test('OptimizedImage renders the requested thumbnail with lazy async loading', () => {
   const html = renderToStaticMarkup(
@@ -36,4 +41,9 @@ test('fallback progression stops after original', () => {
   assert.equal(getNextImageFallbackIndex(0, 3), 1);
   assert.equal(getNextImageFallbackIndex(1, 3), 2);
   assert.equal(getNextImageFallbackIndex(2, 3), 2);
+});
+
+test('a new image chain immediately resets a stale fallback index', () => {
+  assert.equal(getActiveImageFallbackIndex('old-chain', 'new-chain', 2), 0);
+  assert.equal(getActiveImageFallbackIndex('same-chain', 'same-chain', 2), 2);
 });
