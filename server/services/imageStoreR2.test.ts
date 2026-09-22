@@ -11,7 +11,7 @@ interface Upload {
   contentType: string;
 }
 
-async function withR2TestEnv(sourceBody: Buffer, contentType: string, run: (uploads: Upload[]) => Promise<void>): Promise<void> {
+async function withR2TestEnv(sourceBody: Buffer, contentType: string, run: (uploads: Upload[]) => Promise<void>, existingSuffixes: string[] = []): Promise<void> {
   const originalFetch = globalThis.fetch;
   const originalEnv = Object.fromEntries(ENV_NAMES.map((name) => [name, process.env[name]]));
   const uploads: Upload[] = [];
@@ -21,6 +21,11 @@ async function withR2TestEnv(sourceBody: Buffer, contentType: string, run: (uplo
     R2_PUBLIC_BASE_URL: 'https://images.example.com', R2_S3_ENDPOINT: 'https://account.r2.cloudflarestorage.com',
   });
   globalThis.fetch = (async (input, init) => {
+    if (init?.method === 'HEAD') {
+      const exists = uploads.some((upload) => upload.url === String(input))
+        || existingSuffixes.some((suffix) => String(input).endsWith(suffix));
+      return new Response(null, { status: exists ? 200 : 404 });
+    }
     if (!init?.method) return new Response(sourceBody, { status: 200, headers: { 'content-type': contentType } });
     uploads.push({
       url: String(input), body: Buffer.from(init.body as Uint8Array),
@@ -54,6 +59,66 @@ test('uploadImageAssetToR2 creates bounded WebP variants', async () => {
     assert.equal((await sharp(bodyFor('-preview.webp')).metadata()).width, 1600);
     assert.match(result.asset.thumbnail || '', /-thumbnail\.webp$/);
     assert.match(result.asset.preview || '', /-preview\.webp$/);
+  });
+});
+
+test('repeated Notion uploads reuse original and both variants; changed bytes produce new keys', async () => {
+  const source = await sharp({ create: { width: 8, height: 6, channels: 3, background: '#336699' } }).jpeg().toBuffer();
+  await withR2TestEnv(source, 'image/jpeg', async (uploads) => {
+    const first = await uploadImageAssetToR2(standardParams());
+    assert.equal(uploads.length, 3);
+    const second = await uploadImageAssetToR2(standardParams('https://notion.example/photo.jpg?new-signature=1'));
+    assert.deepEqual(second.asset, first.asset);
+    assert.equal(second.uploaded, false);
+    assert.equal(uploads.length, 3);
+    source[source.length - 1] ^= 1;
+    const changed = await uploadImageAssetToR2(standardParams());
+    assert.notEqual(changed.asset.original, first.asset.original);
+    assert.equal(changed.uploaded, true);
+  });
+});
+
+test('complete R2 assets skip source download and all uploads', async () => {
+  await withR2TestEnv(Buffer.from('must not decode'), 'image/jpeg', async (uploads) => {
+    const previousFetch = globalThis.fetch;
+    globalThis.fetch = (async (input, init) => {
+      assert.equal(init?.method, 'HEAD');
+      return previousFetch(input, init);
+    }) as typeof fetch;
+    const result = await uploadImageAssetToR2(standardParams('https://images.example.com/photo.jpg'));
+    assert.equal(result.uploaded, false);
+    assert.equal(result.warning, undefined);
+    assert.equal(result.asset.preview, 'https://images.example.com/photo-preview.webp');
+    assert.equal(uploads.length, 0);
+  }, ['/photo.jpg', '/photo-thumbnail.webp', '/photo-preview.webp']);
+});
+
+test('an existing thumbnail only uploads the missing preview', async () => {
+  const source = await sharp({ create: { width: 8, height: 6, channels: 3, background: '#336699' } }).jpeg().toBuffer();
+  await withR2TestEnv(source, 'image/jpeg', async (uploads) => {
+    const result = await uploadImageAssetToR2(standardParams('https://images.example.com/courses/photo.jpg'));
+    assert.equal(result.uploaded, true);
+    assert.equal(uploads.length, 1);
+    assert.match(uploads[0].url, /photo-preview\.webp$/);
+    assert.equal(result.asset.thumbnail, 'https://images.example.com/courses/photo-thumbnail.webp');
+  }, ['/photo.jpg', '/photo-thumbnail.webp']);
+});
+
+test('thumbnail-only assets skip without requiring a preview', async () => {
+  await withR2TestEnv(Buffer.from('must not decode'), 'image/jpeg', async (uploads) => {
+    const result = await uploadImageAssetToR2({ ...standardParams('https://images.example.com/photo.jpg'), variants: 'thumbnail-only' });
+    assert.equal(result.uploaded, false);
+    assert.equal(result.asset.preview, undefined);
+    assert.equal(result.warning, undefined);
+    assert.equal(uploads.length, 0);
+  }, ['/photo.jpg', '/photo-thumbnail.webp']);
+});
+
+test('failed existence checks are not mistaken for missing objects', async () => {
+  await withR2TestEnv(Buffer.from('unused'), 'image/jpeg', async (uploads) => {
+    globalThis.fetch = async () => new Response(null, { status: 403 });
+    await assert.rejects(uploadImageAssetToR2(standardParams('https://images.example.com/photo.jpg')), /existence check failed \(403\)/);
+    assert.equal(uploads.length, 0);
   });
 });
 

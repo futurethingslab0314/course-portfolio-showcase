@@ -92,22 +92,23 @@ export function isR2ImageSyncEnabled(): boolean {
   return imageBackend === 'r2' && enabled;
 }
 
-async function putObjectSigned(params: {
+async function requestObjectSigned(params: {
   key: string;
-  body: Uint8Array;
-  contentType: string;
-}): Promise<void> {
+  method: 'PUT' | 'HEAD';
+  body?: Uint8Array;
+  contentType?: string;
+}): Promise<Response> {
   const cfg = r2Config();
   const endpoint = new URL(cfg.endpoint);
   const host = endpoint.host;
 
   const canonicalUri = `/${[cfg.bucket, ...params.key.split('/').filter(Boolean)].map(encodeRfc3986).join('/')}`;
-  const payloadHash = sha256Hex(params.body);
+  const payloadHash = sha256Hex(params.body || '');
   const { amzDate, dateStamp } = formatAmzDate();
 
   const canonicalHeaders = `host:${host}\nx-amz-content-sha256:${payloadHash}\nx-amz-date:${amzDate}\n`;
   const signedHeaders = 'host;x-amz-content-sha256;x-amz-date';
-  const canonicalRequest = ['PUT', canonicalUri, '', canonicalHeaders, signedHeaders, payloadHash].join('\n');
+  const canonicalRequest = [params.method, canonicalUri, '', canonicalHeaders, signedHeaders, payloadHash].join('\n');
 
   const credentialScope = `${dateStamp}/auto/s3/aws4_request`;
   const stringToSign = `AWS4-HMAC-SHA256\n${amzDate}\n${credentialScope}\n${sha256Hex(canonicalRequest)}`;
@@ -121,18 +122,28 @@ async function putObjectSigned(params: {
   const authorization = `AWS4-HMAC-SHA256 Credential=${cfg.accessKeyId}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
   const uploadUrl = `${cfg.endpoint}${canonicalUri}`;
 
-  const response = await fetch(uploadUrl, {
-    method: 'PUT',
+  return fetch(uploadUrl, {
+    method: params.method,
     headers: {
       Authorization: authorization,
       'x-amz-date': amzDate,
       'x-amz-content-sha256': payloadHash,
-      'Content-Type': params.contentType,
-      'Cache-Control': 'public, max-age=2592000, immutable',
+      ...(params.contentType ? { 'Content-Type': params.contentType } : {}),
+      ...(params.method === 'PUT' ? { 'Cache-Control': 'public, max-age=2592000, immutable' } : {}),
     },
     body: params.body,
   });
+}
 
+async function objectExists(key: string): Promise<boolean> {
+  const response = await requestObjectSigned({ key, method: 'HEAD' });
+  if (response.ok) return true;
+  if (response.status === 404) return false;
+  throw new Error(`R2 existence check failed (${response.status}): ${key}`);
+}
+
+async function putObjectSigned(params: { key: string; body: Uint8Array; contentType: string }): Promise<void> {
+  const response = await requestObjectSigned({ ...params, method: 'PUT' });
   if (!response.ok) {
     const text = await response.text();
     throw new Error(`R2 upload failed (${response.status}): ${text}`);
@@ -156,7 +167,7 @@ export interface ImageAssetUploadResult {
 interface StoredOriginal {
   body: Uint8Array;
   contentType: string;
-  isStoredOriginal: boolean;
+  uploaded: boolean;
   key: string;
   publicUrl: string;
   basePath: string;
@@ -201,14 +212,15 @@ async function storeOriginal(params: Omit<ImageAssetUploadParams, 'variants'>): 
   const fileStem = originalFilename.replace(/\.[^.]+$/, '');
   const originalBasePath = keyParts.join('/');
 
-  if (!isStoredOriginal) {
+  const uploaded = !isStoredOriginal && !(await objectExists(key));
+  if (uploaded) {
     await putObjectSigned({ key, body, contentType });
   }
 
   return {
     body,
     contentType,
-    isStoredOriginal,
+    uploaded,
     key,
     publicUrl: `${cfg.publicBaseUrl}/${key}`,
     basePath: originalBasePath || basePath,
@@ -218,46 +230,70 @@ async function storeOriginal(params: Omit<ImageAssetUploadParams, 'variants'>): 
 
 export async function uploadImageAssetToR2(params: ImageAssetUploadParams): Promise<ImageAssetUploadResult> {
   const sourceUrl = (params.sourceUrl || '').trim();
+  const publicBase = sourceUrl && looksLikeHttpUrl(sourceUrl) ? r2Config().publicBaseUrl : '';
+  if (publicBase && sourceUrl.startsWith(`${publicBase}/`)) {
+    const key = sourceUrl.slice(publicBase.length + 1);
+    const stem = key.replace(/\.[^/.]+$/, '');
+    const keys = [key, `${stem}-thumbnail.webp`, ...(params.variants === 'thumbnail-only' ? [] : [`${stem}-preview.webp`])];
+    const exists = await Promise.all(keys.map(objectExists));
+    if (exists.every(Boolean)) {
+      return {
+        asset: {
+          original: sourceUrl,
+          thumbnail: `${publicBase}/${keys[1]}`,
+          ...(keys[2] ? { preview: `${publicBase}/${keys[2]}` } : {}),
+        },
+        uploaded: false,
+      };
+    }
+  }
   const stored = await storeOriginal(params);
   if (!stored) return { asset: { original: sourceUrl }, uploaded: false };
 
   const asset: ImageAsset = { original: stored.publicUrl };
+  let uploaded = stored.uploaded;
   const contentType = stored.contentType.toLowerCase().split(';')[0].trim();
   if (contentType === 'image/svg+xml') {
-    return { asset, uploaded: !stored.isStoredOriginal };
+    return { asset, uploaded };
   }
 
   try {
     const metadata = await sharp(stored.body, { animated: true }).metadata();
     if (contentType === 'image/gif' && (metadata.pages || 1) > 1) {
-      return { asset, uploaded: !stored.isStoredOriginal };
+      return { asset, uploaded };
     }
 
-    const thumbnailBody = await sharp(stored.body)
-      .rotate()
-      .resize({ width: 640, height: 640, fit: 'inside', withoutEnlargement: true })
-      .webp({ quality: 80 })
-      .toBuffer();
     const thumbnailKey = `${stored.basePath}/${stored.fileStem}-thumbnail.webp`;
-    await putObjectSigned({ key: thumbnailKey, body: thumbnailBody, contentType: 'image/webp' });
+    if (!(await objectExists(thumbnailKey))) {
+      const thumbnailBody = await sharp(stored.body)
+        .rotate()
+        .resize({ width: 640, height: 640, fit: 'inside', withoutEnlargement: true })
+        .webp({ quality: 80 })
+        .toBuffer();
+      await putObjectSigned({ key: thumbnailKey, body: thumbnailBody, contentType: 'image/webp' });
+      uploaded = true;
+    }
     asset.thumbnail = `${r2Config().publicBaseUrl}/${thumbnailKey}`;
 
     if (params.variants !== 'thumbnail-only') {
-      const previewBody = await sharp(stored.body)
-        .rotate()
-        .resize({ width: 1600, height: 1600, fit: 'inside', withoutEnlargement: true })
-        .webp({ quality: 85 })
-        .toBuffer();
       const previewKey = `${stored.basePath}/${stored.fileStem}-preview.webp`;
-      await putObjectSigned({ key: previewKey, body: previewBody, contentType: 'image/webp' });
+      if (!(await objectExists(previewKey))) {
+        const previewBody = await sharp(stored.body)
+          .rotate()
+          .resize({ width: 1600, height: 1600, fit: 'inside', withoutEnlargement: true })
+          .webp({ quality: 85 })
+          .toBuffer();
+        await putObjectSigned({ key: previewKey, body: previewBody, contentType: 'image/webp' });
+        uploaded = true;
+      }
       asset.preview = `${r2Config().publicBaseUrl}/${previewKey}`;
     }
 
-    return { asset, uploaded: true };
+    return { asset, uploaded };
   } catch (error) {
     return {
       asset,
-      uploaded: !stored.isStoredOriginal,
+      uploaded,
       warning: `Variant conversion failed: ${error instanceof Error ? error.message : String(error)}`,
     };
   }
@@ -294,6 +330,6 @@ export async function uploadImageUrlToR2(params: {
   return {
     publicUrl: stored.publicUrl,
     key: stored.key,
-    uploaded: !stored.isStoredOriginal,
+    uploaded: stored.uploaded,
   };
 }

@@ -23,6 +23,8 @@ No new Notion properties or Supabase columns are required. Variant metadata is s
 
 Re-running Sync is safe because R2 object keys are content-addressed. Existing originals remain available, and an original already hosted in R2 is not uploaded again when only variants are missing.
 
+Sync checks each object using signed HEAD requests to R2. Existing originals and variants are reused; only missing variants are converted and uploaded. A complete R2 asset also skips the source download. Notion source URLs still require one download to calculate the content hash, so changed image content receives new keys even if its URL is unchanged. The R2 credential must permit object reads as well as writes. Only a 404 is treated as missing; other check failures are reported through the existing sync warning flow.
+
 SVG and animated GIF files remain original-only. Unsupported HEIC or unusual raster formats retain the original URL and produce a warning instead of stopping the course sync.
 
 ## Browser Verification
