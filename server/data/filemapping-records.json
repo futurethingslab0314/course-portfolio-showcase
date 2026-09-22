@@ -2,7 +2,7 @@
   {
     "sourceDatabaseId": "student-db",
     "uiPattern": "card-case",
-    "version": "1.0.21",
+    "version": "1.0.22",
     "fieldMapping": {
       "assignmentName": {
         "sourceCandidates": [],
@@ -187,6 +187,6 @@
         "reviewReason": "Low confidence mapping candidate."
       }
     ],
-    "updatedAt": "2026-09-22T17:23:01.711Z"
+    "updatedAt": "2026-09-22T17:27:32.340Z"
   }
 ]

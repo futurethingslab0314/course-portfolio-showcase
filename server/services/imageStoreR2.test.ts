@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { readFile } from 'node:fs/promises';
 import sharp from 'sharp';
 import { uploadImageAssetToR2, uploadImageUrlToR2 } from './imageStoreR2';
 
@@ -26,7 +27,10 @@ async function withR2TestEnv(sourceBody: Buffer, contentType: string, run: (uplo
         || existingSuffixes.some((suffix) => String(input).endsWith(suffix));
       return new Response(null, { status: exists ? 200 : 404 });
     }
-    if (!init?.method) return new Response(sourceBody, { status: 200, headers: { 'content-type': contentType } });
+    if (!init?.method) {
+      const stored = uploads.find((upload) => new URL(upload.url).pathname.replace('/bucket', '') === new URL(String(input)).pathname);
+      return new Response(stored?.body || sourceBody, { status: 200, headers: { 'content-type': stored?.contentType || contentType } });
+    }
     uploads.push({
       url: String(input), body: Buffer.from(init.body as Uint8Array),
       contentType: String((init.headers as Record<string, string>)['Content-Type']),
@@ -59,6 +63,52 @@ test('uploadImageAssetToR2 creates bounded WebP variants', async () => {
     assert.equal((await sharp(bodyFor('-preview.webp')).metadata()).width, 1600);
     assert.match(result.asset.thumbnail || '', /-thumbnail\.webp$/);
     assert.match(result.asset.preview || '', /-preview\.webp$/);
+  });
+});
+
+for (const [sourceUrl, mime] of [
+  ['https://notion.example/photo.HEIC?signature=1', 'application/octet-stream'],
+  ['https://notion.example/file', 'image/heic'],
+  ['https://notion.example/file', 'application/octet-stream'],
+  ['https://images.example.com/courses/photo.heic', 'image/heic'],
+]) {
+  test(`HEIC becomes a full-resolution JPEG original (${sourceUrl}, ${mime})`, async () => {
+    const source = await readFile(new URL('./fixtures/sample.heic', import.meta.url));
+    await withR2TestEnv(source, mime, async (uploads) => {
+      const result = await uploadImageAssetToR2(standardParams(sourceUrl));
+      assert.match(result.asset.original, /-heic-jpeg-v1\.jpg$/);
+      assert.equal(result.warning, undefined);
+      assert.equal(uploads.length, 3);
+      const jpeg = uploads.find((item) => item.contentType === 'image/jpeg');
+      assert.ok(jpeg);
+      const metadata = await sharp(jpeg.body).metadata();
+      assert.equal(metadata.format, 'jpeg');
+      assert.deepEqual([metadata.width, metadata.height], [96, 64]);
+      assert.ok(result.asset.thumbnail);
+      assert.ok(result.asset.preview);
+      const again = await uploadImageAssetToR2(standardParams(sourceUrl));
+      assert.deepEqual(again.asset, result.asset);
+      assert.equal(again.uploaded, false);
+      assert.equal(again.warning, undefined);
+      assert.equal(uploads.length, 3);
+    });
+  });
+}
+
+test('original-only upload also converts HEIC to JPEG', async () => {
+  const source = await readFile(new URL('./fixtures/sample.heic', import.meta.url));
+  await withR2TestEnv(source, 'image/heic', async (uploads) => {
+    const result = await uploadImageUrlToR2(standardParams('https://notion.example/photo.heic'));
+    assert.match(result.publicUrl, /\.jpg$/);
+    assert.equal(uploads.length, 1);
+    assert.equal(uploads[0].contentType, 'image/jpeg');
+  });
+});
+
+test('corrupt HEIC reports conversion failure without uploading invalid JPEG', async () => {
+  await withR2TestEnv(Buffer.from('invalid HEIC'), 'image/heic', async (uploads) => {
+    await assert.rejects(uploadImageAssetToR2(standardParams('https://notion.example/bad.heic')), /HEIC to JPEG conversion failed/);
+    assert.equal(uploads.length, 0);
   });
 });
 

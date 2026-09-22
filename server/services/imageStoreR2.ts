@@ -1,5 +1,6 @@
 import { createHash, createHmac } from 'node:crypto';
 import sharp from 'sharp';
+import convertHeic from 'heic-convert';
 import { ImageAsset } from '../../src/types';
 
 function getEnv(name: string, required = true): string {
@@ -174,6 +175,20 @@ interface StoredOriginal {
   fileStem: string;
 }
 
+function isHeicSource(contentType: string, sourceUrl: string, body?: Uint8Array): boolean {
+  if (/^image\/(heic|heif)(-sequence)?(?:;|$)/i.test(contentType)) return true;
+  if (/\.(heic|heif)$/i.test(new URL(sourceUrl).pathname)) return true;
+  if (!body || body.length < 16) return false;
+  const header = Buffer.from(body);
+  if (header.toString('ascii', 4, 8) !== 'ftyp') return false;
+  const end = Math.min(header.readUInt32BE(0), header.length);
+  for (let offset = 8; offset + 4 <= end; offset += 4) {
+    if (offset === 12) continue;
+    if (['heic', 'heix', 'hevc', 'hevx'].includes(header.toString('ascii', offset, offset + 4))) return true;
+  }
+  return false;
+}
+
 async function storeOriginal(params: Omit<ImageAssetUploadParams, 'variants'>): Promise<StoredOriginal | null> {
   const sourceUrl = (params.sourceUrl || '').trim();
   if (!sourceUrl || !looksLikeHttpUrl(sourceUrl)) {
@@ -187,16 +202,17 @@ async function storeOriginal(params: Omit<ImageAssetUploadParams, 'variants'>): 
     throw new Error(`Failed to download source image (${response.status}): ${sourceUrl}`);
   }
 
-  const contentType = response.headers.get('content-type') || 'application/octet-stream';
+  let contentType = response.headers.get('content-type') || 'application/octet-stream';
   const arrayBuffer = await response.arrayBuffer();
-  const body = new Uint8Array(arrayBuffer);
+  let body: Uint8Array = new Uint8Array(arrayBuffer);
 
   if (!body.length) {
     throw new Error(`Downloaded image is empty: ${sourceUrl}`);
   }
 
   const hash = sha256Hex(body).slice(0, 16);
-  const ext = inferExtension(contentType, sourceUrl);
+  const heic = isHeicSource(contentType, sourceUrl, body);
+  const ext = heic ? 'jpg' : inferExtension(contentType, sourceUrl);
 
   const basePath = [
     'courses',
@@ -204,15 +220,30 @@ async function storeOriginal(params: Omit<ImageAssetUploadParams, 'variants'>): 
     'projects',
     sanitizePathSegment(params.projectNotionId),
   ].join('/');
+  const sourceKey = sourceUrl.slice(cfg.publicBaseUrl.length + 1);
   const key = isStoredOriginal
-    ? sourceUrl.slice(cfg.publicBaseUrl.length + 1)
-    : `${basePath}/${sanitizePathSegment(params.workNotionId)}-${hash}.${sanitizePathSegment(ext)}`;
+    ? (heic ? `${sourceKey.replace(/\.[^/.]+$/, '')}-heic-jpeg-v1.jpg` : sourceKey)
+    : `${basePath}/${sanitizePathSegment(params.workNotionId)}-${hash}${heic ? '-heic-jpeg-v1' : ''}.${sanitizePathSegment(ext)}`;
   const keyParts = key.split('/');
   const originalFilename = keyParts.pop() || `${sanitizePathSegment(params.workNotionId)}-${hash}.${sanitizePathSegment(ext)}`;
   const fileStem = originalFilename.replace(/\.[^.]+$/, '');
   const originalBasePath = keyParts.join('/');
 
-  const uploaded = !isStoredOriginal && !(await objectExists(key));
+  const uploaded = (!isStoredOriginal || heic) && !(await objectExists(key));
+  if (heic) {
+    contentType = 'image/jpeg';
+    if (uploaded) {
+      try {
+        body = await convertHeic({ buffer: body, format: 'JPEG', quality: 1 });
+      } catch (error) {
+        throw new Error(`HEIC to JPEG conversion failed: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    } else {
+      const jpeg = await fetch(`${cfg.publicBaseUrl}/${key}`);
+      if (!jpeg.ok) throw new Error(`Failed to download converted JPEG (${jpeg.status})`);
+      body = new Uint8Array(await jpeg.arrayBuffer());
+    }
+  }
   if (uploaded) {
     await putObjectSigned({ key, body, contentType });
   }
@@ -232,14 +263,17 @@ export async function uploadImageAssetToR2(params: ImageAssetUploadParams): Prom
   const sourceUrl = (params.sourceUrl || '').trim();
   const publicBase = sourceUrl && looksLikeHttpUrl(sourceUrl) ? r2Config().publicBaseUrl : '';
   if (publicBase && sourceUrl.startsWith(`${publicBase}/`)) {
-    const key = sourceUrl.slice(publicBase.length + 1);
+    const sourceKey = sourceUrl.slice(publicBase.length + 1);
+    const key = isHeicSource('', sourceUrl)
+      ? `${sourceKey.replace(/\.[^/.]+$/, '')}-heic-jpeg-v1.jpg`
+      : sourceKey;
     const stem = key.replace(/\.[^/.]+$/, '');
     const keys = [key, `${stem}-thumbnail.webp`, ...(params.variants === 'thumbnail-only' ? [] : [`${stem}-preview.webp`])];
     const exists = await Promise.all(keys.map(objectExists));
     if (exists.every(Boolean)) {
       return {
         asset: {
-          original: sourceUrl,
+          original: `${publicBase}/${key}`,
           thumbnail: `${publicBase}/${keys[1]}`,
           ...(keys[2] ? { preview: `${publicBase}/${keys[2]}` } : {}),
         },
@@ -322,7 +356,7 @@ export async function uploadImageUrlToR2(params: {
   const sourceUrl = (params.sourceUrl || '').trim();
   if (!sourceUrl || !looksLikeHttpUrl(sourceUrl)) return { publicUrl: sourceUrl, key: '', uploaded: false };
   const cfg = r2Config();
-  if (sourceUrl.startsWith(`${cfg.publicBaseUrl}/`)) {
+  if (sourceUrl.startsWith(`${cfg.publicBaseUrl}/`) && !isHeicSource('', sourceUrl)) {
     return { publicUrl: sourceUrl, key: sourceUrl.slice(cfg.publicBaseUrl.length + 1), uploaded: false };
   }
   const stored = await storeOriginal(params);

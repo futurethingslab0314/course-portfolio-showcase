@@ -25,7 +25,7 @@ Re-running Sync is safe because R2 object keys are content-addressed. Existing o
 
 Sync checks each object using signed HEAD requests to R2. Existing originals and variants are reused; only missing variants are converted and uploaded. A complete R2 asset also skips the source download. Notion source URLs still require one download to calculate the content hash, so changed image content receives new keys even if its URL is unchanged. The R2 credential must permit object reads as well as writes. Only a 404 is treated as missing; other check failures are reported through the existing sync warning flow.
 
-SVG and animated GIF files remain original-only. Unsupported HEIC or unusual raster formats retain the original URL and produce a warning instead of stopping the course sync.
+SVG and animated GIF files remain original-only. HEIC/HEIF photos are decoded on the server and converted to JPEG at quality 1 without resizing. The JPEG becomes the original URL for display and printing, with WebP variants generated from it. JPEG conversion is lossy despite preserving pixel dimensions. The main image is used for multi-image HEIC containers. Existing R2 HEIC files are migrated on the next Sync; their old objects are not deleted. Corrupt or unsupported inputs retain their source URL through the existing sync failure handling and produce a warning.
 
 ## Browser Verification
 
