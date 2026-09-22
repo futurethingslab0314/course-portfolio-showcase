@@ -29,6 +29,14 @@ function logWithContext(message: string, context: Record<string, unknown>) {
   console.log(JSON.stringify({ message, ...context }));
 }
 
+export function assertSourceReadsSucceeded(warnings: NormalizationWarning[]): void {
+  const failures = warnings.filter((warning) => warning.code === 'SOURCE_DB_FETCH_FAILED');
+  if (!failures.length) return;
+  throw new Error(`Sync aborted; existing data preserved. Source reads failed: ${failures
+    .map((warning) => `${warning.projectId || warning.sourceDatabaseId || 'unknown project'}: ${warning.message}`)
+    .join('; ')}`);
+}
+
 type BlogImageRewriteResult = {
   blogContent: StudentWork['blogContent'];
   uploaded: number;
@@ -353,6 +361,9 @@ export async function syncCourseToSupabase(params: {
   logWithContext('Sync to Supabase started', { runId, slug });
 
   const payload = await buildCourseSyncPayloadBySlug(slug);
+
+  // A failed fetch is not an empty database: never delete existing works for it.
+  assertSourceReadsSucceeded(payload.warnings);
 
   const coverResult = await rewriteCourseCoverToR2(payload, runId);
   const imageResult = await rewriteWorkImagesToR2(payload, runId);

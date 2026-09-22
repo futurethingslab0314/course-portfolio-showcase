@@ -1,7 +1,20 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { rewriteBlogContentImagesToR2ForTest, rewriteWorkMediaToR2ForTest } from './syncToSupabase';
+import { assertSourceReadsSucceeded, rewriteBlogContentImagesToR2ForTest, rewriteWorkMediaToR2ForTest } from './syncToSupabase';
 import { StudentWork } from '../../src/types';
+
+test('failed source reads abort sync instead of treating missing works as deletions', () => {
+  assert.throws(() => assertSourceReadsSucceeded([
+    { level: 'error', code: 'SOURCE_DB_FETCH_FAILED', projectId: 'project-1', message: 'Notion timeout' },
+  ]), /project-1.*Notion timeout/);
+});
+
+test('successful empty reads and non-source warnings still allow sync', () => {
+  assert.doesNotThrow(() => assertSourceReadsSucceeded([]));
+  assert.doesNotThrow(() => assertSourceReadsSucceeded([
+    { level: 'warning', code: 'R2_IMAGE_UPLOAD_FAILED', message: 'Image unavailable' },
+  ]));
+});
 
 test('rewriteBlogContentImagesToR2ForTest rewrites nested blog image sections to R2 URLs', async () => {
   const blogContent: NonNullable<StudentWork['blogContent']> = [
