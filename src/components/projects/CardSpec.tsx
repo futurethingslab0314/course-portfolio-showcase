@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { StudentWork } from '../../types';
 import { TechnicalDataCard } from '../TechnicalDataCard';
 import { memberRows } from '../../lib/memberRows';
+import { getMainImageAsset } from '../../lib/imageAssets';
+import { OptimizedImage } from '../OptimizedImage';
 
 interface CardSpecProps {
   work: StudentWork;
@@ -14,6 +16,7 @@ interface CardSpecProps {
 export const CardSpec = ({ work, zoomedImage, setZoomedImage }: CardSpecProps) => {
   const specCards = (work.dataSpecs ?? []).filter((card) => Boolean(card?.trim()));
   const members = memberRows(work);
+  const mainImageAsset = getMainImageAsset(work);
 
   return (
     <div className="card-spec-grid">
@@ -21,7 +24,7 @@ export const CardSpec = ({ work, zoomedImage, setZoomedImage }: CardSpecProps) =
         className="relative aspect-square overflow-hidden rounded-lg cursor-zoom-in group"
         onClick={() => setZoomedImage(work.mainImage)}
       >
-        <img src={work.mainImage} alt={work.assignmentName} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" referrerPolicy="no-referrer" />
+        <OptimizedImage asset={mainImageAsset} variant="thumbnail" loading="lazy" alt={work.assignmentName} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" referrerPolicy="no-referrer" />
         <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/10 transition-colors">
           <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md border border-white/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
             <Plus className="text-white" size={24} />
@@ -93,8 +96,9 @@ export const CardSpec = ({ work, zoomedImage, setZoomedImage }: CardSpecProps) =
               exit={{ opacity: 0, scale: 0.9 }}
               className="relative w-full max-w-5xl aspect-square rounded-2xl overflow-hidden shadow-2xl"
             >
-              <img 
-                src={work.mainImage} 
+              <OptimizedImage
+                asset={mainImageAsset}
+                variant="preview"
                 alt="" 
                 className="w-full h-full object-cover" 
                 referrerPolicy="no-referrer" 

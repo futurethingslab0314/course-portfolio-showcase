@@ -24,6 +24,11 @@ const caseWorks: StudentWork[] = [
     mainImage: 'https://example.com/a.jpg',
     mainImageThumbnail: 'https://example.com/a-thumbnail.webp',
     mainImagePreview: 'https://example.com/a-preview.webp',
+    mainImageAsset: {
+      original: 'https://example.com/a.jpg',
+      thumbnail: 'https://example.com/a-typed-thumbnail.webp',
+      preview: 'https://example.com/a-typed-preview.webp',
+    },
     interactionPart: 'https://example.com/hand.png',
     targetUser: 'Stroke Patient',
     designTeam: 'Team Alpha',
@@ -87,6 +92,8 @@ test('buildCardCasePrintHtml includes student labels and card names for print ou
   assert.match(html, /a\.jpg/);
   assert.doesNotMatch(html, /a-thumbnail\.webp/);
   assert.doesNotMatch(html, /a-preview\.webp/);
+  assert.doesNotMatch(html, /a-typed-thumbnail\.webp/);
+  assert.doesNotMatch(html, /a-typed-preview\.webp/);
   assert.match(html, /\.keyword \{[^}]*display: inline-flex;/);
   assert.match(html, /\.keyword \{[^}]*line-height: 1;/);
   assert.match(html, /\.card \{[^}]*position: relative;/);
@@ -119,6 +126,8 @@ test('buildCardCasePrintHtml stacks two 4x6 observation photos on portrait A4 wi
   assert.match(html, /image\.naturalWidth > image\.naturalHeight/);
   assert.doesNotMatch(html, /Target User/);
   assert.doesNotMatch(html, /Alice, Bob/);
+  assert.doesNotMatch(html, /a-typed-thumbnail\.webp/);
+  assert.doesNotMatch(html, /a-typed-preview\.webp/);
 });
 
 test('getCardCaseAvailableYears only uses group-level years', () => {

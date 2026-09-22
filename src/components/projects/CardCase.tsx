@@ -3,6 +3,8 @@ import { X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { StudentWork } from '../../types';
 import { cn } from '../../lib/utils';
+import { getMainImageAsset, resolveImageSource } from '../../lib/imageAssets';
+import { OptimizedImage } from '../OptimizedImage';
 
 interface CardCaseProps {
   work: StudentWork;
@@ -33,8 +35,8 @@ function fallbackBackgroundForWork(work: StudentWork): string {
 export const CardCase = ({ work, isPrintMode = false }: CardCaseProps) => {
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const hasMainImage = Boolean(work.mainImage);
-  const cardImage = work.mainImageThumbnail || work.mainImagePreview || work.mainImage;
-  const previewImage = work.mainImagePreview || work.mainImage;
+  const mainImageAsset = getMainImageAsset(work);
+  const previewImage = resolveImageSource(mainImageAsset, 'preview');
   const hasInteractionPart = Boolean(work.interactionPart);
   const hasTargetUser = Boolean(work.targetUser?.trim());
   const hasDesignTeam = Boolean(work.designTeam?.trim());
@@ -84,8 +86,9 @@ export const CardCase = ({ work, isPrintMode = false }: CardCaseProps) => {
       >
         <div className="absolute inset-0 z-0">
           {hasMainImage ? (
-            <img
-              src={cardImage}
+            <OptimizedImage
+              asset={mainImageAsset}
+              variant={isPrintMode ? 'original' : 'thumbnail'}
               alt={work.assignmentName}
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
               referrerPolicy="no-referrer"
@@ -185,8 +188,9 @@ export const CardCase = ({ work, isPrintMode = false }: CardCaseProps) => {
                 <X size={18} />
               </button>
               <div className="bg-black">
-                <img
-                  src={previewImage}
+                <OptimizedImage
+                  asset={mainImageAsset}
+                  variant="preview"
                   alt={work.assignmentName}
                   className="max-h-[90vh] w-full object-contain"
                   referrerPolicy="no-referrer"
