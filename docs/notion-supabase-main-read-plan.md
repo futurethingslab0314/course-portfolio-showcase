@@ -402,3 +402,21 @@ https://course-portfolio-showcase-production.up.railway.app/api/admin/sync-cours
 7. [ ] Railway variables 完整，並重新部署
 8. [ ] 手動同步回傳 `ok:true`
 9. [ ] 前台顯示正常、圖片來自 R2
+
+---
+
+## K. 圖片縮圖與預覽圖回填
+
+所有使用圖片的 template 共用同一套 image asset pipeline。Notion 仍只需提供原始圖片，不需要新增 thumbnail 或 preview 欄位。
+
+部署後，確認下列環境變數，再為每門既有課程執行一次原本的 Sync：
+
+```text
+READ_FROM_SUPABASE=true
+IMAGE_BACKEND=r2
+IMAGE_SYNC_ENABLED=true
+```
+
+Sync 會保留 original URL，並自動建立 thumbnail 與 preview WebP。R2 key 使用內容 hash，因此重跑 Sync 是安全的；若單張圖片無法轉換，該筆仍保留 original，並在 sync warnings 顯示原因。
+
+完整操作與驗證方式見 `docs/image-variant-backfill.md`。
