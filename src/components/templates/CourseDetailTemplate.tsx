@@ -22,12 +22,12 @@ interface CourseDetailTemplateProps {
   isSyncing?: boolean;
 }
 
-const groupCardGradients = [
-  'linear-gradient(135deg, #f97316 0%, #fb7185 100%)',
-  'linear-gradient(135deg, #0f766e 0%, #38bdf8 100%)',
-  'linear-gradient(135deg, #4338ca 0%, #22c55e 100%)',
-  'linear-gradient(135deg, #d97706 0%, #facc15 100%)',
-  'linear-gradient(135deg, #1d4ed8 0%, #a855f7 100%)',
+const groupCardColors = [
+  '#EEEEEE',
+  '#C4FF00',
+  '#FFB58F',
+  '#CBC5FF',
+  '#7DDFC8',
 ];
 
 function hashString(input: string): number {
@@ -39,7 +39,7 @@ function hashString(input: string): number {
 }
 
 function groupCardBackground(group: string): string {
-  return groupCardGradients[hashString(group) % groupCardGradients.length];
+  return groupCardColors[hashString(group) % groupCardColors.length];
 }
 
 export const CourseDetailTemplate = ({
@@ -409,26 +409,25 @@ export const CourseDetailTemplate = ({
                 animate={{ opacity: 1, y: 0 }}
                 onClick={() => setSelectedCardCaseGroup(groupWork.group)}
                 className="relative overflow-hidden rounded-3xl text-left min-h-[360px] group border border-black/5 shadow-sm hover:shadow-xl transition-all"
-                style={{ background: groupCardBackground(groupWork.group || groupWork.assignmentName) }}
+                style={{ backgroundColor: groupCardBackground(groupWork.group || groupWork.assignmentName) }}
               >
-                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
-                <div className="relative z-10 h-full flex flex-col justify-between p-8 text-white">
+                <div className="relative z-10 h-full flex flex-col justify-between p-8 text-black">
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/60 mb-3">Group Project</div>
+                      <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-black/60 mb-3">Group Project</div>
                       <h3 className="text-3xl font-bold tracking-tight leading-tight">{groupWork.group || groupWork.assignmentName}</h3>
                     </div>
-                    <div className="px-4 py-2 rounded-full bg-white/15 backdrop-blur-md text-[10px] font-bold uppercase tracking-widest">
+                    <div className="px-4 py-2 rounded-full border border-black/20 text-[10px] font-bold uppercase tracking-widest">
                       {groupWork.caseIds?.length || 0} Cases
                     </div>
                   </div>
 
                   <div className="space-y-5">
                     <div>
-                      <div className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-2">Members</div>
+                      <div className="text-[10px] font-bold uppercase tracking-widest text-black/60 mb-2">Members</div>
                       <div className="flex flex-wrap gap-2">
                         {(groupWork.memberDetails || []).map((member, index) => (
-                          <span key={`${member.name}-${index}`} className="px-3 py-2 rounded-full bg-white/12 backdrop-blur-md text-xs font-semibold">
+                          <span key={`${member.name}-${index}`} className="px-3 py-2 rounded-full border border-black/20 text-xs font-semibold">
                             {member.name}
                           </span>
                         ))}
@@ -437,10 +436,10 @@ export const CourseDetailTemplate = ({
 
                     <div className="flex items-end justify-between">
                       <div>
-                        <div className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-1">Year</div>
+                        <div className="text-[10px] font-bold uppercase tracking-widest text-black/60 mb-1">Year</div>
                         <div className="text-lg font-bold">{groupWork.year || 'N/A'}</div>
                       </div>
-                      <div className="text-[11px] font-bold uppercase tracking-[0.25em] text-white/70 group-hover:translate-x-1 transition-transform">
+                      <div className="text-[11px] font-bold uppercase tracking-[0.25em] text-black/70 group-hover:translate-x-1 transition-transform">
                         Enter Group
                       </div>
                     </div>
