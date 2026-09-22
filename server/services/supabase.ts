@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { CoursePayload, NormalizationWarning, UI_PATTERN_FALLBACK, UI_PATTERN_MAP } from '../../shared/contracts';
-import { Course, Project, StudentWork } from '../../src/types';
+import { Course, ImageAsset, Project, StudentWork } from '../../src/types';
 
 interface SupabaseCourseRow {
   id: string;
@@ -236,6 +236,8 @@ function buildStudentWorkMetadata(work: StudentWork): Record<string, unknown> {
     moreImages: work.moreImages || null,
     mainImageThumbnail: work.mainImageThumbnail || null,
     mainImagePreview: work.mainImagePreview || null,
+    mainImageAsset: work.mainImageAsset || null,
+    moreImageAssets: work.moreImageAssets || null,
     url: work.url || null,
     video: work.video || null,
     tags: work.tags || null,
@@ -258,6 +260,21 @@ function buildStudentWorkMetadata(work: StudentWork): Record<string, unknown> {
     foundBy: work.foundBy || null,
     memberDetails: work.memberDetails || null,
   };
+}
+
+function parseImageAsset(value: unknown): ImageAsset | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+  const candidate = value as Record<string, unknown>;
+  if (typeof candidate.original !== 'string') return undefined;
+  const asset: ImageAsset = { original: candidate.original };
+  if (typeof candidate.thumbnail === 'string') asset.thumbnail = candidate.thumbnail;
+  if (typeof candidate.preview === 'string') asset.preview = candidate.preview;
+  return asset;
+}
+
+function parseImageAssets(value: unknown): ImageAsset[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  return value.map(parseImageAsset).filter((asset): asset is ImageAsset => Boolean(asset));
 }
 
 function mapCourseRowToCourse(row: SupabaseCourseRow): Course {
@@ -305,10 +322,12 @@ function mapWorkRowToStudentWork(row: SupabaseStudentWorkRow): StudentWork {
     mainImage: row.main_image_url || '',
     mainImageThumbnail: typeof metadata.mainImageThumbnail === 'string' ? metadata.mainImageThumbnail : undefined,
     mainImagePreview: typeof metadata.mainImagePreview === 'string' ? metadata.mainImagePreview : undefined,
+    mainImageAsset: parseImageAsset(metadata.mainImageAsset),
     blogContent: parseMaybeBlogContent(row.blog_content),
     sourceDatabaseId: row.source_database_id || '',
     studentIds: parseMaybeStringArray(metadata.studentIds),
     moreImages: parseMaybeStringArray(metadata.moreImages),
+    moreImageAssets: parseImageAssets(metadata.moreImageAssets),
     url: typeof metadata.url === 'string' ? metadata.url : undefined,
     video: typeof metadata.video === 'string' ? metadata.video : undefined,
     tags: parseMaybeStringArray(metadata.tags),

@@ -2,7 +2,12 @@ import { randomUUID } from 'node:crypto';
 import { CoursePayload, NormalizationWarning } from '../../shared/contracts';
 import { buildCourseSyncPayloadBySlug } from './generator';
 import { fetchAllCoursesWithMeta, findCourseSlugByPageId, NotionCourseMeta } from './notion';
-import { isR2ImageSyncEnabled, uploadImageUrlToR2 } from './imageStoreR2';
+import {
+  ImageAssetUploadResult,
+  isR2ImageSyncEnabled,
+  uploadImageAssetToR2,
+  uploadImageUrlToR2,
+} from './imageStoreR2';
 import {
   appendSyncLog,
   deleteProjectsNotInCourse,
@@ -15,10 +20,9 @@ import {
 } from './supabase';
 import { BlogContentSection, StudentWork } from '../../src/types';
 
-type ImageRewriteResult = string | {
-  originalUrl: string;
-  thumbnailUrl?: string;
-  previewUrl?: string;
+type WorkImageRewriteParams = {
+  sourceUrl: string;
+  variants: 'standard' | 'thumbnail-only';
 };
 
 function logWithContext(message: string, context: Record<string, unknown>) {
@@ -88,32 +92,41 @@ export async function rewriteBlogContentImagesToR2ForTest(
 
 async function rewriteWorkMediaToR2(
   work: StudentWork,
-  rewriteUrl: (sourceUrl: string) => Promise<ImageRewriteResult>,
+  rewriteAsset: (params: WorkImageRewriteParams) => Promise<ImageAssetUploadResult>,
 ): Promise<void> {
   const mainImage = String(work.mainImage || '').trim();
   if (mainImage) {
-    const result = await rewriteUrl(mainImage);
-    if (typeof result === 'string') {
-      work.mainImage = result;
-    } else {
-      work.mainImage = result.originalUrl;
-      work.mainImageThumbnail = result.thumbnailUrl;
-      work.mainImagePreview = result.previewUrl;
+    const { asset } = await rewriteAsset({ sourceUrl: mainImage, variants: 'standard' });
+    work.mainImage = asset.original;
+    work.mainImageAsset = asset;
+    work.mainImageThumbnail = asset.thumbnail;
+    work.mainImagePreview = asset.preview;
+  }
+
+  if (Array.isArray(work.moreImages)) {
+    const assets = [];
+    for (const sourceUrl of work.moreImages) {
+      const trimmed = String(sourceUrl || '').trim();
+      if (!trimmed) continue;
+      const { asset } = await rewriteAsset({ sourceUrl: trimmed, variants: 'standard' });
+      assets.push(asset);
     }
+    work.moreImageAssets = assets;
+    work.moreImages = assets.map((asset) => asset.original);
   }
 
   const interactionPart = String(work.interactionPart || '').trim();
   if (interactionPart) {
-    const result = await rewriteUrl(interactionPart);
-    work.interactionPart = typeof result === 'string' ? result : result.originalUrl;
+    const { asset } = await rewriteAsset({ sourceUrl: interactionPart, variants: 'thumbnail-only' });
+    work.interactionPart = asset.thumbnail || asset.original;
   }
 }
 
 export async function rewriteWorkMediaToR2ForTest(
   work: StudentWork,
-  rewriteUrl: (sourceUrl: string) => Promise<ImageRewriteResult>,
+  rewriteAsset: (params: WorkImageRewriteParams) => Promise<ImageAssetUploadResult>,
 ): Promise<void> {
-  return rewriteWorkMediaToR2(work, rewriteUrl);
+  return rewriteWorkMediaToR2(work, rewriteAsset);
 }
 
 async function rewriteCourseCoverToR2(payload: CoursePayload, runId: string): Promise<{ uploaded: number; skipped: number }> {
@@ -192,34 +205,39 @@ async function rewriteWorkImagesToR2(payload: CoursePayload, runId: string): Pro
       continue;
     }
 
-    const rewriteOne = async (sourceUrl: string, label: 'mainImage' | 'moreImage' | 'interactionPart', index?: number): Promise<ImageRewriteResult> => {
+    const visualTemplates = new Set(['generic-card', 'data-matrix', 'gallery-story', 'gallery-slide', 'card-spec', 'card-case']);
+    const supportsVariants = visualTemplates.has(project.displayStyle);
+
+    const rewriteOne = async (params: WorkImageRewriteParams): Promise<ImageAssetUploadResult> => {
+      const { sourceUrl, variants } = params;
       const trimmed = String(sourceUrl || '').trim();
       if (!trimmed) {
         skipped += 1;
-        return trimmed;
+        return { asset: { original: trimmed }, uploaded: false };
       }
 
       try {
-        const result = await uploadImageUrlToR2({
-          sourceUrl: trimmed,
-          courseSlug: payload.course.slug || payload.course.id,
-          projectNotionId: project.id,
-          workNotionId: work.id,
-          generateCardCaseVariants: label === 'mainImage' && work.cardCaseRecordType === 'case',
-        });
+        const common = {
+          sourceUrl: trimmed, courseSlug: payload.course.slug || payload.course.id,
+          projectNotionId: project.id, workNotionId: work.id,
+        };
+        const result: ImageAssetUploadResult = supportsVariants || variants === 'thumbnail-only'
+          ? await uploadImageAssetToR2({ ...common, variants })
+          : await uploadImageUrlToR2(common).then((original) => ({
+              asset: { original: original.publicUrl }, uploaded: original.uploaded,
+            }));
         if (result.uploaded) {
           uploaded += 1;
         } else {
           skipped += 1;
         }
-        if (label === 'mainImage' && work.cardCaseRecordType === 'case') {
-          return {
-            originalUrl: result.publicUrl,
-            thumbnailUrl: result.thumbnailUrl,
-            previewUrl: result.previewUrl,
-          };
+        if (result.warning) {
+          payload.warnings.push({
+            level: 'warning', code: 'R2_IMAGE_VARIANT_FAILED', message: result.warning,
+            sourceDatabaseId: work.sourceDatabaseId, workId: work.id,
+          });
         }
-        return result.publicUrl;
+        return result;
       } catch (error) {
         skipped += 1;
         payload.warnings.push({
@@ -235,33 +253,13 @@ async function rewriteWorkImagesToR2(payload: CoursePayload, runId: string): Pro
           entityType: 'image',
           entityNotionId: work.id,
           status: 'failed',
-          message: `${label}${typeof index === 'number' ? `[${index}]` : ''}: ${
-            error instanceof Error ? error.message : 'Unknown R2 upload failure'
-          }`,
+          message: error instanceof Error ? error.message : 'Unknown R2 upload failure',
         }).catch(() => undefined);
-        return trimmed;
+        return { asset: { original: trimmed }, uploaded: false };
       }
     };
 
-    const originalMainImage = String(work.mainImage || '').trim();
-    const originalInteractionPart = String(work.interactionPart || '').trim();
-    await rewriteWorkMediaToR2(work, async (sourceUrl) => {
-      if (sourceUrl === originalMainImage) {
-        return rewriteOne(sourceUrl, 'mainImage');
-      }
-      if (sourceUrl === originalInteractionPart) {
-        return rewriteOne(sourceUrl, 'interactionPart');
-      }
-      return rewriteOne(sourceUrl, 'moreImage');
-    });
-
-    if (Array.isArray(work.moreImages) && work.moreImages.length > 0) {
-      const next: string[] = [];
-      for (let i = 0; i < work.moreImages.length; i += 1) {
-        next.push(await rewriteOne(work.moreImages[i], 'moreImage', i) as string);
-      }
-      work.moreImages = next.filter((item) => item.trim().length > 0);
-    }
+    await rewriteWorkMediaToR2(work, rewriteOne);
 
     const blogImageResult = await rewriteBlogContentImagesToR2(work.blogContent, async (sourceUrl) => {
       const trimmed = String(sourceUrl || '').trim();

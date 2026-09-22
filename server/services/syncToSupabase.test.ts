@@ -55,49 +55,53 @@ test('rewriteBlogContentImagesToR2ForTest rewrites nested blog image sections to
   ]);
 });
 
-test('rewriteWorkMediaToR2ForTest rewrites interactionPart icon urls to R2', async () => {
+test('rewriteWorkMediaToR2ForTest stores main and ordered gallery assets', async () => {
   const work: StudentWork = {
-    id: 'card-case-1',
-    assignmentName: 'Case 1',
-    members: ['Student 01'],
-    description: '',
-    mainImage: 'https://notion.site/main-image',
-    interactionPart: 'https://notion.site/body-icon',
-    sourceDatabaseId: 'db-card-case',
-  };
-
-  const uploaded: string[] = [];
-
-  await rewriteWorkMediaToR2ForTest(work, async (sourceUrl) => {
-    uploaded.push(sourceUrl);
-    return `https://r2.example/${uploaded.length}`;
-  });
-
-  assert.deepEqual(uploaded, ['https://notion.site/main-image', 'https://notion.site/body-icon']);
-  assert.equal(work.mainImage, 'https://r2.example/1');
-  assert.equal(work.interactionPart, 'https://r2.example/2');
-});
-
-test('rewriteWorkMediaToR2ForTest stores generated card-case image variants from one main image', async () => {
-  const work: StudentWork = {
-    id: 'card-case-variants',
-    assignmentName: 'Case Variants',
+    id: 'work-1',
+    assignmentName: 'Work 1',
     members: [],
     description: '',
-    mainImage: 'https://notion.site/original.jpg',
-    sourceDatabaseId: 'db-card-case',
-    cardCaseRecordType: 'case',
+    mainImage: 'main.jpg',
+    moreImages: ['second.jpg', 'first.jpg'],
+    sourceDatabaseId: 'db-1',
   };
 
-  const rewrite = (async () => ({
-    originalUrl: 'https://r2.example/original.jpg',
-    thumbnailUrl: 'https://r2.example/thumbnail.webp',
-    previewUrl: 'https://r2.example/preview.webp',
-  })) as any;
+  await rewriteWorkMediaToR2ForTest(work, async ({ sourceUrl }) => {
+    const stem = sourceUrl.replace(/\.[^.]+$/, '');
+    return {
+      asset: {
+        original: `r2/${sourceUrl}`,
+        thumbnail: `r2/${stem}-thumbnail.webp`,
+        preview: `r2/${stem}-preview.webp`,
+      },
+      uploaded: true,
+    };
+  });
 
-  await rewriteWorkMediaToR2ForTest(work, rewrite);
+  assert.equal(work.mainImage, 'r2/main.jpg');
+  assert.equal(work.mainImageThumbnail, 'r2/main-thumbnail.webp');
+  assert.equal(work.mainImageAsset?.preview, 'r2/main-preview.webp');
+  assert.deepEqual(work.moreImages, ['r2/second.jpg', 'r2/first.jpg']);
+  assert.deepEqual(work.moreImageAssets?.map((asset) => asset.original), ['r2/second.jpg', 'r2/first.jpg']);
+});
 
-  assert.equal(work.mainImage, 'https://r2.example/original.jpg');
-  assert.equal(work.mainImageThumbnail, 'https://r2.example/thumbnail.webp');
-  assert.equal(work.mainImagePreview, 'https://r2.example/preview.webp');
+test('rewriteWorkMediaToR2ForTest keeps original when variant generation warns', async () => {
+  const work: StudentWork = {
+    id: 'unsupported',
+    assignmentName: 'Unsupported',
+    members: [],
+    description: '',
+    mainImage: 'unsupported.heic',
+    sourceDatabaseId: 'db-1',
+  };
+
+  await rewriteWorkMediaToR2ForTest(work, async () => ({
+    asset: { original: 'r2/unsupported.heic' },
+    uploaded: true,
+    warning: 'Variant conversion failed',
+  }));
+
+  assert.equal(work.mainImage, 'r2/unsupported.heic');
+  assert.deepEqual(work.mainImageAsset, { original: 'r2/unsupported.heic' });
+  assert.equal(work.mainImagePreview, undefined);
 });

@@ -245,6 +245,11 @@ test('fetchCoursePayloadBySlugFromSupabase returns only published projects and t
           metadata: {
             mainImageThumbnail: 'https://example.com/thumb.webp',
             mainImagePreview: 'https://example.com/preview.webp',
+            mainImageAsset: {
+              original: 'https://example.com/main.jpg',
+              thumbnail: 'https://example.com/thumb.webp',
+              preview: 'https://example.com/preview.webp',
+            },
             themeTag: 'Conference',
             startDate: '2026-03-01',
             endDate: '2026-03-03',
@@ -253,6 +258,9 @@ test('fetchCoursePayloadBySlugFromSupabase returns only published projects and t
             grant: 'NSTC',
             publicationName: 'CHI 2026',
             moreImages: ['https://example.com/2.jpg'],
+            moreImageAssets: [
+              { original: 'https://example.com/2.jpg', thumbnail: 'https://example.com/2-thumb.webp' },
+            ],
             year: '2026',
           },
         },
@@ -283,6 +291,7 @@ test('fetchCoursePayloadBySlugFromSupabase returns only published projects and t
   assert.equal(payload.studentWorks[0]?.createdAt, '2026-03-20T10:00:00.000Z');
   assert.equal(payload.studentWorks[0]?.mainImageThumbnail, 'https://example.com/thumb.webp');
   assert.equal(payload.studentWorks[0]?.mainImagePreview, 'https://example.com/preview.webp');
+  assert.equal(payload.studentWorks[0]?.mainImageAsset?.thumbnail, 'https://example.com/thumb.webp');
   assert.equal(payload.studentWorks[0]?.themeTag, 'Conference');
   assert.equal(payload.studentWorks[0]?.startDate, '2026-03-01');
   assert.equal(payload.studentWorks[0]?.endDate, '2026-03-03');
@@ -308,6 +317,9 @@ test('fetchCoursePayloadBySlugFromSupabase returns only published projects and t
     },
   ]);
   assert.deepEqual(payload.studentWorks[0]?.moreImages, ['https://example.com/2.jpg']);
+  assert.deepEqual(payload.studentWorks[0]?.moreImageAssets, [
+    { original: 'https://example.com/2.jpg', thumbnail: 'https://example.com/2-thumb.webp' },
+  ]);
   assert.equal(payload.studentWorks[0]?.year, '2026');
 });
 
@@ -364,6 +376,32 @@ test('upsertStudentWorksToSupabase does not overwrite existing blog_content when
   const payload = JSON.parse(requestBody) as Array<Record<string, unknown>>;
   assert.equal(payload.length, 1);
   assert.equal(Object.hasOwn(payload[0] || {}, 'blog_content'), false);
+});
+
+test('upsertStudentWorksToSupabase writes ordered image assets into metadata', async () => {
+  let requestBody = '';
+  const work: StudentWork = {
+    id: 'work-assets', assignmentName: 'Assets', members: [], description: '',
+    mainImage: 'r2/main.jpg', sourceDatabaseId: 'db-1',
+    mainImageAsset: { original: 'r2/main.jpg', thumbnail: 'r2/main-thumb.webp' },
+    moreImages: ['r2/b.jpg', 'r2/a.jpg'],
+    moreImageAssets: [
+      { original: 'r2/b.jpg', preview: 'r2/b-preview.webp' },
+      { original: 'r2/a.jpg', preview: 'r2/a-preview.webp' },
+    ],
+  };
+  globalThis.fetch = async (_input, init) => {
+    requestBody = String(init?.body || '');
+    return new Response(requestBody, { status: 200, headers: { 'content-type': 'application/json' } });
+  };
+
+  await upsertStudentWorksToSupabase({
+    studentWorks: [work], projectIdBySourceDb: new Map([['db-1', 'project-row-1']]), warnings: [],
+  });
+
+  const [row] = JSON.parse(requestBody) as Array<{ metadata: Record<string, unknown> }>;
+  assert.deepEqual(row.metadata.mainImageAsset, work.mainImageAsset);
+  assert.deepEqual(row.metadata.moreImageAssets, work.moreImageAssets);
 });
 
 test('upsertStudentWorksToSupabase batches rows by object shape when blog_content presence differs', async () => {
