@@ -12,7 +12,7 @@ interface DataMatrixProps {
 type ViewMode = 'coordinate' | 'categorized';
 
 const ROW_COUNT = 16;
-const COLUMN_COUNT = 30;
+const COLUMN_COUNT = 32;
 
 const getYearValue = (year?: string): number => {
   if (!year) {
@@ -166,7 +166,7 @@ export const DataMatrix = ({ works }: DataMatrixProps) => {
       <div className="mb-8 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h3 className="text-4xl font-bold tracking-tighter mb-2">Data Matrix</h3>
-          <p className="text-black/40 font-mono text-xs uppercase tracking-widest">Coordinate System: A-P x 1-30</p>
+          <p className="text-black/40 font-mono text-xs uppercase tracking-widest">Coordinate System: A-P x 1-32</p>
         </div>
 
         <div className="flex items-center gap-4 self-start lg:self-auto">
