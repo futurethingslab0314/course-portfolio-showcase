@@ -1,5 +1,6 @@
 import { createHash, createHmac } from 'node:crypto';
 import sharp from 'sharp';
+import { ImageAsset } from '../../src/types';
 
 function getEnv(name: string, required = true): string {
   const value = process.env[name];
@@ -138,24 +139,38 @@ async function putObjectSigned(params: {
   }
 }
 
-export async function uploadImageUrlToR2(params: {
+export interface ImageAssetUploadParams {
   sourceUrl: string;
   courseSlug: string;
   projectNotionId: string;
   workNotionId: string;
-  generateCardCaseVariants?: boolean;
-}): Promise<{ publicUrl: string; key: string; uploaded: boolean; thumbnailUrl?: string; previewUrl?: string }> {
+  variants?: 'standard' | 'thumbnail-only';
+}
+
+export interface ImageAssetUploadResult {
+  asset: ImageAsset;
+  uploaded: boolean;
+  warning?: string;
+}
+
+interface StoredOriginal {
+  body: Uint8Array;
+  contentType: string;
+  isStoredOriginal: boolean;
+  key: string;
+  publicUrl: string;
+  basePath: string;
+  fileStem: string;
+}
+
+async function storeOriginal(params: Omit<ImageAssetUploadParams, 'variants'>): Promise<StoredOriginal | null> {
   const sourceUrl = (params.sourceUrl || '').trim();
   if (!sourceUrl || !looksLikeHttpUrl(sourceUrl)) {
-    return { publicUrl: sourceUrl, key: '', uploaded: false };
+    return null;
   }
 
   const cfg = r2Config();
   const isStoredOriginal = sourceUrl.startsWith(`${cfg.publicBaseUrl}/`);
-  if (isStoredOriginal && !params.generateCardCaseVariants) {
-    return { publicUrl: sourceUrl, key: sourceUrl.slice(cfg.publicBaseUrl.length + 1), uploaded: false };
-  }
-
   const response = await fetch(sourceUrl);
   if (!response.ok) {
     throw new Error(`Failed to download source image (${response.status}): ${sourceUrl}`);
@@ -178,38 +193,107 @@ export async function uploadImageUrlToR2(params: {
     'projects',
     sanitizePathSegment(params.projectNotionId),
   ].join('/');
-  const fileStem = `${sanitizePathSegment(params.workNotionId)}-${hash}`;
   const key = isStoredOriginal
     ? sourceUrl.slice(cfg.publicBaseUrl.length + 1)
-    : `${basePath}/${fileStem}.${sanitizePathSegment(ext)}`;
+    : `${basePath}/${sanitizePathSegment(params.workNotionId)}-${hash}.${sanitizePathSegment(ext)}`;
+  const keyParts = key.split('/');
+  const originalFilename = keyParts.pop() || `${sanitizePathSegment(params.workNotionId)}-${hash}.${sanitizePathSegment(ext)}`;
+  const fileStem = originalFilename.replace(/\.[^.]+$/, '');
+  const originalBasePath = keyParts.join('/');
 
   if (!isStoredOriginal) {
     await putObjectSigned({ key, body, contentType });
   }
 
-  if (!params.generateCardCaseVariants) {
+  return {
+    body,
+    contentType,
+    isStoredOriginal,
+    key,
+    publicUrl: `${cfg.publicBaseUrl}/${key}`,
+    basePath: originalBasePath || basePath,
+    fileStem,
+  };
+}
+
+export async function uploadImageAssetToR2(params: ImageAssetUploadParams): Promise<ImageAssetUploadResult> {
+  const sourceUrl = (params.sourceUrl || '').trim();
+  const stored = await storeOriginal(params);
+  if (!stored) return { asset: { original: sourceUrl }, uploaded: false };
+
+  const asset: ImageAsset = { original: stored.publicUrl };
+  const contentType = stored.contentType.toLowerCase().split(';')[0].trim();
+  if (contentType === 'image/svg+xml') {
+    return { asset, uploaded: !stored.isStoredOriginal };
+  }
+
+  try {
+    const metadata = await sharp(stored.body, { animated: true }).metadata();
+    if (contentType === 'image/gif' && (metadata.pages || 1) > 1) {
+      return { asset, uploaded: !stored.isStoredOriginal };
+    }
+
+    const thumbnailBody = await sharp(stored.body)
+      .rotate()
+      .resize({ width: 640, height: 640, fit: 'inside', withoutEnlargement: true })
+      .webp({ quality: 80 })
+      .toBuffer();
+    const thumbnailKey = `${stored.basePath}/${stored.fileStem}-thumbnail.webp`;
+    await putObjectSigned({ key: thumbnailKey, body: thumbnailBody, contentType: 'image/webp' });
+    asset.thumbnail = `${r2Config().publicBaseUrl}/${thumbnailKey}`;
+
+    if (params.variants !== 'thumbnail-only') {
+      const previewBody = await sharp(stored.body)
+        .rotate()
+        .resize({ width: 1600, height: 1600, fit: 'inside', withoutEnlargement: true })
+        .webp({ quality: 85 })
+        .toBuffer();
+      const previewKey = `${stored.basePath}/${stored.fileStem}-preview.webp`;
+      await putObjectSigned({ key: previewKey, body: previewBody, contentType: 'image/webp' });
+      asset.preview = `${r2Config().publicBaseUrl}/${previewKey}`;
+    }
+
+    return { asset, uploaded: true };
+  } catch (error) {
     return {
-      publicUrl: `${cfg.publicBaseUrl}/${key}`,
-      key,
-      uploaded: !isStoredOriginal,
+      asset,
+      uploaded: !stored.isStoredOriginal,
+      warning: `Variant conversion failed: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
+}
+
+export async function uploadImageUrlToR2(params: {
+  sourceUrl: string;
+  courseSlug: string;
+  projectNotionId: string;
+  workNotionId: string;
+  generateCardCaseVariants?: boolean;
+}): Promise<{ publicUrl: string; key: string; uploaded: boolean; thumbnailUrl?: string; previewUrl?: string }> {
+  if (params.generateCardCaseVariants) {
+    const result = await uploadImageAssetToR2({ ...params, variants: 'standard' });
+    return {
+      publicUrl: result.asset.original,
+      key: result.asset.original.startsWith(`${r2Config().publicBaseUrl}/`)
+        ? result.asset.original.slice(r2Config().publicBaseUrl.length + 1)
+        : '',
+      uploaded: result.uploaded,
+      thumbnailUrl: result.asset.thumbnail,
+      previewUrl: result.asset.preview,
     };
   }
 
-  const [thumbnailBody, previewBody] = await Promise.all([
-    sharp(body).rotate().resize({ width: 640, height: 640, fit: 'inside', withoutEnlargement: true }).webp({ quality: 80 }).toBuffer(),
-    sharp(body).rotate().resize({ width: 1600, height: 1600, fit: 'inside', withoutEnlargement: true }).webp({ quality: 85 }).toBuffer(),
-  ]);
-  const thumbnailKey = `${basePath}/${fileStem}-thumbnail.webp`;
-  const previewKey = `${basePath}/${fileStem}-preview.webp`;
-
-  await putObjectSigned({ key: thumbnailKey, body: thumbnailBody, contentType: 'image/webp' });
-  await putObjectSigned({ key: previewKey, body: previewBody, contentType: 'image/webp' });
-
+  const sourceUrl = (params.sourceUrl || '').trim();
+  if (!sourceUrl || !looksLikeHttpUrl(sourceUrl)) return { publicUrl: sourceUrl, key: '', uploaded: false };
+  const cfg = r2Config();
+  if (sourceUrl.startsWith(`${cfg.publicBaseUrl}/`)) {
+    return { publicUrl: sourceUrl, key: sourceUrl.slice(cfg.publicBaseUrl.length + 1), uploaded: false };
+  }
+  const stored = await storeOriginal(params);
+  if (!stored) return { publicUrl: sourceUrl, key: '', uploaded: false };
   return {
-    publicUrl: `${cfg.publicBaseUrl}/${key}`,
-    key,
-    uploaded: true,
-    thumbnailUrl: `${cfg.publicBaseUrl}/${thumbnailKey}`,
-    previewUrl: `${cfg.publicBaseUrl}/${previewKey}`,
+    publicUrl: stored.publicUrl,
+    key: stored.key,
+    uploaded: !stored.isStoredOriginal,
   };
 }
