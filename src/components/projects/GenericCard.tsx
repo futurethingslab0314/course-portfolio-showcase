@@ -1,12 +1,19 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, Plus, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { StudentWork } from '../../types';
+import { ImageAsset, StudentWork } from '../../types';
 import { memberRows } from '../../lib/memberRows';
+import { getMainImageAsset, getMoreImageAssets } from '../../lib/imageAssets';
+import { OptimizedImage } from '../OptimizedImage';
 
 interface GenericCardProps {
   work: StudentWork;
   courseTitle?: string;
+}
+
+export function getGenericCardImageAssets(work: StudentWork): ImageAsset[] {
+  const assets = [getMainImageAsset(work), ...getMoreImageAssets(work)];
+  return assets.filter((asset, index) => asset.original && assets.findIndex((item) => item.original === asset.original) === index);
 }
 
 export const GenericCard = ({ work, courseTitle }: GenericCardProps) => {
@@ -14,10 +21,7 @@ export const GenericCard = ({ work, courseTitle }: GenericCardProps) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const members = memberRows(work);
 
-  const images = useMemo(() => {
-    const merged = [work.mainImage, ...(work.moreImages ?? [])].filter(Boolean);
-    return [...new Set(merged)];
-  }, [work.mainImage, work.moreImages]);
+  const images = useMemo(() => getGenericCardImageAssets(work), [work]);
 
   const hasMultipleImages = images.length > 1;
   const courseBadgeLabel = courseTitle?.trim() || 'Generic Card';
@@ -66,11 +70,13 @@ export const GenericCard = ({ work, courseTitle }: GenericCardProps) => {
     <>
       <div onClick={openModal} className="generic-card-container group">
         <div className="aspect-[297/210] overflow-hidden relative">
-          <img
-            src={work.mainImage}
+          <OptimizedImage
+            asset={getMainImageAsset(work)}
+            variant="thumbnail"
             alt={work.assignmentName}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             referrerPolicy="no-referrer"
+            loading="lazy"
           />
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
             <div className="bg-white/90 p-2 rounded-full transform translate-y-4 group-hover:translate-y-0 transition-transform">
@@ -121,17 +127,22 @@ export const GenericCard = ({ work, courseTitle }: GenericCardProps) => {
                 <div className="relative w-full bg-black flex items-center justify-center group/slider overflow-hidden">
                   <div className="w-full aspect-video md:aspect-[21/9] relative">
                     <AnimatePresence mode="wait">
-                      <motion.img
-                        key={images[currentImageIndex] || work.mainImage}
-                        src={images[currentImageIndex] || work.mainImage}
-                        alt={`${work.assignmentName} - image ${currentImageIndex + 1}`}
+                      <motion.div
+                        key={images[currentImageIndex]?.original || work.mainImage}
                         initial={{ opacity: 0, scale: 1.1 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.9 }}
                         transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
                         className="w-full h-full object-contain"
-                        referrerPolicy="no-referrer"
-                      />
+                      >
+                        <OptimizedImage
+                          asset={images[currentImageIndex] || getMainImageAsset(work)}
+                          variant="preview"
+                          alt={`${work.assignmentName} - image ${currentImageIndex + 1}`}
+                          className="w-full h-full object-contain"
+                          referrerPolicy="no-referrer"
+                        />
+                      </motion.div>
                     </AnimatePresence>
                   </div>
 

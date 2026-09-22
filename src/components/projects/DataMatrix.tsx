@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { StudentWork } from '../../types';
 import { memberRows } from '../../lib/memberRows';
 import { cn } from '../../lib/utils';
+import { getMainImageAsset } from '../../lib/imageAssets';
+import { OptimizedImage } from '../OptimizedImage';
 
 interface DataMatrixProps {
   works: StudentWork[];
@@ -13,6 +15,10 @@ type ViewMode = 'coordinate' | 'categorized';
 
 const ROW_COUNT = 16;
 const COLUMN_COUNT = 32;
+
+export function getDataMatrixModalImage(work: StudentWork) {
+  return getMainImageAsset(work);
+}
 
 const getYearValue = (year?: string): number => {
   if (!year) {
@@ -251,11 +257,13 @@ export const DataMatrix = ({ works }: DataMatrixProps) => {
                     >
                       {work ? (
                         <motion.div layoutId={`matrix-${work.id}`} className="relative w-full h-full">
-                          <img
-                            src={work.mainImage}
+                          <OptimizedImage
+                            asset={getMainImageAsset(work)}
+                            variant="thumbnail"
                             alt=""
                             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                             referrerPolicy="no-referrer"
+                            loading="lazy"
                           />
                           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
                             <Plus size={12} className="text-white opacity-0 group-hover:opacity-100" />
@@ -304,11 +312,13 @@ export const DataMatrix = ({ works }: DataMatrixProps) => {
                         onClick={() => setSelectedWork(work)}
                         className="aspect-square relative group cursor-pointer overflow-hidden bg-black/5 text-left"
                       >
-                        <img
-                          src={work.mainImage}
+                        <OptimizedImage
+                          asset={getMainImageAsset(work)}
+                          variant="thumbnail"
                           alt=""
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                           referrerPolicy="no-referrer"
+                          loading="lazy"
                         />
                         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex flex-col items-center justify-center p-4">
                           <Plus size={20} className="text-white opacity-0 group-hover:opacity-100 mb-2" />
@@ -353,7 +363,13 @@ export const DataMatrix = ({ works }: DataMatrixProps) => {
 
               <div className="overflow-y-auto">
                 <div className="aspect-square w-full bg-black/5">
-                  <img src={selectedWork.mainImage} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                  <OptimizedImage
+                    asset={getDataMatrixModalImage(selectedWork)}
+                    variant="preview"
+                    alt=""
+                    className="w-full h-full object-cover"
+                    referrerPolicy="no-referrer"
+                  />
                 </div>
                 <div className="p-8">
                   <div className="flex items-center gap-4 mb-4">
