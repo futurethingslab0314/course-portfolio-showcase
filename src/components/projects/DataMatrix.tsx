@@ -48,6 +48,15 @@ const parseGridLocation = (gridLocation?: string): { row: number; col: number } 
   };
 };
 
+export function compareDataMatrixWorks(a: StudentWork, b: StudentWork): number {
+  const aLocation = parseGridLocation(a.gridLocation);
+  const bLocation = parseGridLocation(b.gridLocation);
+  return aLocation.col - bLocation.col
+    || aLocation.row - bLocation.row
+    || getYearValue(b.year) - getYearValue(a.year)
+    || a.id.localeCompare(b.id);
+}
+
 export const DataMatrix = ({ works }: DataMatrixProps) => {
   const [selectedWork, setSelectedWork] = useState<StudentWork | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('coordinate');
@@ -117,23 +126,7 @@ export const DataMatrix = ({ works }: DataMatrixProps) => {
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([tag, tagWorks]) => [
         tag,
-        [...tagWorks].sort((a, b) => {
-          const aLocation = parseGridLocation(a.gridLocation);
-          const bLocation = parseGridLocation(b.gridLocation);
-          const rowDiff = aLocation.row - bLocation.row;
-          if (rowDiff !== 0) {
-            return rowDiff;
-          }
-          const colDiff = aLocation.col - bLocation.col;
-          if (colDiff !== 0) {
-            return colDiff;
-          }
-          const yearDiff = getYearValue(b.year) - getYearValue(a.year);
-          if (yearDiff !== 0) {
-            return yearDiff;
-          }
-          return a.id.localeCompare(b.id);
-        }),
+        [...tagWorks].sort(compareDataMatrixWorks),
       ]) as [string, StudentWork[]][];
   }, [filteredWorks]);
 
