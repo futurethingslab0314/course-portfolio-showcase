@@ -19,6 +19,9 @@ import {
   upsertStudentWorksToSupabase,
 } from './supabase';
 import { BlogContentSection, StudentWork } from '../../src/types';
+import { SyncProgress } from '../../shared/adminSync';
+import { serializeSync } from './syncQueue';
+import { preflightProjectSync } from './supabase';
 
 type WorkImageRewriteParams = {
   sourceUrl: string;
@@ -177,8 +180,26 @@ async function rewriteCourseCoverToR2(payload: CoursePayload, runId: string): Pr
   }
 }
 
-async function rewriteWorkImagesToR2(payload: CoursePayload, runId: string): Promise<{ uploaded: number; skipped: number }> {
+export function countWorkImages(work: StudentWork): number {
+  const countSections = (sections: StudentWork['blogContent']): number => (sections || []).reduce((n, section) => {
+    if (section.type === 'image') return n + 1;
+    if (section.type === 'toggle' || (section.type === 'text' && section.blockType === 'callout')) return n + countSections(section.children);
+    if (section.type === 'column_list') return n + section.columns.reduce((sum, column) => sum + countSections(column.children), 0);
+    return n;
+  }, 0);
+  return [work.mainImage, ...(work.moreImages || []), work.interactionPart].filter(url => url?.trim()).length + countSections(work.blogContent);
+}
+
+async function rewriteWorkImagesToR2(payload: CoursePayload, runId: string, report?: (p: SyncProgress) => void): Promise<{ uploaded: number; skipped: number }> {
+  const progress: SyncProgress = { stage: 'images', total: payload.studentWorks.reduce((sum, work) => sum + countWorkImages(work), 0), processed: 0, uploaded: 0, skipped: 0, failed: 0 };
+  const advance = (outcome: 'uploaded' | 'skipped' | 'failed') => {
+    progress.processed += 1;
+    progress[outcome] += 1;
+    report?.({ ...progress });
+  };
+  report?.({ ...progress });
   if (!isR2ImageSyncEnabled()) {
+    report?.({ ...progress, processed: progress.total, skipped: progress.total });
     return { uploaded: 0, skipped: payload.studentWorks.length };
   }
 
@@ -245,8 +266,10 @@ async function rewriteWorkImagesToR2(payload: CoursePayload, runId: string): Pro
             sourceDatabaseId: work.sourceDatabaseId, workId: work.id,
           });
         }
+        advance(result.uploaded ? 'uploaded' : 'skipped');
         return result;
       } catch (error) {
+        advance('failed');
         skipped += 1;
         payload.warnings.push({
           level: 'warning',
@@ -272,6 +295,7 @@ async function rewriteWorkImagesToR2(payload: CoursePayload, runId: string): Pro
     const blogImageResult = await rewriteBlogContentImagesToR2(work.blogContent, async (sourceUrl) => {
       const trimmed = String(sourceUrl || '').trim();
       if (!trimmed) {
+        advance('skipped');
         return trimmed;
       }
 
@@ -282,8 +306,10 @@ async function rewriteWorkImagesToR2(payload: CoursePayload, runId: string): Pro
           projectNotionId: project.id,
           workNotionId: `${work.id}-blog`,
         });
+        advance(result.uploaded ? 'uploaded' : 'skipped');
         return result.publicUrl;
       } catch (error) {
+        advance('failed');
         payload.warnings.push({
           level: 'warning',
           code: 'R2_BLOG_IMAGE_UPLOAD_FAILED',
@@ -333,7 +359,33 @@ function byUpdatedDesc(a: NotionCourseMeta, b: NotionCourseMeta): number {
   return mb - ma;
 }
 
-export async function syncCourseToSupabase(params: {
+export function syncCourseToSupabase(params: Parameters<typeof runCourseSync>[0]) {
+  return serializeSync(() => runCourseSync(params));
+}
+
+export function syncProjectToSupabase(params: { slug: string; projectId: string; report: (p: SyncProgress) => void }) {
+  return serializeSync(async () => {
+    let progress: SyncProgress = { stage: 'reading', total: 0, processed: 0, uploaded: 0, skipped: 0, failed: 0 };
+    params.report(progress);
+    const payload = await buildCourseSyncPayloadBySlug(params.slug, params.projectId);
+    assertSourceReadsSucceeded(payload.warnings);
+    if (payload.warnings.some(w => w.level === 'error')) throw new Error('Source validation failed. Existing works preserved.');
+    if (!payload.studentWorks.length) throw new Error('Notion returned no works. Existing works preserved; check the source database.');
+    const project = payload.projects[0];
+    if (payload.studentWorks.some(w => w.sourceDatabaseId !== project.sourceDatabaseId)) throw new Error('Assignment source mismatch.');
+    const courseId = await preflightProjectSync(payload.course.id, project, payload.studentWorks);
+    await rewriteWorkImagesToR2(payload, `project-sync-${randomUUID()}`, p => { progress = p; params.report(p); });
+    params.report({ ...progress, stage: 'saving' });
+    const projectRows = await upsertProjectsToSupabase([project], courseId);
+    if (projectRows.length !== 1 || projectRows[0].notion_page_id !== project.id) throw new Error('Assignment write did not return the expected project.');
+    const result = await upsertStudentWorksToSupabase({ studentWorks: payload.studentWorks, projectIdBySourceDb: buildProjectLookup(projectRows), warnings: payload.warnings });
+    if (result.skipped || result.upserted !== payload.studentWorks.length) throw new Error('Some works were not saved. Stale-work deletion skipped.');
+    await deleteStudentWorksNotInProjects({ projectIds: [projectRows[0].id], activeWorkNotionIds: payload.studentWorks.map(w => w.id) });
+    return { warnings: payload.warnings };
+  });
+}
+
+async function runCourseSync(params: {
   slug?: string;
   coursePageId?: string;
   publishedStatus?: boolean;

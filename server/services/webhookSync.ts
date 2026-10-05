@@ -146,7 +146,7 @@ function parseSyncSecret(input: unknown): string {
 export function validateSyncSecret(secretFromRequest: string): { ok: boolean; message?: string } {
   const expected = parseSyncSecret(process.env.COURSE_LINK_SYNC_SECRET || process.env.SYNC_SECRET);
   if (!expected) {
-    return { ok: true };
+    return { ok: false, message: 'Sync secret is not configured.' };
   }
   if (secretFromRequest === expected) {
     return { ok: true };

@@ -5,6 +5,7 @@ import { Course, Project, StudentWork } from '../../types';
 import { cn } from '../../lib/utils';
 import { DataMatrix } from '../projects/DataMatrix';
 import { Header } from '../Header';
+import { ProjectSyncButton } from '../AdminSync';
 import { Footer } from '../Footer';
 import { Filter, Star, ChevronDown, Download } from 'lucide-react';
 import { collectKeywordTags, collectThemeTags, filterAndSortWorksForDisplay } from './courseDetailViewModel';
@@ -276,6 +277,7 @@ export const CourseDetailTemplate = ({
           <div>
             <h2 className="text-4xl md:text-5xl font-bold tracking-tighter mb-4">{activeProject?.projectName}</h2>
             <p className="text-black/50 max-w-2xl font-medium text-base md:text-lg">{activeProject?.projectDescription}</p>
+            {activeProject && <div className="mt-4"><ProjectSyncButton slug={course.slug || course.id} projectId={activeProject.id} name={activeProject.projectName} /></div>}
           </div>
           {!isExternalProject && <div className="text-[10px] font-bold uppercase tracking-widest text-black/20">{summaryLabel}</div>}
         </div>}

@@ -13,13 +13,19 @@ export function filterVisibleProjectRowsForPayload(projectRows: ProjectPayloadRo
 
 async function buildCoursePayloadBySlugWithOptions(
   slug: string,
-  options?: { includeDraftProjects?: boolean },
+  options?: { includeDraftProjects?: boolean; projectId?: string },
 ): Promise<CoursePayload> {
   const warnings: NormalizationWarning[] = [];
 
   const { course, pageId: coursePageId } = await fetchCourseBySlug(slug, warnings);
   const allProjectRows = await fetchProjectsByCourse(coursePageId, course.projectIds, warnings);
-  const projectRows = options?.includeDraftProjects ? allProjectRows : filterVisibleProjectRowsForPayload(allProjectRows);
+  let projectRows = options?.includeDraftProjects ? allProjectRows : filterVisibleProjectRowsForPayload(allProjectRows);
+  if (options?.projectId) {
+    projectRows = projectRows.filter(row => row.project.id === options.projectId);
+    if (projectRows.length !== 1 || projectRows[0].project.contentType === 'external' || !projectRows[0].project.sourceDatabaseId) {
+      throw new Error('Assignment is not a database project in this course.');
+    }
+  }
 
   const projects = projectRows.map((row) => row.project);
   const studentWorks = [];
@@ -59,8 +65,8 @@ export async function buildCoursePayloadBySlug(slug: string): Promise<CoursePayl
   return buildCoursePayloadBySlugWithOptions(slug);
 }
 
-export async function buildCourseSyncPayloadBySlug(slug: string): Promise<CoursePayload> {
-  return buildCoursePayloadBySlugWithOptions(slug, { includeDraftProjects: true });
+export async function buildCourseSyncPayloadBySlug(slug: string, projectId?: string): Promise<CoursePayload> {
+  return buildCoursePayloadBySlugWithOptions(slug, { includeDraftProjects: true, projectId });
 }
 
 export async function generateCourseWebsite(slug: string, baseUrl: string): Promise<GenerationResult> {

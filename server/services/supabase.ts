@@ -603,6 +603,34 @@ export async function upsertStudentWorksToSupabase(params: {
   return { upserted: upsertedCount, skipped };
 }
 
+export async function preflightProjectSync(courseNotionId: string, project: Project, works: StudentWork[]): Promise<string> {
+  const courses = await supabaseRequest<SupabaseCourseRow[]>(
+    `/rest/v1/courses?select=id&notion_page_id=eq.${encodeURIComponent(courseNotionId)}&limit=1`,
+    { method: 'GET', headers: supabaseHeaders() },
+  );
+  if (!courses[0]) throw new Error('Course must be synced once before assignment sync.');
+  const owners = await supabaseRequest<SupabaseProjectRow[]>(
+    `/rest/v1/projects?select=id,notion_page_id,course_id&source_database_id=eq.${encodeURIComponent(project.sourceDatabaseId)}`,
+    { method: 'GET', headers: supabaseHeaders() },
+  );
+  if (owners.some(row => row.notion_page_id !== project.id || row.course_id !== courses[0].id)) {
+    throw new Error('Source database is shared with another assignment. Sync aborted.');
+  }
+  const existing = await supabaseRequest<SupabaseProjectRow[]>(
+    `/rest/v1/projects?select=id,course_id&notion_page_id=eq.${encodeURIComponent(project.id)}`,
+    { method: 'GET', headers: supabaseHeaders() },
+  );
+  if (existing.some(row => row.course_id !== courses[0].id)) throw new Error('Assignment belongs to another course.');
+  for (let offset = 0; offset < works.length; offset += 50) {
+    const rows = await supabaseRequest<SupabaseStudentWorkRow[]>(
+      `/rest/v1/student_works?select=project_id&notion_page_id=${encodeURIComponent(buildInFilter(works.slice(offset, offset + 50).map(w => w.id)))}`,
+      { method: 'GET', headers: supabaseHeaders() },
+    );
+    if (rows.some(row => row.project_id !== existing[0]?.id)) throw new Error('A work belongs to another assignment. Sync aborted.');
+  }
+  return courses[0].id;
+}
+
 export async function deleteStudentWorksNotInProjects(params: {
   projectIds: string[];
   activeWorkNotionIds: string[];

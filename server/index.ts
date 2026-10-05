@@ -6,7 +6,8 @@ import { buildCoursePayloadBySlug, generateCourseWebsite } from './services/gene
 import { executeFunctionTool, listFunctionTools } from './services/mappingPipeline';
 import { fetchAllCourses } from './services/notion';
 import { fetchCoursePayloadBySlugFromSupabase, fetchCoursesFromSupabase, shouldReadFromSupabase, validateCourseSyncToken } from './services/supabase';
-import { syncAllCoursesToSupabase, syncCourseToSupabase } from './services/syncToSupabase';
+import { syncAllCoursesToSupabase, syncCourseToSupabase, syncProjectToSupabase } from './services/syncToSupabase';
+import { createAdminRouter } from './services/adminRouter';
 import { syncCourseLink, syncProjectMappings, validateSyncSecret } from './services/webhookSync';
 import { resolveSyncButtonAuth } from './services/syncButtonAuth';
 import { getCourseSyncJob, startCourseSyncJob } from './services/syncCourseButtonJobs';
@@ -15,6 +16,7 @@ import { Course } from '../src/types';
 
 const app = express();
 app.use(express.json());
+app.use('/api/admin/session', createAdminRouter(syncProjectToSupabase, () => invalidateAllApiCache()));
 
 const port = Number(process.env.PORT || 8787);
 const baseUrl = process.env.BASE_URL || `http://localhost:${port}`;

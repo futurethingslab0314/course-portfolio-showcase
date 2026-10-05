@@ -19,6 +19,7 @@ import { CardCase } from './components/projects/CardCase';
 import { HomePageTemplate } from './components/templates/HomePageTemplate';
 import { CourseDetailTemplate } from './components/templates/CourseDetailTemplate';
 import { AdminSyncCourseTemplate } from './components/templates/AdminSyncCourseTemplate';
+import { AdminSyncProvider, useAdminSync } from './components/AdminSync';
 
 const StudentWorkItem = ({ work, style, courseTitle }: { work: StudentWork; style: Project['displayStyle']; courseTitle: string }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -98,6 +99,7 @@ const HomePage = () => {
 };
 
 const CourseDetailPage = () => {
+  const { job } = useAdminSync();
   const { id } = useParams();
   const [course, setCourse] = useState<Course | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -105,6 +107,8 @@ const CourseDetailPage = () => {
   const [activeProjectId, setActiveProjectId] = useState<string | undefined>(undefined);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
+
+  const completedJobId = job?.status === 'success' && job.slug === id ? job.id : undefined;
 
   const loadCourseData = async (slugOrId: string, options?: { refresh?: boolean }) => {
     const payload = await loadCoursePayloadBySlug(slugOrId, options);
@@ -122,14 +126,14 @@ const CourseDetailPage = () => {
     let active = true;
     if (!id) return;
 
-    loadCoursePayloadBySlug(id)
+    loadCoursePayloadBySlug(id, { refresh: Boolean(completedJobId) })
       .then((payload) => {
         if (!active) return;
         setCourse(payload.course);
         setProjects(payload.projects);
         setStudentWorks(payload.studentWorks);
         setLoadError(null);
-        setActiveProjectId(payload.projects[0]?.id);
+        setActiveProjectId(previous => payload.projects.some(project => project.id === previous) ? previous : payload.projects[0]?.id);
       })
       .catch((error) => {
         if (!active) return;
@@ -142,7 +146,7 @@ const CourseDetailPage = () => {
     return () => {
       active = false;
     };
-  }, [id]);
+  }, [id, completedJobId]);
 
   useEffect(() => {
     if (course?.courseName) {
@@ -191,11 +195,13 @@ const CourseDetailPage = () => {
 export default function App() {
   return (
     <Router>
+      <AdminSyncProvider>
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/course/:id" element={<CourseDetailPage />} />
         <Route path="/admin/sync-course" element={<AdminSyncCourseTemplate />} />
       </Routes>
+      </AdminSyncProvider>
     </Router>
   );
 }

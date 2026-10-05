@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { RefreshCw, Menu, X as CloseIcon } from 'lucide-react';
+import { Menu, X as CloseIcon } from 'lucide-react';
+import { AdminControl } from './AdminSync';
 
 interface HeaderProps {
   title?: string;
@@ -45,14 +46,7 @@ export const Header = ({ title, titleLink = '/', showBackButton, onMenuClick, is
               to other courses
             </Link>
           )}
-          <button
-            onClick={onSyncData}
-            disabled={Boolean(isSyncing)}
-            className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-full border border-black/10 text-[9px] md:text-[10px] font-bold uppercase tracking-wider hover:bg-black hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all whitespace-nowrap"
-          >
-            <RefreshCw size={12} className="md:w-[14px] md:h-[14px]" />
-            {isSyncing ? 'Syncing...' : 'Sync Data'}
-          </button>
+          <AdminControl />
         </div>
       </div>
     </div>
