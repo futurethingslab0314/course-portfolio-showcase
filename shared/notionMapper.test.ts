@@ -2,6 +2,26 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { normalizeStudentWork } from './notionMapper';
 
+test('mainImage skips empty mapped fields before using the populated native field', () => {
+  const work = normalizeStudentWork(
+    { id: 'gallery', Cover: [], mainImage: ['https://example.com/main.jpg'] },
+    'db',
+    { mainImage: { sourceCandidates: ['Cover'], transform: 'string', default: 'https://example.com/fallback.jpg' } },
+    [], {},
+  );
+  assert.equal(work.mainImage, 'https://example.com/main.jpg');
+});
+
+test('mainImage respects populated explicit mappings and skips empty earlier candidates', () => {
+  const work = normalizeStudentWork(
+    { id: 'gallery', Cover: [], Hero: ['https://example.com/hero.jpg'], mainImage: ['https://example.com/main.jpg'] },
+    'db',
+    { mainImage: { sourceCandidates: ['Cover', 'Hero'], transform: 'string' } },
+    [], {},
+  );
+  assert.equal(work.mainImage, 'https://example.com/hero.jpg');
+});
+
 test('normalizeStudentWork maps activity-event aliases without explicit field mapping', () => {
   const warnings: Array<{ level: 'warning' | 'error'; code: string; message: string }> = [];
   const work = normalizeStudentWork(

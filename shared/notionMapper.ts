@@ -480,6 +480,15 @@ export function normalizeStudentWork(
 
   const pick = <K extends keyof StudentWork>(field: K): unknown => {
     const rule = fieldMapping[field];
+    if (field === 'mainImage') {
+      // An empty legacy mapping must not hide a populated native image field.
+      const candidates = [...pickAllByCandidates(source, rule), source.mainImage];
+      for (const candidate of candidates) {
+        const image = firstString(runTransform(candidate, rule?.transform)).trim();
+        if (image) return image;
+      }
+      return runTransform(rule?.default, rule?.transform);
+    }
     if (field === 'members') {
       if (extractedMemberData.memberNames.length) {
         return extractedMemberData.memberNames;
