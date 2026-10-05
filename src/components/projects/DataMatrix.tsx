@@ -236,10 +236,10 @@ export const DataMatrix = ({ works }: DataMatrixProps) => {
             exit={{ opacity: 0 }}
             className="overflow-x-auto pb-8"
           >
-            <div className="inline-block min-w-full border-t border-l border-black/5">
+            <div className="data-matrix-table border-t border-l border-black/5">
               {coordinateGrid.map((row, rowIndex) => (
-                <div key={rowIndex} className="flex">
-                  <div className="w-8 h-8 flex items-center justify-center bg-black/[0.02] border-r border-b border-black/5 text-[10px] font-mono text-black/20 shrink-0">
+                <div key={rowIndex} className="data-matrix-row">
+                  <div className="flex items-center justify-center bg-black/[0.02] border-r border-b border-black/5 text-[10px] font-mono text-black/20">
                     {String.fromCharCode(65 + rowIndex)}
                   </div>
                   {row.map((work, colIndex) => (
@@ -269,10 +269,10 @@ export const DataMatrix = ({ works }: DataMatrixProps) => {
                   ))}
                 </div>
               ))}
-              <div className="flex">
-                <div className="w-8 h-8 shrink-0" />
+              <div className="data-matrix-row">
+                <div className="h-8" />
                 {Array.from({ length: COLUMN_COUNT }).map((_, index) => (
-                  <div key={index} className="w-8 h-8 flex items-center justify-center text-[10px] font-mono text-black/20">
+                  <div key={index} className="h-8 flex items-center justify-center text-[10px] font-mono text-black/20">
                     {index + 1}
                   </div>
                 ))}

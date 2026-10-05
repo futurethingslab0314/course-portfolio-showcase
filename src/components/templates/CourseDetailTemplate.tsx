@@ -272,7 +272,7 @@ export const CourseDetailTemplate = ({
         </AnimatePresence>
       </div>
 
-      <main className={isExternalProject ? "w-full flex-1 min-h-0 flex flex-col" : "max-w-7xl mx-auto px-6 py-20"}>
+      <main className={isExternalProject ? "w-full flex-1 min-h-0 flex flex-col" : activeProject?.displayStyle === 'data-matrix' ? "w-full min-w-0 px-4 md:px-6 py-20" : "max-w-7xl mx-auto px-6 py-20"}>
         {!isExternalProject && <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
             <h2 className="text-4xl md:text-5xl font-bold tracking-tighter mb-4">{activeProject?.projectName}</h2>

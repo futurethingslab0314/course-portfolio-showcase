@@ -22,7 +22,17 @@
   }
 
   /* Data Matrix Style */
+  .data-matrix-table {
+    width: 100%;
+    min-width: 1056px;
+  }
+
+  .data-matrix-row {
+    display: grid;
+    grid-template-columns: 2rem repeat(32, minmax(0, 1fr));
+  }
+
   .data-matrix-cell {
-    @apply w-8 h-8 border border-black/5 relative cursor-pointer overflow-hidden;
+    @apply min-w-0 aspect-square border border-black/5 relative cursor-pointer overflow-hidden;
   }
 }
