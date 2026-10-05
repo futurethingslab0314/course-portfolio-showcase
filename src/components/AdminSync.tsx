@@ -147,6 +147,6 @@ export function ProjectSyncButton({ slug, projectId, name }: { slug: string; pro
   if (!admin.authenticated) return null;
   const busy = admin.starting || admin.job?.status === 'queued' || admin.job?.status === 'running';
   return <button disabled={busy} onClick={() => void admin.start(slug, projectId, name)} className="flex items-center gap-2 border border-black/20 rounded px-3 py-2 text-sm disabled:opacity-40">
-    <RefreshCw size={15} />同步此作業
+    <RefreshCw size={15} />Sync Data
   </button>;
 }

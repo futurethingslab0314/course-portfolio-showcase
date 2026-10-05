@@ -277,9 +277,11 @@ export const CourseDetailTemplate = ({
           <div>
             <h2 className="text-4xl md:text-5xl font-bold tracking-tighter mb-4">{activeProject?.projectName}</h2>
             <p className="text-black/50 max-w-2xl font-medium text-base md:text-lg">{activeProject?.projectDescription}</p>
-            {activeProject && <div className="mt-4"><ProjectSyncButton slug={course.slug || course.id} projectId={activeProject.id} name={activeProject.projectName} /></div>}
           </div>
-          {!isExternalProject && <div className="text-[10px] font-bold uppercase tracking-widest text-black/20">{summaryLabel}</div>}
+          <div className="flex shrink-0 flex-col items-end gap-3 self-end">
+            {activeProject && <ProjectSyncButton slug={course.slug || course.id} projectId={activeProject.id} name={activeProject.projectName} />}
+            <div className="text-[10px] font-bold uppercase tracking-widest text-black/20">{summaryLabel}</div>
+          </div>
         </div>}
 
         {!isExternalProject && <div className="flex flex-col md:flex-row md:items-center gap-6 md:gap-8 mb-12 py-6 border-y border-black/5">
