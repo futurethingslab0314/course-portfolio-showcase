@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Plus, Grid, LayoutGrid, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { StudentWork } from '../../types';
@@ -9,6 +10,7 @@ import { OptimizedImage } from '../OptimizedImage';
 
 interface DataMatrixProps {
   works: StudentWork[];
+  controlsContainer?: HTMLElement | null;
 }
 
 type ViewMode = 'coordinate' | 'categorized';
@@ -57,7 +59,7 @@ export function compareDataMatrixWorks(a: StudentWork, b: StudentWork): number {
     || a.id.localeCompare(b.id);
 }
 
-export const DataMatrix = ({ works }: DataMatrixProps) => {
+export const DataMatrix = ({ works, controlsContainer }: DataMatrixProps) => {
   const [selectedWork, setSelectedWork] = useState<StudentWork | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('coordinate');
   const [selectedTag, setSelectedTag] = useState<string>('ALL');
@@ -160,10 +162,8 @@ export const DataMatrix = ({ works }: DataMatrixProps) => {
   const canGoPrev = hasMultiplePages && selectedLocationIndex > 0;
   const canGoNext = hasMultiplePages && selectedLocationIndex < selectedLocationWorks.length - 1;
 
-  return (
-    <div className="py-12">
-      <div className="mb-8 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-end">
-        <div className="flex items-center gap-4 self-start lg:self-auto">
+  const viewControls = (
+<div className="flex shrink-0 items-center gap-4">
           <div className="flex bg-black/5 p-1 rounded-lg">
             <button
               type="button"
@@ -200,9 +200,13 @@ export const DataMatrix = ({ works }: DataMatrixProps) => {
             </div>
           </div>
         </div>
-      </div>
+  );
 
-      <div className="mb-10 overflow-x-auto pb-2">
+  return (
+    <div className="pb-12">
+      <div className="mb-5 flex flex-col gap-3">
+        {controlsContainer ? createPortal(viewControls, controlsContainer) : viewControls}
+      <div className="min-w-0 overflow-x-auto">
         <div className="flex min-w-max gap-2">
           {allTags.map((tag) => (
             <button
@@ -220,6 +224,7 @@ export const DataMatrix = ({ works }: DataMatrixProps) => {
             </button>
           ))}
         </div>
+      </div>
       </div>
 
       <AnimatePresence mode="wait">

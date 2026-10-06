@@ -55,6 +55,7 @@ export const CourseDetailTemplate = ({
   isSyncing,
 }: CourseDetailTemplateProps) => {
   const activeProject = projects.find((project) => project.id === activeProjectId);
+  const [matrixControlsContainer, setMatrixControlsContainer] = useState<HTMLDivElement | null>(null);
   const [selectedYear, setSelectedYear] = useState<string>('ALL');
   const [starredOnly, setStarredOnly] = useState<boolean>(false);
   const [selectedThemeTag, setSelectedThemeTag] = useState<string>('ALL');
@@ -284,7 +285,7 @@ export const CourseDetailTemplate = ({
           </div>
         </div>}
 
-        {!isExternalProject && <div className="flex flex-col md:flex-row md:items-center gap-6 md:gap-8 mb-12 py-6 border-y border-black/5">
+        {!isExternalProject && <div className={cn("flex flex-col md:flex-row md:items-center gap-6 md:gap-8 py-6 border-y border-black/5", activeProject?.displayStyle === 'data-matrix' ? 'mb-5 md:flex-wrap' : 'mb-12')}>
           {(!isCardCaseProject || isCardCaseGroupView) && (
             <div className="flex items-center justify-between md:justify-start gap-6">
               <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-black/30">
@@ -327,6 +328,8 @@ export const CourseDetailTemplate = ({
               </div>
             </div>
           )}
+
+          {activeProject?.displayStyle === 'data-matrix' && <div ref={setMatrixControlsContainer} className="md:ml-auto shrink-0" />}
 
           {supportsThemeFilter && (
             <div className="flex items-center justify-between md:justify-start gap-6 md:pl-8 md:border-l border-black/5">
@@ -529,7 +532,7 @@ export const CourseDetailTemplate = ({
             </div>
           </>
         ) : activeProject?.displayStyle === 'data-matrix' ? (
-          <DataMatrix works={filteredWorks} />
+          <DataMatrix works={filteredWorks} controlsContainer={matrixControlsContainer} />
         ) : (
           <div
             className={cn(
