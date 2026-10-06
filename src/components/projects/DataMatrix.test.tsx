@@ -42,7 +42,9 @@ test('DataMatrix renders columns through 32 and places work at A32', () => {
 
   const html = renderToStaticMarkup(<DataMatrix works={[work]} />);
 
-  assert.match(html, /Coordinate System: A-P x 1-32/);
+  assert.doesNotMatch(html, /Coordinate System:|>Data Matrix</);
+  assert.match(html, />32<\/div>/);
+  assert.match(html, /aria-label="Coordinate view"/);
   assert.match(html, /src="https:\/\/example\.com\/a32-thumb\.webp"/);
   assert.doesNotMatch(html, /src="https:\/\/example\.com\/a32\.jpg"/);
   assert.equal(resolveImageSource(getDataMatrixModalImage(work), 'preview'), 'https://example.com/a32-preview.webp');
