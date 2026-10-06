@@ -9,7 +9,7 @@
 - A persistent top-right notification shows the assignment name, stage, progress, and completion or failure.
 - Changing assignment tabs or course routes does not discard the notification.
 - Completion reloads data when the affected course is visible. Other courses are not replaced with the completed job's data.
-- External-link assignments do not offer data synchronization.
+- External-link assignments offer admin-only synchronization of the URL and assignment settings, without processing images or changing stored works. Blank or invalid HTTP(S) URLs are rejected before writing.
 
 ## Authentication
 

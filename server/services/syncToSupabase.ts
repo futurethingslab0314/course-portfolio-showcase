@@ -370,8 +370,21 @@ export function syncProjectToSupabase(params: { slug: string; projectId: string;
     const payload = await buildCourseSyncPayloadBySlug(params.slug, params.projectId);
     assertSourceReadsSucceeded(payload.warnings);
     if (payload.warnings.some(w => w.level === 'error')) throw new Error('Source validation failed. Existing works preserved.');
-    if (!payload.studentWorks.length) throw new Error('Notion returned no works. Existing works preserved; check the source database.');
     const project = payload.projects[0];
+    if (project.contentType === 'external') {
+      try {
+        const url = new URL(project.externalUrl || '');
+        if (!['http:', 'https:'].includes(url.protocol)) throw new Error('Unsupported protocol');
+      } catch {
+        throw new Error('Invalid external URL in Notion. Existing link preserved.');
+      }
+      const courseId = await preflightProjectSync(payload.course.id, project, []);
+      params.report({ ...progress, stage: 'saving' });
+      const rows = await upsertProjectsToSupabase([project], courseId);
+      if (rows.length !== 1 || rows[0].notion_page_id !== project.id) throw new Error('Assignment write did not return the expected project.');
+      return { warnings: payload.warnings };
+    }
+    if (!payload.studentWorks.length) throw new Error('Notion returned no works. Existing works preserved; check the source database.');
     if (payload.studentWorks.some(w => w.sourceDatabaseId !== project.sourceDatabaseId)) throw new Error('Assignment source mismatch.');
     const courseId = await preflightProjectSync(payload.course.id, project, payload.studentWorks);
     await rewriteWorkImagesToR2(payload, `project-sync-${randomUUID()}`, p => { progress = p; params.report(p); });

@@ -12,6 +12,8 @@ The visitor-facing Sync Data / Refresh controls are removed. Notion token-based 
 
 ## Behavior and Limits
 
+- External-link assignments show Sync Data to signed-in administrators above the embedded page. It updates the Notion URL and assignment settings only; invalid or empty URLs preserve the previous stored link. On completion the embedded page loads the updated URL.
+
 - Sessions last eight hours and are revoked by logout. Passwords are never stored in the browser.
 - The notification stays visible while switching course routes and assignment tabs. Image progress counts source image references, not individual generated thumbnail/preview files.
 - Existing image variants are skipped by the existing media pipeline. Failed image processing produces a completion warning; source read errors stop database updates.

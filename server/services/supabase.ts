@@ -609,7 +609,7 @@ export async function preflightProjectSync(courseNotionId: string, project: Proj
     { method: 'GET', headers: supabaseHeaders() },
   );
   if (!courses[0]) throw new Error('Course must be synced once before assignment sync.');
-  const owners = await supabaseRequest<SupabaseProjectRow[]>(
+  const owners = project.contentType === 'external' ? [] : await supabaseRequest<SupabaseProjectRow[]>(
     `/rest/v1/projects?select=id,notion_page_id,course_id&source_database_id=eq.${encodeURIComponent(project.sourceDatabaseId)}`,
     { method: 'GET', headers: supabaseHeaders() },
   );

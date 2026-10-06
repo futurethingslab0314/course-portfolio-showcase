@@ -22,7 +22,7 @@ async function buildCoursePayloadBySlugWithOptions(
   let projectRows = options?.includeDraftProjects ? allProjectRows : filterVisibleProjectRowsForPayload(allProjectRows);
   if (options?.projectId) {
     projectRows = projectRows.filter(row => row.project.id === options.projectId);
-    if (projectRows.length !== 1 || projectRows[0].project.contentType === 'external' || !projectRows[0].project.sourceDatabaseId) {
+    if (projectRows.length !== 1 || (projectRows[0].project.contentType !== 'external' && !projectRows[0].project.sourceDatabaseId)) {
       throw new Error('Assignment is not a database project in this course.');
     }
   }

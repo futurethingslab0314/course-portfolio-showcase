@@ -5,7 +5,7 @@ import { Course, Project, StudentWork } from '../../types';
 import { cn } from '../../lib/utils';
 import { DataMatrix } from '../projects/DataMatrix';
 import { Header } from '../Header';
-import { ProjectSyncButton } from '../AdminSync';
+import { ProjectSyncButton, useAdminSync } from '../AdminSync';
 import { Footer } from '../Footer';
 import { Filter, Star, ChevronDown, Download } from 'lucide-react';
 import { collectKeywordTags, collectThemeTags, filterAndSortWorksForDisplay } from './courseDetailViewModel';
@@ -55,6 +55,7 @@ export const CourseDetailTemplate = ({
   isSyncing,
 }: CourseDetailTemplateProps) => {
   const activeProject = projects.find((project) => project.id === activeProjectId);
+  const { authenticated } = useAdminSync();
   const [matrixControlsContainer, setMatrixControlsContainer] = useState<HTMLDivElement | null>(null);
   const [selectedYear, setSelectedYear] = useState<string>('ALL');
   const [starredOnly, setStarredOnly] = useState<boolean>(false);
@@ -274,6 +275,9 @@ export const CourseDetailTemplate = ({
       </div>
 
       <main className={isExternalProject ? "w-full flex-1 min-h-0 flex flex-col" : "max-w-7xl mx-auto px-6 py-20"}>
+        {isExternalProject && authenticated && activeProject && <div className="flex shrink-0 justify-end border-b border-black/5 px-4 md:px-6 py-3">
+          <ProjectSyncButton slug={course.slug || course.id} projectId={activeProject.id} name={activeProject.projectName} />
+        </div>}
         {!isExternalProject && <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
             <h2 className="text-4xl md:text-5xl font-bold tracking-tighter mb-4">{activeProject?.projectName}</h2>
