@@ -22,6 +22,11 @@
   }
 
   /* Data Matrix Style */
+  .data-matrix-viewport {
+    width: calc(100vw - 3rem);
+    margin-inline: calc(50% - 50vw + 1.5rem);
+  }
+
   .data-matrix-table {
     width: 100%;
     min-width: 1056px;

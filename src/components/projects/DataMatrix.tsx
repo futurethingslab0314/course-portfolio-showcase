@@ -162,12 +162,7 @@ export const DataMatrix = ({ works }: DataMatrixProps) => {
 
   return (
     <div className="py-12">
-      <div className="mb-8 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <h3 className="text-4xl font-bold tracking-tighter mb-2">Data Matrix</h3>
-          <p className="text-black/40 font-mono text-xs uppercase tracking-widest">Coordinate System: A-P x 1-32</p>
-        </div>
-
+      <div className="mb-8 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-end">
         <div className="flex items-center gap-4 self-start lg:self-auto">
           <div className="flex bg-black/5 p-1 rounded-lg">
             <button
@@ -234,7 +229,7 @@ export const DataMatrix = ({ works }: DataMatrixProps) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="overflow-x-auto pb-8"
+            className="data-matrix-viewport overflow-x-auto pb-8"
           >
             <div className="data-matrix-table border-t border-l border-black/5">
               {coordinateGrid.map((row, rowIndex) => (
