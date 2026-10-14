@@ -29,9 +29,13 @@
   let initialized = false;
   const equal = (a,b) => JSON.stringify(a) === JSON.stringify(b);
   function lock(value) {
-    value=value||!authenticated;
+    value=value||!authenticated||(shared&&!initialized);
     window.wallReadOnly=value;
-    wall.querySelectorAll('.wall-note').forEach(note=>note.inert=value);
+    wall.querySelectorAll('.wall-note').forEach(note=>{
+      note.inert=false;
+      note.querySelector('.note-content').contentEditable=value?'false':'plaintext-only';
+      note.querySelector('.note-delete').disabled=value;
+    });
     document.getElementById('pendingSection').inert = value;
     for(const id of ['addNote','noteColor','syncPhotos'])document.getElementById(id).disabled=value;
     undo.disabled=value||!past.length;redo.disabled=value||!future.length;
@@ -167,7 +171,7 @@
         if(shared)await request('/login','POST',{password:input.value});
         else if(input.value!=='taiwan')throw new Error('密碼不正確，請再試一次');
         authenticated=true;input.value='';dialog.close();refresh();
-        if(shared){if(dirty)save();else status.textContent='已解鎖編輯';}
+        if(shared){if(!initialized)await load();else if(dirty)save();else status.textContent='已解鎖編輯';}
       }catch(e){error.textContent=e.message;input.select();}
       finally{authBusy=false;dialog.querySelector('.unlock-submit').disabled=false;}
     };
@@ -263,7 +267,7 @@
     try {
       authenticated=(await request('/session')).authenticated;refresh();
       const version=await request();
-      if(!version){status.textContent='尚未建立共用牆：請匯入你目前的牆面匯出檔';importButton.hidden=false;return;}
+      if(!version){status.textContent=authenticated?'已解鎖，請先匯入本機 download json 備份，建立共用牆後即可編輯':'尚未建立共用牆：請先解鎖並匯入本機備份';importButton.hidden=false;lock(true);return;}
       accept(version);initialized=true;
       const draft=JSON.parse(localStorage.getItem(draftKey)||'null');
       if(draft){baseline=draft.baseline;apply(draft.state);dirty=true;showDraftControls();status.textContent='已恢復尚未同步的草稿';setTimeout(save,700);}

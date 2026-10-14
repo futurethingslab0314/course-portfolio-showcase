@@ -272,7 +272,7 @@ class DigitalWallModelTest(unittest.TestCase):
         self.assertIn("note-delete", html)
         self.assertNotIn("Delete Post-it", html)
         self.assertIn("text: ''", html)
-        self.assertIn("content.contentEditable = 'plaintext-only'", html)
+        self.assertIn("content.contentEditable = window.wallReadOnly ? 'false' : 'plaintext-only'", html)
         self.assertIn("noteText", html)
         self.assertIn("noteColor", html)
         self.assertIn("saveNotes", html)

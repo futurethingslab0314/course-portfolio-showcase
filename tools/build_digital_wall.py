@@ -840,7 +840,10 @@ def render_html(model: Dict[str, Any]) -> str:
       noteText.value = note.text || '';
       noteColor.value = note.color || '#e9ff51';
       const reference=document.getElementById('noteReference');
-      reference.hidden=!note.sourceImage;
+      reference.hidden=false;
+      document.getElementById('noteReferenceImage').hidden=!note.sourceImage;
+      document.getElementById('noteReferenceText').textContent=note.text || '空白便利貼';
+      document.getElementById('noteReferenceStatus').textContent='';
       if(note.sourceImage) {{
         document.getElementById('noteReferenceImage').src=note.sourceImage;
         document.getElementById('noteReferenceText').textContent=note.text;
@@ -855,7 +858,6 @@ def render_html(model: Dict[str, Any]) -> str:
       const sticky = document.createElement('div');
       const uncertain = note.uncertain || note.text === '待辨識';
       sticky.className = uncertain ? 'wall-note uncertain' : 'wall-note';
-      sticky.inert=!!window.wallReadOnly;
       sticky.dataset.id = note.id || crypto.randomUUID();
       note.id = sticky.dataset.id;
       applyNotePosition(sticky, note);
@@ -863,16 +865,18 @@ def render_html(model: Dict[str, Any]) -> str:
       sticky.style.background = note.color || '#e9ff51';
       const content = document.createElement('span');
       content.className = 'note-content';
-      content.contentEditable = 'plaintext-only';
+      content.contentEditable = window.wallReadOnly ? 'false' : 'plaintext-only';
       content.setAttribute('role','textbox');
       content.setAttribute('aria-label','便利貼文字');
       content.textContent = note.text || (uncertain ? '待辨識' : '');
       const remove = document.createElement('button');
       remove.type='button';remove.className='note-delete';remove.textContent='−';
+      remove.disabled=!!window.wallReadOnly;
       remove.title='刪除便利貼';remove.setAttribute('aria-label','刪除便利貼');
       remove.addEventListener('pointerdown',event=>event.stopPropagation());
       remove.addEventListener('click',event=>{{
         event.stopPropagation();
+        if(window.wallReadOnly)return;
         model.wallNotes=model.wallNotes.filter(n=>n.id!==note.id);
         sticky.remove();selectedNote=null;noteText.value='';
         document.getElementById('noteReference').hidden=true;
@@ -885,6 +889,7 @@ def render_html(model: Dict[str, Any]) -> str:
         selectNote(note, sticky);
       }});
       sticky.addEventListener('input', () => {{
+        if(window.wallReadOnly)return;
         note.text = content.textContent;
         noteText.value = note.text;
         note.uncertain = false;
@@ -895,6 +900,7 @@ def render_html(model: Dict[str, Any]) -> str:
         if (event.detail > 1) return;
         event.stopPropagation();
         selectNote(note, sticky);
+        if(window.wallReadOnly)return;
         if (event.target === content && document.activeElement === content) return;
         sticky.setPointerCapture(event.pointerId);
         sticky.classList.add('dragging');
