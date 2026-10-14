@@ -1,0 +1,1685 @@
+{
+  "revision": "physical-notes-20261014-v1",
+  "notes": [
+    {
+      "id": "physical-note-01",
+      "text": "借我…一下",
+      "uncertain": true,
+      "color": "#e7ef66",
+      "x": 7.3974609375,
+      "y": 36.28305288461539,
+      "sourceImage": "note-originals/note-01.jpg",
+      "sourceBounds": [
+        134,
+        305,
+        169,
+        339
+      ],
+      "colorName": "黃",
+      "anchorPhotoId": "3e3a7f1b-413c-8060-9c1c-df3b363aa121",
+      "anchorOffset": {
+        "x": -2.7435390625,
+        "y": 1.1150528846153875
+      },
+      "physicalX": 7.3974609375,
+      "physicalY": 36.28305288461539
+    },
+    {
+      "id": "physical-note-02",
+      "text": "主委加碼\n#硬要",
+      "uncertain": false,
+      "color": "#f2967b",
+      "x": 7.470703125,
+      "y": 40.79026442307692,
+      "sourceImage": "note-originals/note-02.jpg",
+      "sourceBounds": [
+        135,
+        344,
+        171,
+        380
+      ],
+      "colorName": "橘",
+      "anchorPhotoId": "3e3a7f1b-413c-80ba-92a1-d0461001e789",
+      "anchorOffset": {
+        "x": -2.680296875,
+        "y": 0.07426442307691872
+      },
+      "physicalX": 7.470703125,
+      "physicalY": 40.79026442307692
+    },
+    {
+      "id": "physical-note-03",
+      "text": "城市佈告欄\n（…佈告欄）",
+      "uncertain": true,
+      "color": "#f2967b",
+      "x": 18.4326171875,
+      "y": 22.02899639423077,
+      "sourceImage": "note-originals/note-03.jpg",
+      "sourceBounds": [
+        359,
+        176,
+        396,
+        215
+      ],
+      "colorName": "橘",
+      "anchorPhotoId": "3e3a7f1b-413c-8053-8be2-cf290f53e57e",
+      "anchorOffset": {
+        "x": -2.5533828125000007,
+        "y": -1.2120036057692296
+      },
+      "physicalX": 18.4326171875,
+      "physicalY": 22.02899639423077
+    },
+    {
+      "id": "physical-note-04",
+      "text": "#警示系列",
+      "uncertain": false,
+      "color": "#f2967b",
+      "x": 18.359375,
+      "y": 26.705228365384617,
+      "sourceImage": "note-originals/note-04.jpg",
+      "sourceBounds": [
+        357,
+        219,
+        395,
+        255
+      ],
+      "colorName": "橘",
+      "anchorPhotoId": "3e3a7f1b-413c-8053-8be2-cf290f53e57e",
+      "anchorOffset": {
+        "x": -2.6266250000000007,
+        "y": 3.464228365384617
+      },
+      "physicalX": 18.359375,
+      "physicalY": 26.705228365384617
+    },
+    {
+      "id": "physical-note-05",
+      "text": "…補\n#事後補",
+      "uncertain": true,
+      "color": "#e7ef66",
+      "x": 16.4794921875,
+      "y": 31.043419471153847,
+      "sourceImage": "note-originals/note-05.jpg",
+      "sourceBounds": [
+        320,
+        257,
+        355,
+        294
+      ],
+      "colorName": "黃",
+      "anchorPhotoId": "3e3a7f1b-413c-8087-98fb-cc1ace644dd9",
+      "anchorOffset": {
+        "x": 2.7424921875,
+        "y": -4.144580528846156
+      },
+      "physicalX": 16.4794921875,
+      "physicalY": 31.043419471153847
+    },
+    {
+      "id": "physical-note-06",
+      "text": "走一步算一步\n出事再說",
+      "uncertain": false,
+      "color": "#e7ef66",
+      "x": 16.552734375,
+      "y": 35.83233173076923,
+      "sourceImage": "note-originals/note-06.jpg",
+      "sourceBounds": [
+        321,
+        300,
+        357,
+        336
+      ],
+      "colorName": "黃",
+      "anchorPhotoId": "3e3a7f1b-413c-8095-b526-c60c62cbb152",
+      "anchorOffset": {
+        "x": -0.8902656250000014,
+        "y": -5.303668269230769
+      },
+      "physicalX": 16.552734375,
+      "physicalY": 35.83233173076923
+    },
+    {
+      "id": "physical-note-07",
+      "text": "#有用？沒用？",
+      "uncertain": false,
+      "color": "#f2967b",
+      "x": 18.408203125,
+      "y": 35.66331129807692,
+      "sourceImage": "note-originals/note-07.jpg",
+      "sourceBounds": [
+        359,
+        299,
+        395,
+        334
+      ],
+      "colorName": "橘",
+      "anchorPhotoId": "3e3a7f1b-413c-8050-939e-ec865520a1d4",
+      "anchorOffset": {
+        "x": -2.304796875000001,
+        "y": 2.3493112980769197
+      },
+      "physicalX": 18.408203125,
+      "physicalY": 35.66331129807692
+    },
+    {
+      "id": "physical-note-08",
+      "text": "#捆綁系列",
+      "uncertain": false,
+      "color": "#e7ef66",
+      "x": 20.3125,
+      "y": 42.31144831730769,
+      "sourceImage": "note-originals/note-08.jpg",
+      "sourceBounds": [
+        398,
+        358,
+        434,
+        393
+      ],
+      "colorName": "黃",
+      "anchorPhotoId": "3e4a7f1b-413c-80ff-9a15-cac8023cbe8e",
+      "anchorOffset": {
+        "x": 0.7824999999999989,
+        "y": -5.605551682692308
+      },
+      "physicalX": 20.3125,
+      "physicalY": 42.31144831730769
+    },
+    {
+      "id": "physical-note-09",
+      "text": "給我一條繩子\n我能綁住整顆地球",
+      "uncertain": false,
+      "color": "#e7ef66",
+      "x": 22.1923828125,
+      "y": 42.59314903846154,
+      "sourceImage": "note-originals/note-09.jpg",
+      "sourceBounds": [
+        436,
+        360,
+        473,
+        396
+      ],
+      "colorName": "黃",
+      "anchorPhotoId": "3e3a7f1b-413c-801e-a220-c51f0a66599b",
+      "anchorOffset": {
+        "x": 0.2783828124999985,
+        "y": -6.477850961538458
+      },
+      "physicalX": 22.1923828125,
+      "physicalY": 42.59314903846154
+    },
+    {
+      "id": "physical-note-10",
+      "text": "#全能改造王",
+      "uncertain": false,
+      "color": "#8cd0c8",
+      "x": 25.09765625,
+      "y": 40.33954326923077,
+      "sourceImage": "note-originals/note-10.jpg",
+      "sourceBounds": [
+        496,
+        341,
+        532,
+        375
+      ],
+      "colorName": "藍綠",
+      "anchorPhotoId": "3e3a7f1b-413c-80e8-9823-f70be1fdbf09",
+      "anchorOffset": {
+        "x": -0.836343750000001,
+        "y": 7.003543269230768
+      },
+      "physicalX": 25.09765625,
+      "physicalY": 40.33954326923077
+    },
+    {
+      "id": "physical-note-11",
+      "text": "#借我放一下",
+      "uncertain": false,
+      "color": "#8cd0c8",
+      "x": 7.5439453125,
+      "y": 49.57932692307692,
+      "sourceImage": "note-originals/note-11.jpg",
+      "sourceBounds": [
+        137,
+        424,
+        172,
+        456
+      ],
+      "colorName": "藍綠",
+      "anchorPhotoId": "3e3a7f1b-413c-804f-9724-ddc78b9b0b76",
+      "anchorOffset": {
+        "x": -2.8150546875,
+        "y": -0.9256730769230828
+      },
+      "physicalX": 7.5439453125,
+      "physicalY": 49.57932692307692
+    },
+    {
+      "id": "physical-note-12",
+      "text": "臺灣人の\n…精神",
+      "uncertain": true,
+      "color": "#8cd0c8",
+      "x": 7.5439453125,
+      "y": 52.84705528846154,
+      "sourceImage": "note-originals/note-12.jpg",
+      "sourceBounds": [
+        137,
+        451,
+        172,
+        487
+      ],
+      "colorName": "藍綠",
+      "anchorPhotoId": "3e3a7f1b-413c-80c7-9bdb-d1f9da06da6e",
+      "anchorOffset": {
+        "x": -2.275054687500001,
+        "y": -4.122944711538459
+      },
+      "physicalX": 7.5439453125,
+      "physicalY": 52.84705528846154
+    },
+    {
+      "id": "physical-note-13",
+      "text": "# It's MINE!!",
+      "uncertain": false,
+      "color": "#cea6d2",
+      "x": 7.4462890625,
+      "y": 57.861328125,
+      "sourceImage": "note-originals/note-13.jpg",
+      "sourceBounds": [
+        134,
+        496,
+        171,
+        531
+      ],
+      "colorName": "紫",
+      "anchorPhotoId": "3e3a7f1b-413c-80c7-9bdb-d1f9da06da6e",
+      "anchorOffset": {
+        "x": -2.372710937500001,
+        "y": 0.8913281250000011
+      },
+      "physicalX": 7.4462890625,
+      "physicalY": 57.861328125
+    },
+    {
+      "id": "physical-note-14",
+      "text": "自己家\n自己掛 ✓",
+      "uncertain": false,
+      "color": "#8cd0c8",
+      "x": 11.376953125,
+      "y": 54.48091947115385,
+      "sourceImage": "note-originals/note-14.jpg",
+      "sourceBounds": [
+        216,
+        465,
+        250,
+        502
+      ],
+      "colorName": "藍綠",
+      "anchorPhotoId": "3e3a7f1b-413c-80c7-9bdb-d1f9da06da6e",
+      "anchorOffset": {
+        "x": 1.5579531249999992,
+        "y": -2.489080528846152
+      },
+      "physicalX": 11.376953125,
+      "physicalY": 54.48091947115385
+    },
+    {
+      "id": "physical-note-15",
+      "text": "擅用公共空間\nNO.1",
+      "uncertain": false,
+      "color": "#8cd0c8",
+      "x": 15.185546875,
+      "y": 48.28350360576923,
+      "sourceImage": "note-originals/note-15.jpg",
+      "sourceBounds": [
+        293,
+        411,
+        329,
+        446
+      ],
+      "colorName": "藍綠",
+      "anchorPhotoId": "3e4a7f1b-413c-8074-803f-fd9580b9c32b",
+      "anchorOffset": {
+        "x": 1.6235468750000006,
+        "y": -3.231496394230767
+      },
+      "physicalX": 15.185546875,
+      "physicalY": 48.28350360576923
+    },
+    {
+      "id": "physical-note-16",
+      "text": "消防意識薄弱\n#反正不會發生",
+      "uncertain": false,
+      "color": "#8cd0c8",
+      "x": 17.1875,
+      "y": 48.33984375,
+      "sourceImage": "note-originals/note-16.jpg",
+      "sourceBounds": [
+        334,
+        411,
+        370,
+        447
+      ],
+      "colorName": "藍綠",
+      "anchorPhotoId": "3e4a7f1b-413c-80ff-9a15-cac8023cbe8e",
+      "anchorOffset": {
+        "x": -2.342500000000001,
+        "y": 0.4228437499999984
+      },
+      "physicalX": 17.1875,
+      "physicalY": 48.33984375
+    },
+    {
+      "id": "physical-note-17",
+      "text": "人人都是水電工\n#…",
+      "uncertain": true,
+      "color": "#8cd0c8",
+      "x": 19.8974609375,
+      "y": 74.19996995192308,
+      "sourceImage": "note-originals/note-17.jpg",
+      "sourceBounds": [
+        389,
+        640,
+        426,
+        677
+      ],
+      "colorName": "藍綠",
+      "anchorPhotoId": "3e3a7f1b-413c-80a6-a9aa-e58a2310f749",
+      "anchorOffset": {
+        "x": 0.3254609375000008,
+        "y": 6.558969951923075
+      },
+      "physicalX": 19.8974609375,
+      "physicalY": 74.19996995192308
+    },
+    {
+      "id": "physical-note-18",
+      "text": "生命自有出路\n（孤兒照片）\n#生活…",
+      "uncertain": true,
+      "color": "#e7ef66",
+      "x": 20.458984375,
+      "y": 83.3270733173077,
+      "sourceImage": "note-originals/note-18.jpg",
+      "sourceBounds": [
+        401,
+        721,
+        437,
+        758
+      ],
+      "colorName": "黃",
+      "anchorPhotoId": "3e3a7f1b-413c-8091-8cd6-fb1a55e50cc1",
+      "anchorOffset": {
+        "x": -2.1470156250000016,
+        "y": -1.1989266826923028
+      },
+      "physicalX": 20.458984375,
+      "physicalY": 83.3270733173077
+    },
+    {
+      "id": "physical-note-19",
+      "text": "當生活給我檸檬，\n我喝 lemonade",
+      "uncertain": false,
+      "color": "#8cd0c8",
+      "x": 34.7412109375,
+      "y": 18.761268028846153,
+      "sourceImage": "note-originals/note-19.jpg",
+      "sourceBounds": [
+        693,
+        146,
+        730,
+        187
+      ],
+      "colorName": "藍綠",
+      "anchorPhotoId": "3e2a7f1b-413c-8059-9a27-eb1482ea96d7",
+      "anchorOffset": {
+        "x": 0.8642109374999976,
+        "y": -6.143731971153848
+      },
+      "physicalX": 34.7412109375,
+      "physicalY": 18.761268028846153
+    },
+    {
+      "id": "physical-note-20",
+      "text": "fix + 美化",
+      "uncertain": false,
+      "color": "#cea6d2",
+      "x": 36.81640625,
+      "y": 18.817608173076923,
+      "sourceImage": "note-originals/note-20.jpg",
+      "sourceBounds": [
+        736,
+        148,
+        772,
+        186
+      ],
+      "colorName": "紫",
+      "anchorPhotoId": "3e2a7f1b-413c-80b8-b783-c2ea3898cfe5",
+      "anchorOffset": {
+        "x": -2.4245937499999997,
+        "y": 0.6796081730769217
+      },
+      "physicalX": 36.81640625,
+      "physicalY": 18.817608173076923
+    },
+    {
+      "id": "physical-note-21",
+      "text": "補丁",
+      "uncertain": false,
+      "color": "#cea6d2",
+      "x": 40.5517578125,
+      "y": 14.028695913461538,
+      "sourceImage": "note-originals/note-21.jpg",
+      "sourceBounds": [
+        812,
+        106,
+        849,
+        143
+      ],
+      "colorName": "紫",
+      "anchorPhotoId": "3e2a7f1b-413c-80b8-b783-c2ea3898cfe5",
+      "anchorOffset": {
+        "x": 1.3107578125000003,
+        "y": -4.109304086538463
+      },
+      "physicalX": 40.5517578125,
+      "physicalY": 14.028695913461538
+    },
+    {
+      "id": "physical-note-22",
+      "text": "披著羊皮的羊 --",
+      "uncertain": false,
+      "color": "#f2967b",
+      "x": 44.921875,
+      "y": 11.944110576923077,
+      "sourceImage": "note-originals/note-22.jpg",
+      "sourceBounds": [
+        902,
+        87,
+        938,
+        125
+      ],
+      "colorName": "橘",
+      "anchorPhotoId": "3e0a7f1b-413c-800a-8f82-fb46e76c6196",
+      "anchorOffset": {
+        "x": 2.526874999999997,
+        "y": -5.387889423076924
+      },
+      "physicalX": 44.921875,
+      "physicalY": 11.944110576923077
+    },
+    {
+      "id": "physical-note-23",
+      "text": "偽裝",
+      "uncertain": false,
+      "color": "#cea6d2",
+      "x": 45.7275390625,
+      "y": 14.479417067307692,
+      "sourceImage": "note-originals/note-23.jpg",
+      "sourceBounds": [
+        917,
+        110,
+        956,
+        147
+      ],
+      "colorName": "紫",
+      "anchorPhotoId": "3e3a7f1b-413c-8006-bf7f-dd5ab813e8de",
+      "anchorOffset": {
+        "x": -3.0374609375000006,
+        "y": -2.8005829326923095
+      },
+      "physicalX": 45.7275390625,
+      "physicalY": 14.479417067307692
+    },
+    {
+      "id": "physical-note-24",
+      "text": "維持公共…運作",
+      "uncertain": true,
+      "color": "#8cd0c8",
+      "x": 49.4140625,
+      "y": 12.50751201923077,
+      "sourceImage": "note-originals/note-24.jpg",
+      "sourceBounds": [
+        993,
+        92,
+        1031,
+        130
+      ],
+      "colorName": "藍綠",
+      "anchorPhotoId": "3e3a7f1b-413c-8006-bf7f-dd5ab813e8de",
+      "anchorOffset": {
+        "x": 0.6490624999999994,
+        "y": -4.772487980769231
+      },
+      "physicalX": 49.4140625,
+      "physicalY": 12.50751201923077
+    },
+    {
+      "id": "physical-note-25",
+      "text": "#還能將…",
+      "uncertain": true,
+      "color": "#cea6d2",
+      "x": 47.900390625,
+      "y": 22.59239783653846,
+      "sourceImage": "note-originals/note-25.jpg",
+      "sourceBounds": [
+        962,
+        183,
+        1000,
+        218
+      ],
+      "colorName": "紫",
+      "anchorPhotoId": "3e3a7f1b-413c-8006-bf7f-dd5ab813e8de",
+      "anchorOffset": {
+        "x": -0.8646093750000006,
+        "y": 5.312397836538459
+      },
+      "physicalX": 47.900390625,
+      "physicalY": 22.59239783653846
+    },
+    {
+      "id": "physical-note-26",
+      "text": "巷",
+      "uncertain": false,
+      "color": "#8cd0c8",
+      "x": 39.111328125,
+      "y": 36.39573317307692,
+      "sourceImage": "note-originals/note-26.jpg",
+      "sourceBounds": [
+        792,
+        314,
+        810,
+        332
+      ],
+      "colorName": "藍綠",
+      "anchorPhotoId": "3e3a7f1b-413c-8033-92b3-d8d665f96df3",
+      "anchorOffset": {
+        "x": 1.692328125000003,
+        "y": 1.5797331730769173
+      },
+      "physicalX": 39.111328125,
+      "physicalY": 36.39573317307692
+    },
+    {
+      "id": "physical-note-27",
+      "text": "保護",
+      "uncertain": false,
+      "color": "#cea6d2",
+      "x": 36.279296875,
+      "y": 40.45222355769231,
+      "sourceImage": "note-originals/note-27.jpg",
+      "sourceBounds": [
+        725,
+        341,
+        761,
+        377
+      ],
+      "colorName": "紫",
+      "anchorPhotoId": "3e4a7f1b-413c-803c-baf2-efa6bbc89a70",
+      "anchorOffset": {
+        "x": -1.8767031249999988,
+        "y": -2.6957764423076966
+      },
+      "physicalX": 36.279296875,
+      "physicalY": 40.45222355769231
+    },
+    {
+      "id": "physical-note-28",
+      "text": "（手繪圖案）",
+      "uncertain": false,
+      "color": "#8cd0c8",
+      "x": 29.0771484375,
+      "y": 47.88912259615385,
+      "sourceImage": "note-originals/note-28.jpg",
+      "sourceBounds": [
+        587,
+        415,
+        604,
+        435
+      ],
+      "colorName": "藍綠",
+      "anchorPhotoId": "3e3a7f1b-413c-800e-8fce-cff9b248cbce",
+      "anchorOffset": {
+        "x": -0.7588515624999985,
+        "y": -5.152877403846155
+      },
+      "physicalX": 29.0771484375,
+      "physicalY": 47.88912259615385
+    },
+    {
+      "id": "physical-note-29",
+      "text": "材料與加工",
+      "uncertain": false,
+      "color": "#cea6d2",
+      "x": 41.9189453125,
+      "y": 47.21304086538461,
+      "sourceImage": "note-originals/note-29.jpg",
+      "sourceBounds": [
+        840,
+        401,
+        877,
+        437
+      ],
+      "colorName": "紫",
+      "anchorPhotoId": "3e3a7f1b-413c-8014-9e95-f4ce164fffe1",
+      "anchorOffset": {
+        "x": 1.1109453125000002,
+        "y": 4.223040865384611
+      },
+      "physicalX": 41.9189453125,
+      "physicalY": 47.21304086538461
+    },
+    {
+      "id": "physical-note-30",
+      "text": "替代",
+      "uncertain": false,
+      "color": "#e7ef66",
+      "x": 53.0517578125,
+      "y": 41.69170673076923,
+      "sourceImage": "note-originals/note-30.jpg",
+      "sourceBounds": [
+        1067,
+        351,
+        1106,
+        389
+      ],
+      "colorName": "黃",
+      "anchorPhotoId": "3e3a7f1b-413c-8089-8114-e6411f6d70fb",
+      "anchorOffset": {
+        "x": 0.18575781250000034,
+        "y": 6.1747067307692305
+      },
+      "physicalX": 53.0517578125,
+      "physicalY": 41.69170673076923
+    },
+    {
+      "id": "physical-note-31",
+      "text": "無所謂",
+      "uncertain": false,
+      "color": "#e7ef66",
+      "x": 55.5419921875,
+      "y": 41.52268629807692,
+      "sourceImage": "note-originals/note-31.jpg",
+      "sourceBounds": [
+        1118,
+        350,
+        1157,
+        387
+      ],
+      "colorName": "黃",
+      "anchorPhotoId": "3e3a7f1b-413c-8018-93ea-d78d8d3fbc99",
+      "anchorOffset": {
+        "x": 0.5019921875000009,
+        "y": 6.3886862980769195
+      },
+      "physicalX": 55.5419921875,
+      "physicalY": 41.52268629807692
+    },
+    {
+      "id": "physical-note-32",
+      "text": "硬要",
+      "uncertain": false,
+      "color": "#cea6d2",
+      "x": 33.251953125,
+      "y": 62.14317908653846,
+      "sourceImage": "note-originals/note-32.jpg",
+      "sourceBounds": [
+        663,
+        532,
+        699,
+        571
+      ],
+      "colorName": "紫",
+      "anchorPhotoId": "3e4a7f1b-413c-8077-803d-f3fe5f2c333c",
+      "anchorOffset": {
+        "x": -1.4530468749999983,
+        "y": 0.30117908653846115
+      },
+      "physicalX": 33.251953125,
+      "physicalY": 62.14317908653846
+    },
+    {
+      "id": "physical-note-33",
+      "text": "組",
+      "uncertain": false,
+      "color": "#e7ef66",
+      "x": 44.8486328125,
+      "y": 55.88942307692308,
+      "sourceImage": "note-originals/note-33.jpg",
+      "sourceBounds": [
+        909,
+        486,
+        928,
+        506
+      ],
+      "colorName": "黃",
+      "anchorPhotoId": "3e3a7f1b-413c-80b4-bd2c-f3796b2a3cdb",
+      "anchorOffset": {
+        "x": -1.0723671874999994,
+        "y": 4.943423076923082
+      },
+      "physicalX": 44.8486328125,
+      "physicalY": 55.88942307692308
+    },
+    {
+      "id": "physical-note-34",
+      "text": "將生活中隨處可得的材料\n賦予新的價值",
+      "uncertain": false,
+      "color": "#8cd0c8",
+      "x": 46.9482421875,
+      "y": 54.48091947115385,
+      "sourceImage": "note-originals/note-34.jpg",
+      "sourceBounds": [
+        944,
+        465,
+        979,
+        502
+      ],
+      "colorName": "藍綠",
+      "anchorPhotoId": "3e3a7f1b-413c-80b4-bd2c-f3796b2a3cdb",
+      "anchorOffset": {
+        "x": 1.0272421875000006,
+        "y": 3.5349194711538487
+      },
+      "physicalX": 46.9482421875,
+      "physicalY": 54.48091947115385
+    },
+    {
+      "id": "physical-note-35",
+      "text": "既然改變不了環境，\n我就和它和平共處",
+      "uncertain": false,
+      "color": "#8cd0c8",
+      "x": 48.681640625,
+      "y": 59.88957331730769,
+      "sourceImage": "note-originals/note-35.jpg",
+      "sourceBounds": [
+        979,
+        513,
+        1015,
+        550
+      ],
+      "colorName": "藍綠",
+      "anchorPhotoId": "3e3a7f1b-413c-80dc-9dc8-f408ef5d65fe",
+      "anchorOffset": {
+        "x": -1.9153593750000013,
+        "y": 1.6335733173076932
+      },
+      "physicalX": 48.681640625,
+      "physicalY": 59.88957331730769
+    },
+    {
+      "id": "physical-note-36",
+      "text": "最低成本的修改\n→就是這麼省錢",
+      "uncertain": false,
+      "color": "#f2967b",
+      "x": 37.79296875,
+      "y": 69.24203725961539,
+      "sourceImage": "note-originals/note-36.jpg",
+      "sourceBounds": [
+        754,
+        594,
+        794,
+        635
+      ],
+      "colorName": "橘",
+      "anchorPhotoId": "3e4a7f1b-413c-8011-ba48-ebc072500497",
+      "anchorOffset": {
+        "x": -2.1240312500000016,
+        "y": -3.132962740384613
+      },
+      "physicalX": 37.79296875,
+      "physicalY": 69.24203725961539
+    },
+    {
+      "id": "physical-note-37",
+      "text": "眼不見為淨",
+      "uncertain": false,
+      "color": "#8cd0c8",
+      "x": 45.1171875,
+      "y": 71.2139423076923,
+      "sourceImage": "note-originals/note-37.jpg",
+      "sourceBounds": [
+        904,
+        612,
+        944,
+        652
+      ],
+      "colorName": "藍綠",
+      "anchorPhotoId": "3e4a7f1b-413c-80a5-817c-fb831bd42aec",
+      "anchorOffset": {
+        "x": -1.2758125000000007,
+        "y": 0.3149423076923057
+      },
+      "physicalX": 45.1171875,
+      "physicalY": 71.2139423076923
+    },
+    {
+      "id": "physical-note-38",
+      "text": "膠帶黏得起來就行",
+      "uncertain": false,
+      "color": "#8cd0c8",
+      "x": 42.9443359375,
+      "y": 75.66481370192308,
+      "sourceImage": "note-originals/note-38.jpg",
+      "sourceBounds": [
+        860,
+        651,
+        899,
+        692
+      ],
+      "colorName": "藍綠",
+      "anchorPhotoId": "3e4a7f1b-413c-807f-ba75-d7d8786dc1fc",
+      "anchorOffset": {
+        "x": 0.05933593750000199,
+        "y": -3.4521862980769242
+      },
+      "physicalX": 42.9443359375,
+      "physicalY": 75.66481370192308
+    },
+    {
+      "id": "physical-note-39",
+      "text": "修補",
+      "uncertain": false,
+      "color": "#cea6d2",
+      "x": 42.138671875,
+      "y": 84.9609375,
+      "sourceImage": "note-originals/note-39.jpg",
+      "sourceBounds": [
+        843,
+        736,
+        883,
+        772
+      ],
+      "colorName": "紫",
+      "anchorPhotoId": "3e4a7f1b-413c-807f-ba75-d7d8786dc1fc",
+      "anchorOffset": {
+        "x": -0.746328124999998,
+        "y": 5.843937499999996
+      },
+      "physicalX": 42.138671875,
+      "physicalY": 84.9609375
+    },
+    {
+      "id": "physical-note-40",
+      "text": "（交通錐圖案）",
+      "uncertain": false,
+      "color": "#f2967b",
+      "x": 51.3916015625,
+      "y": 76.62259615384616,
+      "sourceImage": "note-originals/note-40.jpg",
+      "sourceBounds": [
+        1042,
+        668,
+        1063,
+        692
+      ],
+      "colorName": "橘",
+      "anchorPhotoId": "3e2a7f1b-413c-8028-bfe6-dbe18136899a",
+      "anchorOffset": {
+        "x": 2.0796015625000024,
+        "y": -3.609403846153839
+      },
+      "physicalX": 51.3916015625,
+      "physicalY": 76.62259615384616
+    },
+    {
+      "id": "physical-note-41",
+      "text": "#台灣 hand made",
+      "uncertain": false,
+      "color": "#eea3b7",
+      "x": 65.6005859375,
+      "y": 6.873497596153846,
+      "sourceImage": "note-originals/note-41.jpg",
+      "sourceBounds": [
+        1324,
+        40,
+        1363,
+        82
+      ],
+      "colorName": "粉紅",
+      "anchorPhotoId": "3e4a7f1b-413c-80bc-896f-c07b89f3cf8a",
+      "anchorOffset": {
+        "x": 1.8465859375000022,
+        "y": -5.299502403846154
+      },
+      "physicalX": 65.6005859375,
+      "physicalY": 6.873497596153846
+    },
+    {
+      "id": "physical-note-42",
+      "text": "老精緻了",
+      "uncertain": false,
+      "color": "#eea3b7",
+      "x": 70.849609375,
+      "y": 9.296123798076923,
+      "sourceImage": "note-originals/note-42.jpg",
+      "sourceBounds": [
+        1430,
+        61,
+        1472,
+        104
+      ],
+      "colorName": "粉紅",
+      "anchorPhotoId": "3e3a7f1b-413c-8006-b4b8-c58d9dbb270d",
+      "anchorOffset": {
+        "x": 0.1866093750000033,
+        "y": -9.874876201923076
+      },
+      "physicalX": 70.849609375,
+      "physicalY": 9.296123798076923
+    },
+    {
+      "id": "physical-note-43",
+      "text": "手邊有什麼\n就用什麼",
+      "uncertain": false,
+      "color": "#8cd0c8",
+      "x": 65.625,
+      "y": 19.437349759615383,
+      "sourceImage": "note-originals/note-43.jpg",
+      "sourceBounds": [
+        1325,
+        152,
+        1363,
+        193
+      ],
+      "colorName": "藍綠",
+      "anchorPhotoId": "3e3a7f1b-413c-8057-9eb1-fdd403d581df",
+      "anchorOffset": {
+        "x": -1.5769999999999982,
+        "y": 1.490349759615384
+      },
+      "physicalX": 65.625,
+      "physicalY": 19.437349759615383
+    },
+    {
+      "id": "physical-note-44",
+      "text": "強迫症",
+      "uncertain": false,
+      "color": "#e7ef66",
+      "x": 56.1767578125,
+      "y": 23.212139423076923,
+      "sourceImage": "note-originals/note-44.jpg",
+      "sourceBounds": [
+        1131,
+        187,
+        1170,
+        225
+      ],
+      "colorName": "黃",
+      "anchorPhotoId": "3e3a7f1b-413c-8043-bc99-d7639618eb54",
+      "anchorOffset": {
+        "x": -0.46024218750000045,
+        "y": -3.0688605769230755
+      },
+      "physicalX": 56.1767578125,
+      "physicalY": 23.212139423076923
+    },
+    {
+      "id": "physical-note-45",
+      "text": "大",
+      "uncertain": false,
+      "color": "#f2967b",
+      "x": 63.330078125,
+      "y": 25.409405048076923,
+      "sourceImage": "note-originals/note-45.jpg",
+      "sourceBounds": [
+        1288,
+        215,
+        1306,
+        236
+      ],
+      "colorName": "橘",
+      "anchorPhotoId": "3e3a7f1b-413c-808e-9c06-f3c435fb7a04",
+      "anchorOffset": {
+        "x": -1.0399218750000045,
+        "y": 1.0214050480769217
+      },
+      "physicalX": 63.330078125,
+      "physicalY": 25.409405048076923
+    },
+    {
+      "id": "physical-note-46",
+      "text": "人",
+      "uncertain": false,
+      "color": "#f2967b",
+      "x": 63.330078125,
+      "y": 28.282752403846153,
+      "sourceImage": "note-originals/note-46.jpg",
+      "sourceBounds": [
+        1287,
+        240,
+        1307,
+        262
+      ],
+      "colorName": "橘",
+      "anchorPhotoId": "3e3a7f1b-413c-808e-9c06-f3c435fb7a04",
+      "anchorOffset": {
+        "x": -1.0399218750000045,
+        "y": 3.8947524038461516
+      },
+      "physicalX": 63.330078125,
+      "physicalY": 28.282752403846153
+    },
+    {
+      "id": "physical-note-47",
+      "text": "勉強維持",
+      "uncertain": false,
+      "color": "#e7ef66",
+      "x": 59.912109375,
+      "y": 40.84660456730769,
+      "sourceImage": "note-originals/note-47.jpg",
+      "sourceBounds": [
+        1207,
+        344,
+        1247,
+        381
+      ],
+      "colorName": "黃",
+      "anchorPhotoId": "3e1a7f1b-413c-80d2-b98a-eac3ae378eb1",
+      "anchorOffset": {
+        "x": 0.7511093749999986,
+        "y": -5.29539543269231
+      },
+      "physicalX": 59.912109375,
+      "physicalY": 40.84660456730769
+    },
+    {
+      "id": "physical-note-48",
+      "text": "除舊布新",
+      "uncertain": false,
+      "color": "#eea3b7",
+      "x": 67.28515625,
+      "y": 35.77599158653846,
+      "sourceImage": "note-originals/note-48.jpg",
+      "sourceBounds": [
+        1359,
+        299,
+        1397,
+        336
+      ],
+      "colorName": "粉紅",
+      "anchorPhotoId": "3e4a7f1b-413c-8047-8227-c5236166c2b2",
+      "anchorOffset": {
+        "x": 2.058156249999996,
+        "y": 1.1449915865384597
+      },
+      "physicalX": 67.28515625,
+      "physicalY": 35.77599158653846
+    },
+    {
+      "id": "physical-note-49",
+      "text": "何意味",
+      "uncertain": false,
+      "color": "#cea6d2",
+      "x": 75.8544921875,
+      "y": 32.28290264423077,
+      "sourceImage": "note-originals/note-49.jpg",
+      "sourceBounds": [
+        1534,
+        267,
+        1573,
+        306
+      ],
+      "colorName": "紫",
+      "anchorPhotoId": "3e3a7f1b-413c-80ba-bd29-f5a2a170a2dd",
+      "anchorOffset": {
+        "x": 2.049492187499993,
+        "y": -3.8820973557692326
+      },
+      "physicalX": 75.8544921875,
+      "physicalY": 32.28290264423077
+    },
+    {
+      "id": "physical-note-50",
+      "text": "壓住",
+      "uncertain": false,
+      "color": "#e7ef66",
+      "x": 61.9140625,
+      "y": 51.60757211538461,
+      "sourceImage": "note-originals/note-50.jpg",
+      "sourceBounds": [
+        1248,
+        438,
+        1288,
+        478
+      ],
+      "colorName": "黃",
+      "anchorPhotoId": "3e3a7f1b-413c-8034-8ccd-f1afa8e3b584",
+      "anchorOffset": {
+        "x": -0.49393750000000125,
+        "y": 7.781572115384613
+      },
+      "physicalX": 61.9140625,
+      "physicalY": 51.60757211538461
+    },
+    {
+      "id": "physical-note-51",
+      "text": "四",
+      "uncertain": false,
+      "color": "#e7ef66",
+      "x": 63.6962890625,
+      "y": 52.05829326923077,
+      "sourceImage": "note-originals/note-51.jpg",
+      "sourceBounds": [
+        1294,
+        452,
+        1315,
+        472
+      ],
+      "colorName": "黃",
+      "anchorPhotoId": "3e3a7f1b-413c-80a1-9be9-e5d45d45cf6e",
+      "anchorOffset": {
+        "x": -1.9887109375000023,
+        "y": -0.11570673076923299
+      },
+      "physicalX": 63.6962890625,
+      "physicalY": 52.05829326923077
+    },
+    {
+      "id": "physical-note-52",
+      "text": "不要亂動",
+      "uncertain": false,
+      "color": "#cea6d2",
+      "x": 63.3056640625,
+      "y": 55.88942307692308,
+      "sourceImage": "note-originals/note-52.jpg",
+      "sourceBounds": [
+        1277,
+        478,
+        1316,
+        514
+      ],
+      "colorName": "紫",
+      "anchorPhotoId": "3e3a7f1b-413c-80af-b700-e547e6b4a822",
+      "anchorOffset": {
+        "x": 1.1606640624999969,
+        "y": -4.953576923076923
+      },
+      "physicalX": 63.3056640625,
+      "physicalY": 55.88942307692308
+    },
+    {
+      "id": "physical-note-53",
+      "text": "禁止",
+      "uncertain": false,
+      "color": "#e7ef66",
+      "x": 65.5517578125,
+      "y": 57.69230769230769,
+      "sourceImage": "note-originals/note-53.jpg",
+      "sourceBounds": [
+        1323,
+        493,
+        1362,
+        531
+      ],
+      "colorName": "黃",
+      "anchorPhotoId": "3e3a7f1b-413c-8063-a697-f3a319f058a2",
+      "anchorOffset": {
+        "x": -0.4522421875000049,
+        "y": -2.4996923076923068
+      },
+      "physicalX": 65.5517578125,
+      "physicalY": 57.69230769230769
+    },
+    {
+      "id": "physical-note-54",
+      "text": "節省\n①空間\n②…費用",
+      "uncertain": true,
+      "color": "#8cd0c8",
+      "x": 70.8984375,
+      "y": 48.00180288461539,
+      "sourceImage": "note-originals/note-54.jpg",
+      "sourceBounds": [
+        1433,
+        406,
+        1471,
+        446
+      ],
+      "colorName": "藍綠",
+      "anchorPhotoId": "3e4a7f1b-413c-8093-8553-df1576f36190",
+      "anchorOffset": {
+        "x": -1.7255624999999952,
+        "y": 0.8638028846153887
+      },
+      "physicalX": 70.8984375,
+      "physicalY": 48.00180288461539
+    },
+    {
+      "id": "physical-note-55",
+      "text": "以物理／心理的…\n避免…\n借",
+      "uncertain": true,
+      "color": "#8cd0c8",
+      "x": 76.7578125,
+      "y": 43.66361177884615,
+      "sourceImage": "note-originals/note-55.jpg",
+      "sourceBounds": [
+        1553,
+        368,
+        1591,
+        407
+      ],
+      "colorName": "藍綠",
+      "anchorPhotoId": "3e4a7f1b-413c-80e9-840f-eaa77dd788f4",
+      "anchorOffset": {
+        "x": -1.1561875000000015,
+        "y": 0.4756117788461509
+      },
+      "physicalX": 76.7578125,
+      "physicalY": 43.66361177884615
+    },
+    {
+      "id": "physical-note-56",
+      "text": "心靈安慰（魔法）",
+      "uncertain": false,
+      "color": "#e7ef66",
+      "x": 76.85546875,
+      "y": 47.26938100961539,
+      "sourceImage": "note-originals/note-56.jpg",
+      "sourceBounds": [
+        1555,
+        402,
+        1593,
+        437
+      ],
+      "colorName": "黃",
+      "anchorPhotoId": "3e4a7f1b-413c-80e9-840f-eaa77dd788f4",
+      "anchorOffset": {
+        "x": -1.0585312500000015,
+        "y": 4.081381009615384
+      },
+      "physicalX": 76.85546875,
+      "physicalY": 47.26938100961539
+    },
+    {
+      "id": "physical-note-57",
+      "text": "隨手放",
+      "uncertain": false,
+      "color": "#8cd0c8",
+      "x": 85.1806640625,
+      "y": 40.62124399038461,
+      "sourceImage": "note-originals/note-57.jpg",
+      "sourceBounds": [
+        1725,
+        342,
+        1764,
+        379
+      ],
+      "colorName": "藍綠",
+      "anchorPhotoId": "3e3a7f1b-413c-802c-b3c4-ff890523c126",
+      "anchorOffset": {
+        "x": 4.356664062500002,
+        "y": 3.004243990384616
+      },
+      "physicalX": 85.1806640625,
+      "physicalY": 40.62124399038461
+    },
+    {
+      "id": "physical-note-58",
+      "text": "超越常識／常人認知的用法",
+      "uncertain": false,
+      "color": "#8cd0c8",
+      "x": 85.44921875,
+      "y": 49.24128605769231,
+      "sourceImage": "note-originals/note-58.jpg",
+      "sourceBounds": [
+        1731,
+        418,
+        1769,
+        456
+      ],
+      "colorName": "藍綠",
+      "anchorPhotoId": "3e3a7f1b-413c-8009-bddd-cef3562ee8e8",
+      "anchorOffset": {
+        "x": -1.003781250000003,
+        "y": -4.0557139423076904
+      },
+      "physicalX": 85.44921875,
+      "physicalY": 49.24128605769231
+    },
+    {
+      "id": "physical-note-59",
+      "text": "重新定義\n功能取向\n#想不到吧～",
+      "uncertain": false,
+      "color": "#f2967b",
+      "x": 68.701171875,
+      "y": 58.48106971153846,
+      "sourceImage": "note-originals/note-59.jpg",
+      "sourceBounds": [
+        1387,
+        499,
+        1427,
+        539
+      ],
+      "colorName": "橘",
+      "anchorPhotoId": "3e3a7f1b-413c-8085-9017-d0ea2db136e8",
+      "anchorOffset": {
+        "x": 0.05717187499999454,
+        "y": -1.7919302884615433
+      },
+      "physicalX": 68.701171875,
+      "physicalY": 58.48106971153846
+    },
+    {
+      "id": "physical-note-60",
+      "text": "角色轉換",
+      "uncertain": false,
+      "color": "#cea6d2",
+      "x": 68.84765625,
+      "y": 65.07286658653847,
+      "sourceImage": "note-originals/note-60.jpg",
+      "sourceBounds": [
+        1391,
+        557,
+        1429,
+        598
+      ],
+      "colorName": "紫",
+      "anchorPhotoId": "3e3a7f1b-413c-8085-9017-d0ea2db136e8",
+      "anchorOffset": {
+        "x": 0.20365624999999454,
+        "y": 4.799866586538464
+      },
+      "physicalX": 68.84765625,
+      "physicalY": 65.07286658653847
+    },
+    {
+      "id": "physical-note-61",
+      "text": "功能…\n→斜槓!!",
+      "uncertain": true,
+      "color": "#eea3b7",
+      "x": 70.80078125,
+      "y": 64.79116586538461,
+      "sourceImage": "note-originals/note-61.jpg",
+      "sourceBounds": [
+        1430,
+        556,
+        1470,
+        594
+      ],
+      "colorName": "粉紅",
+      "anchorPhotoId": "3e3a7f1b-413c-80c9-b454-c30a15dd359d",
+      "anchorOffset": {
+        "x": 0.08978125000000148,
+        "y": -4.849834134615392
+      },
+      "physicalX": 70.80078125,
+      "physicalY": 64.79116586538461
+    },
+    {
+      "id": "physical-note-62",
+      "text": "阻止",
+      "uncertain": false,
+      "color": "#cea6d2",
+      "x": 74.4384765625,
+      "y": 61.12905649038461,
+      "sourceImage": "note-originals/note-62.jpg",
+      "sourceBounds": [
+        1505,
+        522,
+        1544,
+        563
+      ],
+      "colorName": "紫",
+      "anchorPhotoId": "3e3a7f1b-413c-809e-8cfb-f01e6ed3297d",
+      "anchorOffset": {
+        "x": 0.4444765625000002,
+        "y": -4.715943509615386
+      },
+      "physicalX": 74.4384765625,
+      "physicalY": 61.12905649038461
+    },
+    {
+      "id": "physical-note-63",
+      "text": "害怕某件事的發生 >w<",
+      "uncertain": false,
+      "color": "#f2967b",
+      "x": 78.41796875,
+      "y": 60.50931490384615,
+      "sourceImage": "note-originals/note-63.jpg",
+      "sourceBounds": [
+        1587,
+        517,
+        1625,
+        557
+      ],
+      "colorName": "橘",
+      "anchorPhotoId": "3e3a7f1b-413c-8054-b1fc-f39db42d0a26",
+      "anchorOffset": {
+        "x": 1.8799687500000033,
+        "y": 0.007314903846150855
+      },
+      "physicalX": 78.41796875,
+      "physicalY": 60.50931490384615
+    },
+    {
+      "id": "physical-note-64",
+      "text": "不知道為啥要這樣…\n#荒謬 ^_^",
+      "uncertain": false,
+      "color": "#f2967b",
+      "x": 81.54296875,
+      "y": 54.36823918269231,
+      "sourceImage": "note-originals/note-64.jpg",
+      "sourceBounds": [
+        1650,
+        462,
+        1690,
+        503
+      ],
+      "colorName": "橘",
+      "anchorPhotoId": "3e4a7f1b-413c-802f-9326-e43c5cce4501",
+      "anchorOffset": {
+        "x": -2.4420312499999994,
+        "y": 1.0412391826923084
+      },
+      "physicalX": 81.54296875,
+      "physicalY": 54.36823918269231
+    },
+    {
+      "id": "physical-note-65",
+      "text": "模…",
+      "uncertain": true,
+      "color": "#eea3b7",
+      "x": 58.4228515625,
+      "y": 67.72085336538461,
+      "sourceImage": "note-originals/note-65.jpg",
+      "sourceBounds": [
+        1177,
+        581,
+        1216,
+        621
+      ],
+      "colorName": "粉紅",
+      "anchorPhotoId": "3e3a7f1b-413c-8038-9d8d-f938f4c52ae8",
+      "anchorOffset": {
+        "x": -0.8241484374999999,
+        "y": -3.3171466346153835
+      },
+      "physicalX": 58.4228515625,
+      "physicalY": 67.72085336538461
+    },
+    {
+      "id": "physical-note-66",
+      "text": "空間利用",
+      "uncertain": false,
+      "color": "#eea3b7",
+      "x": 62.0361328125,
+      "y": 76.11553485576923,
+      "sourceImage": "note-originals/note-66.jpg",
+      "sourceBounds": [
+        1250,
+        656,
+        1291,
+        695
+      ],
+      "colorName": "粉紅",
+      "anchorPhotoId": "3e3a7f1b-413c-804a-b7d8-e98b90b53e64",
+      "anchorOffset": {
+        "x": 0.5331328124999999,
+        "y": 5.922534855769229
+      },
+      "physicalX": 62.0361328125,
+      "physicalY": 76.11553485576923
+    },
+    {
+      "id": "physical-note-67",
+      "text": "修補",
+      "uncertain": false,
+      "color": "#e7ef66",
+      "x": 69.8974609375,
+      "y": 73.52388822115384,
+      "sourceImage": "note-originals/note-67.jpg",
+      "sourceBounds": [
+        1411,
+        632,
+        1452,
+        673
+      ],
+      "colorName": "黃",
+      "anchorPhotoId": "3e3a7f1b-413c-80c9-b454-c30a15dd359d",
+      "anchorOffset": {
+        "x": -0.8135390624999985,
+        "y": 3.8828882211538343
+      },
+      "physicalX": 69.8974609375,
+      "physicalY": 73.52388822115384
+    },
+    {
+      "id": "physical-note-68",
+      "text": "墊腳石",
+      "uncertain": false,
+      "color": "#cea6d2",
+      "x": 62.744140625,
+      "y": 85.8623798076923,
+      "sourceImage": "note-originals/note-68.jpg",
+      "sourceBounds": [
+        1265,
+        742,
+        1305,
+        782
+      ],
+      "colorName": "紫",
+      "anchorPhotoId": "3e3a7f1b-413c-80c0-8a06-dc4ce6c81b5a",
+      "anchorOffset": {
+        "x": -0.0578593749999996,
+        "y": -4.261620192307689
+      },
+      "physicalX": 62.744140625,
+      "physicalY": 85.8623798076923
+    },
+    {
+      "id": "physical-note-69",
+      "text": "#實踐愛…",
+      "uncertain": true,
+      "color": "#cea6d2",
+      "x": 65.576171875,
+      "y": 85.1299579326923,
+      "sourceImage": "note-originals/note-69.jpg",
+      "sourceBounds": [
+        1324,
+        736,
+        1362,
+        775
+      ],
+      "colorName": "紫",
+      "anchorPhotoId": "3e3a7f1b-413c-807e-9715-dc35639e3823",
+      "anchorOffset": {
+        "x": -0.6778281250000049,
+        "y": 5.527957932692303
+      },
+      "physicalX": 65.576171875,
+      "physicalY": 85.1299579326923
+    },
+    {
+      "id": "physical-note-70",
+      "text": "將就一下",
+      "uncertain": false,
+      "color": "#cea6d2",
+      "x": 75.2197265625,
+      "y": 81.8622295673077,
+      "sourceImage": "note-originals/note-70.jpg",
+      "sourceBounds": [
+        1521,
+        707,
+        1560,
+        746
+      ],
+      "colorName": "紫",
+      "anchorPhotoId": "3e4a7f1b-413c-8053-b4dc-f8387d9249d1",
+      "anchorOffset": {
+        "x": 0.7777265625000069,
+        "y": 3.7532295673076987
+      },
+      "physicalX": 75.2197265625,
+      "physicalY": 81.8622295673077
+    },
+    {
+      "id": "physical-note-71",
+      "text": "先這樣啦",
+      "uncertain": false,
+      "color": "#f2967b",
+      "x": 75.78125,
+      "y": 85.07361778846153,
+      "sourceImage": "note-originals/note-71.jpg",
+      "sourceBounds": [
+        1533,
+        736,
+        1571,
+        774
+      ],
+      "colorName": "橘",
+      "anchorPhotoId": "3e4a7f1b-413c-8053-b4dc-f8387d9249d1",
+      "anchorOffset": {
+        "x": 1.339250000000007,
+        "y": 6.964617788461538
+      },
+      "physicalX": 75.78125,
+      "physicalY": 85.07361778846153
+    },
+    {
+      "id": "physical-note-72",
+      "text": "外科小傷處理",
+      "uncertain": false,
+      "color": "#eea3b7",
+      "x": 79.58984375,
+      "y": 82.82001201923077,
+      "sourceImage": "note-originals/note-72.jpg",
+      "sourceBounds": [
+        1610,
+        716,
+        1650,
+        754
+      ],
+      "colorName": "粉紅",
+      "anchorPhotoId": "3e4a7f1b-413c-8049-af50-c028fc58405c",
+      "anchorOffset": {
+        "x": -1.981156249999998,
+        "y": 2.9450120192307736
+      },
+      "physicalX": 79.58984375,
+      "physicalY": 82.82001201923077
+    },
+    {
+      "id": "physical-note-73",
+      "text": "犧牲小我\n成就大我",
+      "uncertain": false,
+      "color": "#f2967b",
+      "x": 58.1298828125,
+      "y": 91.83443509615384,
+      "sourceImage": "note-originals/note-73.jpg",
+      "sourceBounds": [
+        1171,
+        796,
+        1210,
+        834
+      ],
+      "colorName": "橘",
+      "anchorPhotoId": "3e4a7f1b-413c-8007-bd23-f9c8b9e3054e",
+      "anchorOffset": {
+        "x": 3.0628828125,
+        "y": -0.6105649038461536
+      },
+      "physicalX": 58.1298828125,
+      "physicalY": 91.83443509615384
+    }
+  ],
+  "uncertainCount": 13
+}

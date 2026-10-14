@@ -700,7 +700,9 @@ async function fetchCardCaseWorksForProject(
   project: Project,
   relationConfig: CardCaseRelationConfig | undefined,
   warnings: NormalizationWarning[],
+  existingIds: Set<string> = new Set(),
 ): Promise<StudentWork[]> {
+  const known=new Set([...existingIds].map(stripNotionId));
   const studentGroupAliases = [relationConfig?.entry.groupField || '', 'group', 'Group', 'GROUP', 'Project Group', 'project group', 'Team', 'team'];
   const studentNameAliases = [relationConfig?.entry.studentNameField || '', 'StudentName', 'Student Name', 'studentName', 'student name', 'Name', 'name', 'Title'];
   const studentIdAliases = [relationConfig?.entry.studentIdField || '', 'StudentID', 'Student Id', 'Student ID', 'studentId', 'student id', 'ID', 'Id', 'id'];
@@ -759,7 +761,7 @@ async function fetchCardCaseWorksForProject(
     groupSummaries.set(group, summary);
   }
 
-  const allCaseIds = studentPages.flatMap((page) => relationIds(page, ...caseCardsAliases));
+  const allCaseIds = studentPages.flatMap((page) => relationIds(page, ...caseCardsAliases)).filter(id=>!known.has(stripNotionId(id)));
   const casePages = await fetchPagesByIds(allCaseIds);
   const caseById = new Map(casePages.map((page) => [stripNotionId(page.id), page]));
   const allBodyIds = casePages.flatMap((page) => relationIds(page, ...bodyPartAliases));
@@ -776,6 +778,7 @@ async function fetchCardCaseWorksForProject(
     const linkedCaseIds = relationIds(studentPage, ...caseCardsAliases);
 
     for (const rawCaseId of linkedCaseIds) {
+      if(known.has(stripNotionId(rawCaseId)))continue;
       const casePage = caseById.get(stripNotionId(rawCaseId));
       if (!casePage) {
         warnings.push({
@@ -845,21 +848,24 @@ export async function fetchStudentWorksForProject(
   fieldMapping: FieldMapping,
   relationConfig: CardCaseRelationConfig | undefined,
   warnings: NormalizationWarning[],
+  existingIds: Set<string> = new Set(),
 ): Promise<StudentWork[]> {
   if (project.contentType === 'external' || !project.sourceDatabaseId) {
     return [];
   }
 
   if (project.displayStyle === 'card-case') {
-    return fetchCardCaseWorksForProject(project, relationConfig, warnings);
+    return fetchCardCaseWorksForProject(project, relationConfig, warnings, existingIds);
   }
 
   const sourceDatabaseId = normalizeNotionId(project.sourceDatabaseId);
 
   const pages = await queryDatabase(sourceDatabaseId);
   const works: StudentWork[] = [];
+  const known=new Set([...existingIds].map(stripNotionId));
 
   for (const page of pages) {
+    if(known.has(stripNotionId(page.id)))continue;
     const normalized = normalizeStudentWork(normalizeSourceRecord(page), project.sourceDatabaseId, fieldMapping, warnings, {
       courseId: project.courseId,
       projectId: project.id,

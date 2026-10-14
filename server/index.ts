@@ -13,8 +13,33 @@ import { resolveSyncButtonAuth } from './services/syncButtonAuth';
 import { getCourseSyncJob, startCourseSyncJob } from './services/syncCourseButtonJobs';
 import { CoursePayload } from '../shared/contracts';
 import { Course } from '../src/types';
+import { createSharedWallRouter, LocalWallStore, SupabaseWallStore } from './services/sharedWall';
+import { fetchWallPhotos } from './services/wallPhotos';
 
 const app = express();
+const wallDir = path.resolve(process.cwd(), 'digital-wall');
+if (fs.existsSync(path.join(wallDir, 'digital-wall-data.json'))) {
+  const seed = JSON.parse(fs.readFileSync(path.join(wallDir, 'digital-wall-data.json'), 'utf8'));
+  if (process.env.SHARED_WALL_LOCAL_FILE && process.env.NODE_ENV === 'production') throw new Error('Use Supabase for the public shared wall');
+  const store = process.env.SHARED_WALL_LOCAL_FILE ? new LocalWallStore(process.env.SHARED_WALL_LOCAL_FILE) : new SupabaseWallStore();
+  app.use('/api/shared-wall', express.json({limit:'2mb'}), createSharedWallRouter(store, new Set(seed.items.map((item: {id:string})=>item.id)),fetchWallPhotos));
+  app.use('/api/wall-photos',(req,res,next)=>{
+    if(req.headers.origin==='null' && process.env.NODE_ENV!=='production')res.set('Access-Control-Allow-Origin','null');
+    res.set('Access-Control-Allow-Methods','POST, OPTIONS');res.set('Access-Control-Allow-Headers','Content-Type');
+    if(req.method==='OPTIONS'){res.sendStatus(204);return;}next();
+  });
+  app.post('/api/wall-photos',express.json({limit:'1mb'}),async (req,res)=>{
+    res.set('Cache-Control','no-store');
+    const ids=req.body?.existingIds;
+    if(!Array.isArray(ids)||ids.length>10000||ids.some(id=>typeof id!=='string'||id.length>120)){res.status(400).json({error:'Invalid photo IDs'});return;}
+    try{res.json({photos:await fetchWallPhotos(new Set(ids))});}catch{res.status(503).json({error:'無法同步 Notion，請確認伺服器的 Notion 金鑰與資料庫權限'});}
+  });
+  app.get(/^\/shared-wall$/, (_req,res)=>res.redirect('/shared-wall/'));
+  app.get('/shared-wall/', (_req,res)=>res.sendFile(path.join(wallDir,'digital-wall.html')));
+  app.get('/shared-wall/shared-sync.js', (_req,res)=>res.sendFile(path.join(wallDir,'shared-sync.js')));
+  app.get('/shared-wall/reference-wall.jpg', (_req,res)=>res.sendFile(path.join(wallDir,'reference-wall.jpg')));
+  app.use('/shared-wall/note-originals', express.static(path.join(wallDir,'note-originals')));
+}
 app.use(express.json());
 app.use('/api/admin/session', createAdminRouter(syncProjectToSupabase, () => invalidateAllApiCache()));
 
