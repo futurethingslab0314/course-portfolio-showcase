@@ -143,13 +143,22 @@
   }
     const toggle=document.createElement('button');toggle.type='button';toggle.className='icon-button';
     toggle.innerHTML="<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-lock-keyhole\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"16\" r=\"1\"></circle><rect x=\"3\" y=\"10\" width=\"18\" height=\"12\" rx=\"2\"></rect><path d=\"M7 10V7a5 5 0 0 1 10 0v3\"></path></svg>";
+    const lockedIcon=toggle.innerHTML;
+    const unlockedIcon="<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-lock-keyhole-open\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"16\" r=\"1\"></circle><rect width=\"18\" height=\"12\" x=\"3\" y=\"10\" rx=\"2\"></rect><path d=\"M7 10V7a5 5 0 0 1 9.33-2.5\"></path></svg>";
     toggle.title='解鎖編輯';toggle.setAttribute('aria-label','解鎖編輯');
     document.getElementById('saveStatus').before(toggle);
     const dialog=document.createElement('dialog');dialog.className='unlock-dialog';dialog.setAttribute('aria-labelledby','unlockTitle');
     dialog.innerHTML='<form method="dialog"><div class="preview-heading"><h2 id="unlockTitle">解鎖編輯</h2><button type="button" class="unlock-close" aria-label="關閉密碼視窗">×</button></div><label for="localWallPassword">編輯密碼</label><input id="localWallPassword" type="password" autocomplete="current-password" required><p class="unlock-error" role="alert"></p><button type="submit" class="unlock-submit">解鎖編輯</button></form>';
     document.body.append(dialog);
     const input=dialog.querySelector('input'),error=dialog.querySelector('.unlock-error');
-    const refresh=()=>{lock(busy||(shared&&!initialized));toggle.title=authenticated?'鎖定編輯':'解鎖編輯';toggle.setAttribute('aria-label',toggle.title);toggle.setAttribute('aria-pressed',String(authenticated));showCount();};
+    const refresh=()=>{
+      lock(busy||(shared&&!initialized));
+      toggle.innerHTML=authenticated?unlockedIcon:lockedIcon;
+      toggle.title=authenticated?'目前已解鎖，點擊鎖定編輯':'目前已上鎖，點擊解鎖編輯';
+      toggle.setAttribute('aria-label',authenticated?'鎖定編輯':'解鎖編輯');
+      toggle.setAttribute('aria-pressed',String(authenticated));
+      showCount();
+    };
     let authBusy=false;
     toggle.onclick=async()=>{
       if(authBusy)return;
