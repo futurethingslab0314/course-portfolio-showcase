@@ -215,7 +215,7 @@ def build_wall_model(payload: Dict[str, Any]) -> Dict[str, Any]:
 
 def render_html(model: Dict[str, Any]) -> str:
     data_json = json.dumps(model, ensure_ascii=False)
-    title = "台灣將就之道"
+    title = html.escape(f"{model['course']} / {model['project']} 數位牆面")
     storage_slug = str(model.get("slug") or "wall").lower()
     project_slug = str(model.get("project") or "project").lower().replace(" ", "-")
     storage_key = f"digital-wall-positions:{storage_slug}:{project_slug}"
@@ -240,7 +240,7 @@ def render_html(model: Dict[str, Any]) -> str:
     * {{ box-sizing: border-box; }}
     body {{ margin: 0; padding: 28px; }}
     header {{ display: flex; align-items: end; justify-content: space-between; gap: 24px; margin: 0 auto 18px; max-width: 1500px; }}
-    h1 {{ margin: 0; font-size: 28px; line-height: 1.3; letter-spacing: 0; }}
+    h1 {{ margin: 0; font-size: clamp(24px, 4vw, 52px); line-height: .95; letter-spacing: 0; }}
     .meta {{ color: #6c6258; font-size: 13px; text-align: right; }}
     .toolbar {{
       display: flex;
@@ -327,13 +327,12 @@ def render_html(model: Dict[str, Any]) -> str:
       transform: translate(-50%, -50%) rotate(calc(var(--r) * 1deg));
       z-index: 12;
       min-width: 28px;
-      max-width: 88px;
+      max-width: 64px;
       padding: 4px 5px;
       color: #332a23;
-      font-size: 10px;
+      font-size: 8px;
       font-weight: 800;
-      line-height: 1.35;
-      white-space: pre-wrap;
+      line-height: 1.18;
       text-align: center;
       box-shadow: 0 3px 7px rgba(30,23,17,.18);
       border: 1px solid rgba(0,0,0,.06);
@@ -343,13 +342,6 @@ def render_html(model: Dict[str, Any]) -> str:
       user-select: none;
     }}
     .wall-note.selected {{ outline: 3px solid rgba(0,0,0,.55); z-index: 60; }}
-    .note-content {{ display: block; min-width: 28px; min-height: 1em; cursor: text; user-select: text; outline: none; }}
-    .note-content:empty {{ min-width: 48px; min-height: 40px; }}
-    .note-delete {{ display: none; position: absolute; top: -14px; right: -14px; width: 26px; height: 26px; padding: 0; border-radius: 50%; border: 1px solid #777; background: white; color: #222; font-size: 20px; line-height: 22px; cursor: pointer; }}
-    .wall-note.selected .note-delete {{ display: block; }}
-    #addNote {{ position: relative; width: 50px; height: 44px; border: 0; background: transparent; padding: 5px; }}
-    #addNote::before {{ content: ''; position: absolute; inset: 6px 8px; background: #fff0a3; box-shadow: -4px 3px 0 #f7e79b, 0 2px 5px #0003; transform: rotate(-4deg); }}
-    #addNote::after {{ content: ''; position: absolute; right: 8px; bottom: 6px; border: 7px solid transparent; border-right-color: #ddce80; border-bottom-color: #ddce80; }}
     .wall-note.dragging {{ cursor: grabbing; z-index: 70; }}
     .wall-note.uncertain {{
       border: 2px dashed rgba(30,23,17,.72);
@@ -417,71 +409,6 @@ def render_html(model: Dict[str, Any]) -> str:
     #noteReference img {{ width: 100%; max-height: 240px; object-fit: contain; }}
     #noteReference p {{ white-space: pre-wrap; font-size: 14px; margin: 8px 0 0; }}
     #closeNoteReference {{ float: right; border: 0; background: transparent; cursor: pointer; font-size: 20px; }}
-    #photoPreview {{ position: fixed; right: 16px; bottom: 16px; width: 280px; max-width: calc(100vw - 32px); max-height: calc(100dvh - 32px); overflow: auto; padding: 16px; border: 1px solid #dce3df; border-radius: 8px; background: #fff; color: #303834; box-shadow: 0 12px 40px #1020191a; z-index: 100; }}
-    .preview-heading {{ display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }}
-    .preview-heading h2 {{ flex: 1; margin: 0; font-size: 13px; font-weight: 500; line-height: 1.6; overflow-wrap: anywhere; }}
-    #closePhotoPreview, #closeNoteReference {{ width: 32px; height: 32px; flex: 0 0 32px; border: 1px solid #e1e6e3; border-radius: 6px; background: #fff; color: #303834; font-size: 24px; cursor: pointer; }}
-    #closePhotoPreview:hover, #closeNoteReference:hover {{ background: #f0f3f1; }}
-    #photoPreviewImage {{ display: block; width: 100%; height: auto; max-height: 240px; object-fit: contain; background: #f7f8f7; }}
-    #photoPreviewStatus {{ margin: 10px 0 0; font-size: 12px; color: #727e76; }}
-    #photoPreviewStatus:empty {{ display: none; }}
-    #noteReference {{ border-color: #dce3df; border-radius: 8px; padding: 16px; color: #303834; box-shadow: 0 12px 40px #1020191a; }}
-    #noteReference img {{ margin-top: 12px; background: #f7f8f7; }}
-    #noteReference p {{ font-size: 13px; line-height: 1.6; }}
-    #noteReferenceStatus {{ font-size: 11px !important; color: #727e76; }}
-    .unlock-dialog {{ width: 340px; max-width: calc(100vw - 32px); padding: 24px; border: 1px solid #dce3df; border-radius: 8px; color: #303834; background: #fff; box-shadow: 0 20px 60px #10201926; }}
-    .unlock-dialog::backdrop {{ background: #16221c55; }}
-    .unlock-dialog label {{ display: block; font-size: 12px; margin-bottom: 8px; }}
-    .unlock-dialog input {{ width: 100%; padding: 10px 12px; border: 1px solid #cfd8d2; border-radius: 6px; font-size: 16px; }}
-    .unlock-close {{ background: transparent; border: 0; font-size: 24px; cursor: pointer; }}
-    .unlock-error {{ color: #a33b35; font-size: 12px; min-height: 18px; }}
-    .unlock-submit {{ width: 100%; padding: 10px; border: 0; border-radius: 6px; color: white; background: #375f4c; cursor: pointer; }}
-    :root {{ background: #f5f6f7; color: #202322; }}
-    body {{ padding: 24px 28px; }}
-    header {{ align-items: center; margin-bottom: 20px; }}
-    .meta {{ color: #737977; font-size: 12px; line-height: 1.8; }}
-    .toolbar {{ justify-content: flex-start; gap: 8px; padding: 10px 16px; background: white; border: 1px solid #dfe3e1; border-radius: 8px; box-shadow: 0 3px 12px #15251b05; margin-bottom: 0; }}
-    button, input, select {{ font: inherit; }}
-    button {{ transition: background .15s, border-color .15s; }}
-    .toolbar button, .sync-controls button {{ display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 38px; padding: 8px 12px; background: transparent; color: #303834; font-size: 12px; font-weight: 500; border: 1px solid transparent; border-radius: 6px; box-shadow: none; }}
-    .toolbar button:hover:not(:disabled), .sync-controls button:hover:not(:disabled) {{ background: #f0f3f1; border-color: #dce3df; }}
-    button:disabled {{ opacity: .3; cursor: default; }}
-    button:focus-visible, input:focus-visible, select:focus-visible {{ outline: 2px solid #397564; outline-offset: 3px; }}
-    .toolbar .icon-button {{ width: 40px; height: 40px; padding: 10px; flex: 0 0 40px; }}
-    #compareWall {{ border-left: 1px solid #e0e5e2; margin-left: 8px; padding-left: 20px; border-radius: 0 6px 6px 0; }}
-    #compareWall[aria-pressed="true"] {{ background: #e5efeb; color: #245943; }}
-    #exportPositions {{ margin-right: 8px; }}
-    #addNote {{ width: 64px; flex: 0 0 64px; border-left: 1px solid #e0e5e2; border-radius: 0; box-shadow: none; }}
-    #addNote::before {{ left: 22px; right: 8px; }}
-    .toolbar input[type="color"] {{ width: 30px; height: 30px; padding: 3px; background: white; border: 1px solid #d6dcd8; border-radius: 50%; box-shadow: none; cursor: pointer; }}
-    input[type="color"]::-webkit-color-swatch-wrapper {{ padding: 0; }}
-    input[type="color"]::-webkit-color-swatch {{ border: 0; border-radius: 50%; }}
-    .save-status {{ margin-left: auto; color: #6e7973; font-size: 11px; min-width: auto; }}
-    .save-status::before {{ content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #5d8a71; margin-right: 7px; }}
-    .view-controls {{ padding: 14px 4px; margin-bottom: 0; gap: 28px; color: #626c66; font-size: 12px; }}
-    .view-controls output {{ color: #27352d; font-size: 11px; }}
-    input[type="range"] {{ accent-color: #375f4c; height: 4px; cursor: pointer; }}
-    .sync-controls {{ gap: 8px; padding: 0 0 12px; }}
-    [hidden] {{ display: none !important; }}
-    .sync-controls strong {{ font-size: 12px; font-weight: 500; margin-right: auto; }}
-    .sync-controls input, .sync-controls select {{ border: 1px solid #dce3df; border-radius: 6px; padding: 9px; background: white; max-width: 100%; }}
-    .wall {{ border-color: #d2d8d4; background: linear-gradient(#fff,#b8b8b8); box-shadow: none; }}
-    .pending {{ border-top: 1px solid #dce1de; padding-top: 18px; }}
-    .pending h2 {{ font-size: 14px; font-weight: 600; color: #414d45; margin: 0 0 18px; }}
-    .pending-actions button {{ border: 1px solid #dbe2dd; border-radius: 4px; font-size: 12px; color: #365440; }}
-    footer {{ color: #87918b; font-size: 11px; padding: 8px 0; }}
-    @media (max-width: 760px) {{
-      body {{ padding: 16px 12px; }}
-      h1 {{ font-size: 24px; }}
-      header {{ margin-bottom: 14px; }}
-      .meta {{ font-size: 11px; margin-top: 6px; }}
-      .toolbar {{ gap: 8px; padding: 8px; }}
-      .toolbar button {{ padding: 8px; }}
-      #exportPositions {{ margin-right: 0; }}
-      .save-status {{ flex-basis: 100%; padding: 4px; }}
-      .view-controls {{ gap: 16px; }}
-      .view-controls input {{ width: 100px; }}
-    }}
   </style>
 </head>
 <body>
@@ -490,16 +417,20 @@ def render_html(model: Dict[str, Any]) -> str:
     <div class="meta">照片 {model['summary']['photoCount']} 張 / 分組 {model['summary']['groupCount']} 組<br />上：將就得很精緻，下：將就得很隨意</div>
   </header>
   <div class="toolbar" aria-label="Edit wall controls">
-    <button type="button" id="compareWall" aria-pressed="false"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-panels-top-left" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M3 9h18"></path><path d="M9 21V9"></path></svg><span>對照實體牆</span></button>
-    <button type="button" id="exportPositions"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download" aria-hidden="true"><path d="M12 15V3"></path><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m7 10 5 5 5-5"></path></svg><span>download json</span></button>
-    <button type="button" id="addNote" title="新增空白便利貼" aria-label="新增空白便利貼"></button>
-    <input type="hidden" id="noteText" />
+    <button type="button" id="compareWall" aria-pressed="false">對照實體牆</button>
+    <button type="button" id="arrangeGrid">格位排列</button>
+    <button type="button" id="restoreLayout">還原排列</button>
+    <button type="button" id="exportPositions">Export Positions</button>
+    <button type="button" id="addNote">Add Post-it</button>
+    <button type="button" id="deleteNote">Delete Post-it</button>
+    <input type="text" id="noteText" placeholder="Post-it text" aria-label="Post-it text" />
     <input type="color" id="noteColor" value="#e9ff51" aria-label="Post-it color" />
-    <span class="save-status" id="saveStatus">已編輯 0 次</span>
-    <button type="button" id="syncPhotos" title="從 Notion 同步新照片"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-cw" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path><path d="M8 16H3v5"></path></svg><span>同步照片</span></button>
+    <button type="button" id="resetPositions">Reset Positions</button>
+    <span class="save-status" id="saveStatus">Auto-save on</span>
   </div>
   <div class="view-controls">
     <label>牆面縮放 <input id="wallZoom" type="range" min="100" max="300" step="10" value="150" /><output id="wallZoomValue">150%</output></label>
+    <label>照片尺寸 <input id="photoSize" type="range" min="1.5" max="5" step="0.1" value="3" /><output id="photoSizeValue">100%</output></label>
   </div>
   <main class="wall-wrap">
     <section class="wall" id="wall" aria-label="Taiwan Solution digital coordinate wall">
@@ -517,49 +448,23 @@ def render_html(model: Dict[str, Any]) -> str:
     <p id="noteReferenceText"></p>
     <p id="noteReferenceStatus"></p>
   </aside>
-  <aside id="photoPreview" hidden aria-labelledby="photoPreviewTitle">
-    <div class="preview-heading"><h2 id="photoPreviewTitle"></h2><button type="button" id="closePhotoPreview" aria-label="關閉照片" title="關閉照片">×</button></div>
-    <img id="photoPreviewImage" alt="" />
-    <p id="photoPreviewStatus" role="status"></p>
-  </aside>
   <script id="wall-data" type="application/json">{data_json}</script>
   <script>
     const model = JSON.parse(document.getElementById('wall-data').textContent);
     const wall = document.getElementById('wall');
-    const photoPreview=document.getElementById('photoPreview');
-    const previewImage=document.getElementById('photoPreviewImage');
-    const previewStatus=document.getElementById('photoPreviewStatus');
-    function openPhotoPreview(item) {{
-      document.getElementById('noteReference').hidden=true;
-      document.getElementById('photoPreviewTitle').textContent=item.title || '照片';
-      previewStatus.textContent='載入中…';
-      previewImage.alt=item.title || '牆面照片';
-      previewImage.onload=()=>{{previewStatus.textContent='';}};
-      previewImage.onerror=()=>{{previewStatus.textContent='照片暫時無法載入';}};
-      previewImage.src=item.image || item.preview || item.thumbnail;
-      photoPreview.hidden=false;
-    }}
-    document.getElementById('closePhotoPreview').onclick=()=>{{photoPreview.hidden=true;}};
-    document.addEventListener('keydown',event=>{{
-      if(event.key==='Escape'){{photoPreview.hidden=true;document.getElementById('noteReference').hidden=true;}}
-    }});
     const storageKey = '{storage_key}';
-    const catalogKey=storageKey+':synced-photos-v1';
-    try {{
-      const cached=JSON.parse(localStorage.getItem(catalogKey)||'[]');
-      if(Array.isArray(cached))for(const item of cached)if(item.id&&!model.items.some(p=>p.id===item.id))model.items.push(item);
-    }}catch{{}}
     const notesStorageKey = '{notes_key}';
     const viewStorageKey = storageKey + ':view';
     const wallZoom = document.getElementById('wallZoom');
-    const fixedPhotoSize = 3.4;
+    const photoSize = document.getElementById('photoSize');
     try {{
       const savedView = JSON.parse(localStorage.getItem(viewStorageKey) || '{{}}');
       if (Number.isFinite(savedView.zoom)) wallZoom.value = savedView.zoom;
+      if (Number.isFinite(savedView.size)) photoSize.value = savedView.size;
     }} catch {{}}
     function applyView() {{
       wall.style.width = wallZoom.value + '%';
-      wall.style.setProperty('--photo-size', model.grid ? (80 / model.grid.columns) * fixedPhotoSize / 3 : fixedPhotoSize);
+      wall.style.setProperty('--photo-size', model.grid ? (80 / model.grid.columns) * Number(photoSize.value) / 3 : photoSize.value);
       if (model.grid) {{
         wall.classList.add('grid-layout');
         wall.style.setProperty('--grid-columns', model.grid.columns);
@@ -567,12 +472,15 @@ def render_html(model: Dict[str, Any]) -> str:
         if (!wall.classList.contains('reference-view')) wall.style.aspectRatio = model.grid.columns + ' / ' + model.grid.rows;
       }}
       document.getElementById('wallZoomValue').value = wallZoom.value + '%';
+      document.getElementById('photoSizeValue').value = Math.round(Number(photoSize.value) / 3 * 100) + '%';
     }}
     applyView();
-    wallZoom.addEventListener('input', () => {{
+    for (const control of [wallZoom, photoSize]) {{
+      control.addEventListener('input', () => {{
         applyView();
-        localStorage.setItem(viewStorageKey, JSON.stringify({{zoom: Number(wallZoom.value)}}));
+        localStorage.setItem(viewStorageKey, JSON.stringify({{zoom: Number(wallZoom.value), size: Number(photoSize.value)}}));
       }});
+    }}
     const saveStatus = document.getElementById('saveStatus');
     const noteText = document.getElementById('noteText');
     const noteColor = document.getElementById('noteColor');
@@ -592,7 +500,8 @@ def render_html(model: Dict[str, Any]) -> str:
         }}
       }}
       localStorage.setItem(storageKey, JSON.stringify(positions));
-      window.dispatchEvent(new Event('wall-edit'));
+      saveStatus.textContent = 'Saved';
+      window.setTimeout(() => {{ saveStatus.textContent = 'Auto-save on'; }}, 900);
     }}
     function loadSavedNotes() {{
       try {{
@@ -603,7 +512,8 @@ def render_html(model: Dict[str, Any]) -> str:
     }}
     function saveNotes() {{
       localStorage.setItem(notesStorageKey, JSON.stringify(model.wallNotes || []));
-      window.dispatchEvent(new Event('wall-edit'));
+      saveStatus.textContent = 'Notes saved';
+      window.setTimeout(() => {{ saveStatus.textContent = 'Auto-save on'; }}, 900);
     }}
     function applyPosition(card, item) {{
       card.style.setProperty('--x', item.x);
@@ -667,7 +577,7 @@ def render_html(model: Dict[str, Any]) -> str:
       const maxRow=Math.max(...cells.map(c=>c.row))+1;
       model.grid={{columns:maxCol-minCol+1, rows:maxRow-minRow+1}};
       wallZoom.value='100';
-      localStorage.setItem(viewStorageKey, JSON.stringify({{zoom:100}}));
+      localStorage.setItem(viewStorageKey, JSON.stringify({{zoom:100,size:Number(photoSize.value)}}));
       for (const cell of cells) {{
         cell.item.x=(cell.col-minCol+.5)/model.grid.columns*100;
         cell.item.y=(cell.row-minRow+.5)/model.grid.rows*100;
@@ -695,7 +605,23 @@ def render_html(model: Dict[str, Any]) -> str:
       }}
       saveNotes();
     }}
+    if (model.grid) photoSize.max='3.4';
     applyView();
+    document.getElementById('arrangeGrid').addEventListener('click', () => {{ arrangeGrid(); window.location.reload(); }});
+    document.getElementById('restoreLayout').addEventListener('click', () => {{
+      const raw = localStorage.getItem(backupStorageKey);
+      if (!raw) return;
+      const backup=JSON.parse(raw);
+      const positions={{}};
+      for (const item of backup.items) {{
+        if (item.alignmentStatus !== 'unmatched') positions[item.id]={{x:item.x,y:item.y,placed:true}};
+      }}
+      localStorage.setItem(storageKey, JSON.stringify(positions));
+      if(backup.notesRevision === model.notesRevision) localStorage.setItem(notesStorageKey, JSON.stringify(backup.notes));
+      else localStorage.removeItem(notesStorageKey);
+      localStorage.setItem(gridStorageKey, JSON.stringify(backup.grid || {{disabled:true}}));
+      window.location.reload();
+    }});
     function updatePendingCount() {{
       const count=document.querySelectorAll('#pendingPhotos .photo').length;
       document.getElementById('pendingCount').textContent = `（${{count}} 張）`;
@@ -722,7 +648,7 @@ def render_html(model: Dict[str, Any]) -> str:
       wall.appendChild(card); applyPosition(card,item); savePositions(); updatePendingCount();
       card.scrollIntoView({{block:'center',inline:'nearest',behavior:'smooth'}});
     }}
-    function renderPhoto(item) {{
+    for (const item of model.items) {{
       const card = document.createElement('article');
       card.className = 'photo';
       card.dataset.id = item.id;
@@ -747,15 +673,9 @@ def render_html(model: Dict[str, Any]) -> str:
       const placeButton=document.createElement('button'); placeButton.type='button'; placeButton.textContent='放到牆面';
       placeButton.addEventListener('click',()=>placeFromTray(card,item));
       actions.append(label,placeButton); card.appendChild(actions);
-      card.tabIndex=0;card.setAttribute('aria-label','放大照片：'+item.title);
-      card.addEventListener('keydown',event=>{{if(event.target===card && ['Enter',' '].includes(event.key)){{event.preventDefault();openPhotoPreview(item);}}}});
-      card.addEventListener('click',event=>{{if(window.wallReadOnly && !event.target.closest('button'))openPhotoPreview(item);}});
       card.addEventListener('pointerdown', (event) => {{
         if(event.target.closest('button') || event.button !== 0) return;
-        if(window.wallReadOnly)return;
         event.preventDefault();
-        let moved=false;
-        const original={{x:item.x,y:item.y,alignmentStatus:item.alignmentStatus}};
         const fromPending=card.classList.contains('pending-photo');
         if (card.classList.contains('pending-photo')) {{
           const bounds = wall.getBoundingClientRect();
@@ -771,8 +691,6 @@ def render_html(model: Dict[str, Any]) -> str:
         const rect = wall.getBoundingClientRect();
         const start = {{ clientX: event.clientX, clientY: event.clientY, x: item.x, y: item.y }};
         const move = (moveEvent) => {{
-          if(Math.hypot(moveEvent.clientX-start.clientX,moveEvent.clientY-start.clientY)>5)moved=true;
-          if(!moved)return;
           if(fromPending) {{
             const bounds=wall.getBoundingClientRect();
             item.x=Math.max(0,Math.min(100,(moveEvent.clientX-bounds.left)/bounds.width*100));
@@ -790,13 +708,6 @@ def render_html(model: Dict[str, Any]) -> str:
           card.removeEventListener('pointermove', move);
           card.removeEventListener('pointerup', up);
           card.removeEventListener('pointercancel', up);
-          if(!moved) {{
-            Object.assign(item,original);
-            if(fromPending){{card.classList.add('pending-photo');document.getElementById('pendingPhotos').appendChild(card);}}
-            applyPosition(card,item);updatePendingCount();
-            if(endEvent.type!=='pointercancel')openPhotoPreview(item);
-            return;
-          }}
           if(fromPending) {{
             const bounds=wall.getBoundingClientRect();
             if(endEvent.type==='pointercancel' || endEvent.clientX<bounds.left || endEvent.clientX>bounds.right || endEvent.clientY<bounds.top || endEvent.clientY>bounds.bottom) {{
@@ -819,31 +730,15 @@ def render_html(model: Dict[str, Any]) -> str:
         wall.appendChild(card);
       }}
     }}
-    for(const item of model.items)renderPhoto(item);
-    function addSyncedPhotos(photos) {{
-      let added=0;
-      const cached=JSON.parse(localStorage.getItem(catalogKey)||'[]');
-      for(const source of photos){{
-        if(!source.id||!source.image||model.items.some(p=>p.id===source.id))continue;
-        const item={{...source,x:50,y:50,rotation:0,alignmentStatus:'unmatched'}};
-        model.items.push(item);cached.push(item);renderPhoto(item);added++;
-      }}
-      localStorage.setItem(catalogKey,JSON.stringify(cached));updatePendingCount();
-      return added;
-    }}
     updatePendingCount();
     function selectNote(note, element) {{
-      photoPreview.hidden=true;
       document.querySelectorAll('.wall-note.selected').forEach(node => node.classList.remove('selected'));
       selectedNote = {{ note, element }};
       element.classList.add('selected');
       noteText.value = note.text || '';
       noteColor.value = note.color || '#e9ff51';
       const reference=document.getElementById('noteReference');
-      reference.hidden=false;
-      document.getElementById('noteReferenceImage').hidden=!note.sourceImage;
-      document.getElementById('noteReferenceText').textContent=note.text || '空白便利貼';
-      document.getElementById('noteReferenceStatus').textContent='';
+      reference.hidden=!note.sourceImage;
       if(note.sourceImage) {{
         document.getElementById('noteReferenceImage').src=note.sourceImage;
         document.getElementById('noteReferenceText').textContent=note.text;
@@ -863,35 +758,23 @@ def render_html(model: Dict[str, Any]) -> str:
       applyNotePosition(sticky, note);
       sticky.style.setProperty('--r', ((note.x * 17 + note.y * 11) % 8) - 4);
       sticky.style.background = note.color || '#e9ff51';
-      const content = document.createElement('span');
-      content.className = 'note-content';
-      content.contentEditable = window.wallReadOnly ? 'false' : 'plaintext-only';
-      content.setAttribute('role','textbox');
-      content.setAttribute('aria-label','便利貼文字');
-      content.textContent = note.text || (uncertain ? '待辨識' : '');
-      const remove = document.createElement('button');
-      remove.type='button';remove.className='note-delete';remove.textContent='−';
-      remove.disabled=!!window.wallReadOnly;
-      remove.title='刪除便利貼';remove.setAttribute('aria-label','刪除便利貼');
-      remove.addEventListener('pointerdown',event=>event.stopPropagation());
-      remove.addEventListener('click',event=>{{
-        event.stopPropagation();
-        if(window.wallReadOnly)return;
-        model.wallNotes=model.wallNotes.filter(n=>n.id!==note.id);
-        sticky.remove();selectedNote=null;noteText.value='';
-        document.getElementById('noteReference').hidden=true;
-        saveNotes();
-      }});
-      sticky.append(content,remove);
+      sticky.contentEditable = 'true';
+      sticky.textContent = uncertain ? '？' : note.text;
+      if(note.sourceImage && !note.useTranscript) {{
+        sticky.classList.add('source-note');
+        sticky.contentEditable='false';
+        const original=document.createElement('img'); original.src=note.sourceImage; original.alt=note.text;
+        sticky.replaceChildren(original);
+        const factor=note.sourceBounds ? (note.sourceBounds[2]-note.sourceBounds[0])/38 : 1;
+        sticky.style.setProperty('--note-width',(model.grid?50/model.grid.columns:1.8)*factor);
+      }}
       sticky.title=note.text+(uncertain?'（部分文字待確認）':'');
       sticky.addEventListener('click', (event) => {{
         event.stopPropagation();
         selectNote(note, sticky);
       }});
       sticky.addEventListener('input', () => {{
-        if(window.wallReadOnly)return;
-        note.text = content.textContent;
-        noteText.value = note.text;
+        note.text = sticky.textContent.trim();
         note.uncertain = false;
         sticky.classList.remove('uncertain');
         saveNotes();
@@ -900,8 +783,6 @@ def render_html(model: Dict[str, Any]) -> str:
         if (event.detail > 1) return;
         event.stopPropagation();
         selectNote(note, sticky);
-        if(window.wallReadOnly)return;
-        if (event.target === content && document.activeElement === content) return;
         sticky.setPointerCapture(event.pointerId);
         sticky.classList.add('dragging');
         const rect = wall.getBoundingClientRect();
@@ -919,7 +800,6 @@ def render_html(model: Dict[str, Any]) -> str:
           sticky.removeEventListener('pointerup', up);
           sticky.removeEventListener('pointercancel', up);
           saveNotes();
-          content.focus({{preventScroll:true}});
         }};
         sticky.addEventListener('pointermove', move);
         sticky.addEventListener('pointerup', up);
@@ -933,23 +813,29 @@ def render_html(model: Dict[str, Any]) -> str:
     }}
     document.getElementById('closeNoteReference').addEventListener('click',()=>{{document.getElementById('noteReference').hidden=true;}});
     document.getElementById('addNote').addEventListener('click', () => {{
-      const rect = wall.getBoundingClientRect();
-      const centerY = Math.max(0, Math.min(100, ((Math.max(0,rect.top)+Math.min(innerHeight,rect.bottom))/2-rect.top)/rect.height*100));
-      const note = {{ id: crypto.randomUUID(), text: '', x: 50, y: centerY, color: noteColor.value || '#e9ff51' }};
+      const note = {{ id: crypto.randomUUID(), text: noteText.value.trim() || '新便利貼', x: 50, y: 50, color: noteColor.value || '#e9ff51' }};
       model.wallNotes.push(note);
       const element = renderNote(note);
       selectNote(note, element);
       saveNotes();
-      element.querySelector('.note-content').focus({{preventScroll:true}});
+    }});
+    document.getElementById('deleteNote').addEventListener('click', () => {{
+      if (!selectedNote) return;
+      model.wallNotes = model.wallNotes.filter(note => note.id !== selectedNote.note.id);
+      selectedNote.element.remove();
+      selectedNote = null;
+      noteText.value = '';
+      saveNotes();
     }});
     noteText.addEventListener('input', () => {{
       if (!selectedNote) return;
       selectedNote.note.text = noteText.value;
       selectedNote.note.useTranscript = true;
       selectedNote.element.classList.remove('source-note');
+      selectedNote.element.contentEditable='true';
       selectedNote.note.uncertain = false;
       selectedNote.element.classList.remove('uncertain');
-      selectedNote.element.querySelector('.note-content').textContent = noteText.value;
+      selectedNote.element.textContent = noteText.value;
       saveNotes();
     }});
     noteColor.addEventListener('input', () => {{
@@ -957,6 +843,8 @@ def render_html(model: Dict[str, Any]) -> str:
       selectedNote.note.color = noteColor.value;
       selectedNote.note.useTranscript=true;
       selectedNote.element.classList.remove('source-note');
+      selectedNote.element.contentEditable='true';
+      selectedNote.element.textContent=selectedNote.note.text;
       selectedNote.element.style.background = noteColor.value;
       saveNotes();
     }});
@@ -966,7 +854,7 @@ def render_html(model: Dict[str, Any]) -> str:
         notesStorageKey,
         grid: model.grid || null,
         updatedAt: new Date().toISOString(),
-        positions: Object.fromEntries(model.items.map(item => [item.id, {{ x: Number(item.x.toFixed(2)), y: Number(item.y.toFixed(2)), placed: item.alignmentStatus !== 'unmatched' }}])),
+        positions: Object.fromEntries(model.items.map(item => [item.id, {{ x: Number(item.x.toFixed(2)), y: Number(item.y.toFixed(2)) }}])),
         wallNotes: model.wallNotes,
       }};
       const blob = new Blob([JSON.stringify(payload, null, 2)], {{ type: 'application/json' }});
@@ -981,15 +869,14 @@ def render_html(model: Dict[str, Any]) -> str:
       const active = wall.classList.toggle('reference-view');
       wall.style.aspectRatio = active ? String(model.wallAspectRatio || 2.58) : (model.grid ? model.grid.columns + ' / ' + model.grid.rows : String(model.wallAspectRatio || 2.58));
       event.currentTarget.setAttribute('aria-pressed', String(active));
-      event.currentTarget.querySelector('span').textContent = active ? '返回數位牆' : '對照實體牆';
+      event.currentTarget.textContent = active ? '返回數位牆' : '對照實體牆';
     }});
-  </script>
-  <script>
-    {{
-      const sync = document.createElement('script');
-      sync.src = './shared-sync.js';
-      document.body.appendChild(sync);
-    }}
+    document.getElementById('resetPositions').addEventListener('click', () => {{
+      localStorage.removeItem(storageKey);
+      localStorage.removeItem(notesStorageKey);
+      localStorage.removeItem(gridStorageKey);
+      window.location.reload();
+    }});
   </script>
 </body>
 </html>

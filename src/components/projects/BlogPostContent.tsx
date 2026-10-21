@@ -1,4 +1,5 @@
 import React from 'react';
+import { ChevronRight } from 'lucide-react';
 import { BlogContentSection, BlogRichTextSpan } from '../../types';
 
 interface RenderBlogSectionOptions {
@@ -348,14 +349,14 @@ export function renderBlogSection(section: BlogContentSection, index: number, op
 
   if (section.type === 'toggle') {
     return (
-      <details key={index} className="blog-section my-6 overflow-hidden rounded-2xl border border-black/10 bg-black/[0.02]">
+      <details key={index} className="blog-section group/toggle my-6 min-w-0 rounded-lg border border-black/10 bg-black/[0.02]">
         <summary
-          className={`cursor-pointer list-none px-5 py-4 marker:content-none ${getToggleSummaryClass(section.blockType)}`}
           aria-label={`Toggle ${section.content}`}
+          className={`cursor-pointer list-none rounded-lg px-5 py-4 marker:content-none [&::-webkit-details-marker]:hidden hover:bg-black/[0.03] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black/60 ${getToggleSummaryClass(section.blockType)}`}
         >
-          <span className="inline-flex items-center gap-3">
-            <span className="text-xs uppercase tracking-[0.2em] text-black/35">Toggle</span>
-            <span>{renderRichText(section.richText, section.content)}</span>
+          <span className="flex items-start gap-3">
+            <ChevronRight aria-hidden="true" className="mt-1 size-5 shrink-0 text-black/50 transition-transform group-open/toggle:rotate-90 motion-reduce:transition-none" />
+            <span className="min-w-0 break-words">{renderRichText(section.richText, section.content)}</span>
           </span>
         </summary>
         <div className="border-t border-black/8 px-5 py-5">

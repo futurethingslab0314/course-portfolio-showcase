@@ -249,9 +249,7 @@ class DigitalWallModelTest(unittest.TestCase):
         self.assertIn("pointermove", html)
         self.assertIn("localStorage.setItem", html)
         self.assertIn("exportPositions", html)
-        self.assertNotIn("Reset Positions", html)
-        self.assertNotIn("restoreLayout", html)
-        self.assertNotIn("還原排列", html)
+        self.assertIn("Reset Positions", html)
 
     def test_rendered_wall_supports_editable_post_its(self):
         model = {
@@ -269,10 +267,7 @@ class DigitalWallModelTest(unittest.TestCase):
 
         self.assertIn("digital-wall-notes:observation-on-the-road:taiwan-solution", html)
         self.assertIn("addNote", html)
-        self.assertIn("note-delete", html)
-        self.assertNotIn("Delete Post-it", html)
-        self.assertIn("text: ''", html)
-        self.assertIn("content.contentEditable = window.wallReadOnly ? 'false' : 'plaintext-only'", html)
+        self.assertIn("deleteNote", html)
         self.assertIn("noteText", html)
         self.assertIn("noteColor", html)
         self.assertIn("saveNotes", html)
