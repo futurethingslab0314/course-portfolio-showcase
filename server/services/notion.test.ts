@@ -41,6 +41,33 @@ test.afterEach(() => {
   process.env.NOTION_DB_COURSES_ID = originalEnv.NOTION_DB_COURSES_ID;
 });
 
+test('toggle heading 3 fetches nested toggle, numbered item and image from API', async () => {
+  const calls: string[] = [];
+  const blocks: Record<string, unknown[]> = {
+    h3: [{ id: 'inner', type: 'toggle', has_children: true, toggle: { rich_text: [{ plain_text: 'Account' }] } }],
+    inner: [{ id: 'step', type: 'numbered_list_item', has_children: true, numbered_list_item: { rich_text: [{ plain_text: 'Settings' }] } }],
+    step: [{ id: 'photo', type: 'image', image: { type: 'file', file: { url: 'https://example.com/account.png' } } }],
+  };
+  globalThis.fetch = async (input) => {
+    const url = new URL(String(input));
+    const id = url.pathname.split('/').at(-2)!;
+    calls.push(id);
+    assert.ok(id in blocks, `Unexpected block request: ${id}`);
+    return new Response(JSON.stringify({ results: blocks[id], has_more: false }), { status: 200 });
+  };
+  const section = await blockToBlogSectionForTest({
+    id: 'h3', type: 'heading_3', has_children: true,
+    heading_3: { is_toggleable: true, rich_text: [{ plain_text: 'Upload files' }] },
+  } as any);
+  assert.deepEqual(calls, ['h3', 'inner', 'step']);
+  assert.equal(section?.type, 'toggle');
+  assert.ok(section?.type === 'toggle');
+  assert.equal(section.blockType, 'heading_3');
+  const inner = (section as any).children[0];
+  assert.equal(inner.type, 'toggle');
+  assert.deepEqual(inner.children[0].children, [{ type: 'image', content: 'https://example.com/account.png', caption: undefined }]);
+});
+
 test('blockToBlogSectionForTest preserves rich-text links in paragraph blocks', async () => {
   const section = await blockToBlogSectionForTest({
     id: 'paragraph-block',
