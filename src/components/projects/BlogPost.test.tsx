@@ -223,6 +223,23 @@ test('renderBlogSection renders toggle sections with nested content', () => {
   assert.match(html, /Nested detail/);
 });
 
+test('renderBlogSection renders images inside numbered items in a second-level toggle', () => {
+  const html = renderToStaticMarkup(renderBlogSection({
+    type: 'toggle', content: 'Upload files', children: [{
+      type: 'toggle', content: 'Bind account', children: [
+        { type: 'text', blockType: 'numbered_list_item', content: 'Sign in' },
+        { type: 'text', blockType: 'numbered_list_item', content: 'Open account settings', children: [
+          { type: 'image', content: 'https://example.com/account.png', caption: 'Account screen' },
+        ] },
+        { type: 'text', blockType: 'numbered_list_item', content: 'Connect printer' },
+      ],
+    }],
+  }, 0));
+  assert.equal((html.match(/<details/g) || []).length, 2);
+  assert.match(html, /<li[^>]*>Open account settings[\s\S]*?<img[^>]*src="https:\/\/example.com\/account.png"[\s\S]*?<\/li>/);
+  assert.ok(html.indexOf('Account screen') < html.indexOf('Connect printer'));
+});
+
 test('renderBlogSection renders image sections inside toggles', () => {
   const html = renderToStaticMarkup(
     renderBlogSection(
