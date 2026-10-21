@@ -292,10 +292,18 @@ function asTableRichRows(blocks: NotionBlock[]): Array<Array<Array<{ text: strin
 }
 
 async function blockToBlogSection(block: NotionBlock): Promise<StudentWork['blogContent'][number] | null> {
+  const nestedBlocks = Array.isArray(block.children)
+    ? block.children
+    : block.has_children && ['paragraph', 'bulleted_list_item', 'numbered_list_item'].includes(block.type)
+      ? await fetchBlockChildren(block.id)
+      : [];
+  const nestedSections = ['paragraph', 'bulleted_list_item', 'numbered_list_item'].includes(block.type)
+    ? (await Promise.all(nestedBlocks.map(blockToBlogSection))).filter((section): section is NonNullable<typeof section> => section !== null)
+    : [];
   if (block.type === 'paragraph') {
     const text = richTextToPlainText(block.paragraph?.rich_text);
     if (!text) return null;
-    return { type: 'text', blockType: 'paragraph', content: text, richText: richTextToSpans(block.paragraph?.rich_text) };
+    return { type: 'text', blockType: 'paragraph', content: text, richText: richTextToSpans(block.paragraph?.rich_text), ...(nestedSections.length ? { children: nestedSections } : {}) };
   }
 
   const mapChildBlocks = async (blocks: NotionBlock[]): Promise<NonNullable<StudentWork['blogContent']>> => {
@@ -354,6 +362,7 @@ async function blockToBlogSection(block: NotionBlock): Promise<StudentWork['blog
       blockType: block.type,
       content: text,
       richText: spans,
+      ...(nestedSections.length ? { children: nestedSections } : {}),
     };
   }
 

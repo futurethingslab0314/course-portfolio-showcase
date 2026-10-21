@@ -73,7 +73,7 @@ async function rewriteBlogContentImagesToR2(
       return { ...section, children };
     }
 
-    if (section.type === 'text' && section.blockType === 'callout' && Array.isArray(section.children)) {
+    if (section.type === 'text' && Array.isArray(section.children)) {
       const children = await Promise.all(section.children.map((child) => rewriteSection(child)));
       return { ...section, children };
     }

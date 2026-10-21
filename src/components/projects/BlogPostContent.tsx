@@ -207,7 +207,7 @@ function renderTextSection(
     return (
       <div key={index} className="blog-section">
         <ListTag className={`${listClass} my-3 pl-6 text-black/80 leading-[1.65]`}>
-          <li className="pl-1">{listContent}</li>
+          <li className="pl-1">{listContent}{section.children?.length ? renderBlogSections(section.children) : null}</li>
         </ListTag>
       </div>
     );
@@ -222,6 +222,7 @@ function renderTextSection(
           </p>
         ))}
       </div>
+      {section.children?.length ? <div className="mt-3 space-y-4 pl-5">{renderBlogSections(section.children)}</div> : null}
     </div>
   );
 }
@@ -265,7 +266,7 @@ export function renderBlogSections(
         <div key={`list-${nodes.length}`} className="blog-section">
           <ListTag className={`${listClass} my-3 pl-6 text-black/80 leading-[1.65]`}>
             {listItems.map((item, itemIndex) => (
-              <li key={itemIndex} className="pl-1">{renderListItemContent(item)}</li>
+              <li key={itemIndex} className="pl-1">{renderListItemContent(item)}{item.children?.length ? renderBlogSections(item.children) : null}</li>
             ))}
           </ListTag>
         </div>,

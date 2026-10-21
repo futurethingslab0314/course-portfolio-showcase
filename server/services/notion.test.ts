@@ -1,5 +1,23 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+
+test('paragraph children preserve nested numbered instructions and images', async () => {
+  const section = await blockToBlogSectionForTest({
+    id: 'settings', type: 'paragraph',
+    paragraph: { rich_text: [{ plain_text: 'Settings' }] },
+    children: [{
+      id: 'step', type: 'numbered_list_item',
+      numbered_list_item: { rich_text: [{ plain_text: 'Select printer' }] },
+      children: [{ id: 'image', type: 'image', image: { type: 'external', external: { url: 'https://example.com/printer.png' } } }],
+    }],
+  } as any);
+  assert.equal(section?.type, 'text');
+  if (section?.type !== 'text') return;
+  assert.equal(section.children?.[0]?.type, 'text');
+  const step = section.children?.[0];
+  if (step?.type !== 'text') return;
+  assert.equal(step.children?.[0]?.type, 'image');
+});
 import { blockToBlogSectionForTest, fetchAllCourses, fetchStudentWorksForProject } from './notion';
 import { Project } from '../../src/types';
 
