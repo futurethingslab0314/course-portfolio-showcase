@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { usePageLinkState } from '../../lib/usePageLinkState';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Plus, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ImageAsset, StudentWork } from '../../types';
@@ -17,13 +18,14 @@ export function getGenericCardImageAssets(work: StudentWork): ImageAsset[] {
 }
 
 export const GenericCard = ({ work, courseTitle }: GenericCardProps) => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isModalOpen, setIsModalOpen] = usePageLinkState(`open:${work.id}`, false);
+  const [linkedImageIndex, setCurrentImageIndex] = usePageLinkState(`slide:${work.id}`, 0);
   const members = memberRows(work);
 
   const images = useMemo(() => getGenericCardImageAssets(work), [work]);
 
   const hasMultipleImages = images.length > 1;
+  const currentImageIndex = Math.min(linkedImageIndex, Math.max(0, images.length - 1));
   const courseBadgeLabel = courseTitle?.trim() || 'Generic Card';
 
   const openModal = () => {

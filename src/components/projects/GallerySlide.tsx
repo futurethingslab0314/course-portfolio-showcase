@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { usePageLinkState } from '../../lib/usePageLinkState';
+import React from 'react';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ImageAsset, StudentWork } from '../../types';
@@ -20,9 +21,10 @@ export function getGallerySlideAssets(work: StudentWork): ImageAsset[] {
 export const GallerySlide = ({ work, courseTitle }: GallerySlideProps) => {
   const allImages = getGallerySlideAssets(work);
   const members = memberRows(work);
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [isZoomed, setIsZoomed] = useState(false);
+  const [linkedImageIndex, setCurrentSlide] = usePageLinkState(`slide:${work.id}`, 0);
+  const [isZoomed, setIsZoomed] = usePageLinkState(`open:${work.id}`, false);
   const courseBadgeLabel = courseTitle?.trim() || 'Gallery Slide';
+  const currentSlide = Math.min(linkedImageIndex, Math.max(0, allImages.length - 1));
 
   const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % allImages.length);
   const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + allImages.length) % allImages.length);

@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import { usePageLinkState } from '../../lib/usePageLinkState';
+import React, { useEffect } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { StudentWork } from '../../types';
 import { ActivityEventCardContent, ActivityEventDetailContent } from './ActivityEventContent';
@@ -9,9 +10,10 @@ interface ActivityEventProps {
 }
 
 export function ActivityEvent({ work, initialModalOpen = false }: ActivityEventProps) {
-  const [isModalOpen, setIsModalOpen] = useState(initialModalOpen);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isModalOpen, setIsModalOpen] = usePageLinkState(`open:${work.id}`, initialModalOpen);
+  const [linkedImageIndex, setCurrentImageIndex] = usePageLinkState(`slide:${work.id}`, 0);
   const allImages = [work.mainImage, ...(work.moreImages || [])].filter(Boolean);
+  const currentImageIndex = Math.min(linkedImageIndex, Math.max(0, allImages.length - 1));
 
   useEffect(() => {
     if (!isModalOpen) {

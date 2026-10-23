@@ -1,5 +1,6 @@
+import { PageLinkProvider, usePageLinkState } from './lib/usePageLinkState';
 import React, { useEffect, useMemo, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, useParams } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useParams, useSearchParams } from 'react-router-dom';
 import { Project, StudentWork, Course } from './types';
 import { filterWorksForProject, loadCoursePayloadBySlug, loadCoursesForHome } from './data/courseData';
 
@@ -21,9 +22,9 @@ import { CourseDetailTemplate } from './components/templates/CourseDetailTemplat
 import { AdminSyncCourseTemplate } from './components/templates/AdminSyncCourseTemplate';
 import { AdminSyncProvider, useAdminSync } from './components/AdminSync';
 
-const StudentWorkItem = ({ work, style, courseTitle }: { work: StudentWork; style: Project['displayStyle']; courseTitle: string }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [zoomedImage, setZoomedImage] = useState<string | null>(null);
+const StudentWorkContent = ({ work, style, courseTitle }: { work: StudentWork; style: Project['displayStyle']; courseTitle: string }) => {
+  const [isExpanded, setIsExpanded] = usePageLinkState(`expanded:${work.id}`, false);
+  const [zoomedImage, setZoomedImage] = usePageLinkState<string | null>(`image:${work.id}`, null);
 
   switch (style) {
     case 'card-spec':
@@ -43,6 +44,17 @@ const StudentWorkItem = ({ work, style, courseTitle }: { work: StudentWork; styl
     default:
       return <GenericCard work={work} />;
   }
+};
+
+const StudentWorkItem = (props: { work: StudentWork; style: Project['displayStyle']; courseTitle: string }) => {
+  const [expanded] = usePageLinkState(`expanded:${props.work.id}`, false);
+  const [open] = usePageLinkState(`open:${props.work.id}`, false);
+  const [image] = usePageLinkState<string | null>(`image:${props.work.id}`, null);
+  const container = React.useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (expanded || open || image) container.current?.scrollIntoView?.({ block: 'start' });
+  }, [expanded, open, image]);
+  return <div ref={container} className="min-w-0 scroll-mt-48"><StudentWorkContent {...props} /></div>;
 };
 
 const HomePage = () => {
@@ -101,14 +113,27 @@ const HomePage = () => {
 const CourseDetailPage = () => {
   const { job } = useAdminSync();
   const { id } = useParams();
+  const [, setSearchParams] = useSearchParams();
   const [course, setCourse] = useState<Course | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [studentWorks, setStudentWorks] = useState<StudentWork[]>([]);
-  const [activeProjectId, setActiveProjectId] = useState<string | undefined>(undefined);
+  const [linkedProjectId, setActiveProjectId] = usePageLinkState<string | undefined>('project', undefined);
+  const activeProjectId = projects.some(project => project.id === linkedProjectId) ? linkedProjectId : projects[0]?.id;
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
 
   const completedJobId = job?.status === 'success' && job.slug === id ? job.id : undefined;
+
+  useEffect(() => {
+    if (!course || (course.slug !== id && course.id !== id)) return;
+    if (!activeProjectId || activeProjectId === linkedProjectId) return;
+    // Include the default tab's ID so links survive later tab reordering.
+    setSearchParams(previous => {
+      const next = new URLSearchParams(previous);
+      next.set('project', activeProjectId);
+      return next;
+    }, { replace: true });
+  }, [activeProjectId, linkedProjectId, setSearchParams, course, id]);
 
   const loadCourseData = async (slugOrId: string, options?: { refresh?: boolean }) => {
     const payload = await loadCoursePayloadBySlug(slugOrId, options);
@@ -116,10 +141,6 @@ const CourseDetailPage = () => {
     setProjects(payload.projects);
     setStudentWorks(payload.studentWorks);
     setLoadError(null);
-    setActiveProjectId((prev) => {
-      const exists = payload.projects.some((project) => project.id === prev);
-      return exists ? prev : payload.projects[0]?.id;
-    });
   };
 
   useEffect(() => {
@@ -133,7 +154,6 @@ const CourseDetailPage = () => {
         setProjects(payload.projects);
         setStudentWorks(payload.studentWorks);
         setLoadError(null);
-        setActiveProjectId(previous => payload.projects.some(project => project.id === previous) ? previous : payload.projects[0]?.id);
       })
       .catch((error) => {
         if (!active) return;
@@ -195,13 +215,15 @@ const CourseDetailPage = () => {
 export default function App() {
   return (
     <Router>
-      <AdminSyncProvider>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/course/:id" element={<CourseDetailPage />} />
-        <Route path="/admin/sync-course" element={<AdminSyncCourseTemplate />} />
-      </Routes>
-      </AdminSyncProvider>
+      <PageLinkProvider>
+        <AdminSyncProvider>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/course/:id" element={<CourseDetailPage />} />
+            <Route path="/admin/sync-course" element={<AdminSyncCourseTemplate />} />
+          </Routes>
+        </AdminSyncProvider>
+      </PageLinkProvider>
     </Router>
   );
 }

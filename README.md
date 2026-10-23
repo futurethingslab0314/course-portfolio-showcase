@@ -36,3 +36,9 @@ View your app in AI Studio: https://ai.studio/apps/9e81d424-336d-4875-a7ed-3c3fd
   - Header: `x-sync-secret: <COURSE_LINK_SYNC_SECRET>`
   - Body/query: `projectPageId`
   - Optional: `overwrite=true|false`
+
+## Share course content
+
+Open a course tab, group, article, or work, then copy the browser address. The URL preserves the current content, filters, expanded details, and image selection. Opening the link or refreshing restores that view; browser Back and Forward restore earlier views.
+
+Course tabs use `?project=<project-id>`. Additional query parameters record nested content using stable work IDs. Existing `/course/<slug>` links continue to open the first tab. Content opened inside an external embedded website follows that website's own sharing support.

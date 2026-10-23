@@ -1,3 +1,4 @@
+import { usePageLinkState } from '../../lib/usePageLinkState';
 import React, { RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { ArrowUp, ExternalLink, Plus, User, X } from 'lucide-react';
@@ -151,7 +152,7 @@ function BlogPostArticleContent({
 }
 
 export const BlogPost = ({ work }: BlogPostProps) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = usePageLinkState(`open:${work.id}`, false);
   const [showBackToTop, setShowBackToTop] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 

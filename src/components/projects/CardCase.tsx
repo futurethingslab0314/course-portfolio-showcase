@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import { usePageLinkState } from '../../lib/usePageLinkState';
+import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { StudentWork } from '../../types';
@@ -33,7 +34,7 @@ function fallbackBackgroundForWork(work: StudentWork): string {
 }
 
 export const CardCase = ({ work, isPrintMode = false }: CardCaseProps) => {
-  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [isImageModalOpen, setIsImageModalOpen] = usePageLinkState(`open:${work.id}`, false);
   const hasMainImage = Boolean(work.mainImage);
   const mainImageAsset = getMainImageAsset(work);
   const previewImage = resolveImageSource(mainImageAsset, 'preview');

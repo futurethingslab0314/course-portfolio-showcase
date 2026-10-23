@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { usePageLinkState } from '../../lib/usePageLinkState';
+import React, { useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Plus, Grid, LayoutGrid, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -60,9 +61,11 @@ export function compareDataMatrixWorks(a: StudentWork, b: StudentWork): number {
 }
 
 export const DataMatrix = ({ works, controlsContainer }: DataMatrixProps) => {
-  const [selectedWork, setSelectedWork] = useState<StudentWork | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>('coordinate');
-  const [selectedTag, setSelectedTag] = useState<string>('ALL');
+  const [selectedWorkId, setSelectedWorkId] = usePageLinkState<string | null>('matrixWork', null);
+  const selectedWork = works.find(work => work.id === selectedWorkId) || null;
+  const setSelectedWork = (work: StudentWork | null) => setSelectedWorkId(work?.id || null);
+  const [viewMode, setViewMode] = usePageLinkState<ViewMode>('matrixView', 'coordinate');
+  const [selectedTag, setSelectedTag] = usePageLinkState<string>('matrixTag', 'ALL');
 
   const allTags = useMemo(() => {
     const tagSet = new Set<string>();

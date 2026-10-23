@@ -1,3 +1,4 @@
+import { usePageLinkState } from '../../lib/usePageLinkState';
 import { ExternalProject } from '../projects/ExternalProject';
 import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -57,13 +58,13 @@ export const CourseDetailTemplate = ({
   const activeProject = projects.find((project) => project.id === activeProjectId);
   const { authenticated } = useAdminSync();
   const [matrixControlsContainer, setMatrixControlsContainer] = useState<HTMLDivElement | null>(null);
-  const [selectedYear, setSelectedYear] = useState<string>('ALL');
-  const [starredOnly, setStarredOnly] = useState<boolean>(false);
-  const [selectedThemeTag, setSelectedThemeTag] = useState<string>('ALL');
-  const [selectedKeywordTag, setSelectedKeywordTag] = useState<string>('ALL');
+  const [selectedYear, setSelectedYear] = usePageLinkState<string>('year', 'ALL');
+  const [starredOnly, setStarredOnly] = usePageLinkState<boolean>('starred', false);
+  const [selectedThemeTag, setSelectedThemeTag] = usePageLinkState<string>('theme', 'ALL');
+  const [selectedKeywordTag, setSelectedKeywordTag] = usePageLinkState<string>('keyword', 'ALL');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [selectedCardCaseGroup, setSelectedCardCaseGroup] = useState<string | undefined>(undefined);
-  const [selectedCardCaseStudent, setSelectedCardCaseStudent] = useState<string | undefined>(undefined);
+  const [selectedCardCaseGroup, setSelectedCardCaseGroup] = usePageLinkState<string | undefined>('group', undefined);
+  const [selectedCardCaseStudent, setSelectedCardCaseStudent] = usePageLinkState<string | undefined>('student', undefined);
   const [cardCasePrintLayout, setCardCasePrintLayout] = useState<CardCasePrintLayout>('observation-photo');
 
   const isExternalProject = activeProject?.contentType === 'external';
@@ -130,14 +131,6 @@ export const CourseDetailTemplate = ({
     const years = new Set(works.map((work) => work.year).filter(Boolean));
     return ['ALL', ...Array.from(years).sort().reverse()];
   }, [works, isCardCaseProject]);
-
-  useEffect(() => {
-    setSelectedCardCaseGroup(undefined);
-  }, [activeProjectId]);
-
-  useEffect(() => {
-    setSelectedCardCaseStudent(undefined);
-  }, [selectedCardCaseGroup]);
 
   useEffect(() => {
     if (selectedCardCaseGroup && !cardCaseGroupWorks.some((work) => work.group === selectedCardCaseGroup)) {
