@@ -644,8 +644,51 @@ export async function deleteStudentWorksNotInProjects(params: {
     ? `&notion_page_id=${encodeURIComponent(buildNotInFilter(activeWorkNotionIds))}`
     : '';
 
+  const deletePath = `/rest/v1/student_works?${projectScope}${staleFilter}`;
+  if (deletePath.length > 6000) {
+    // Large NOT IN lists exceed gateway request-line limits. Read a complete,
+    // scoped snapshot first, then delete only known stale row IDs in small batches.
+    // Splitting NOT IN into separate deletes would also delete active works.
+    const activeIds = new Set(activeWorkNotionIds);
+    const seenIds = new Set<string>();
+    const staleGroups: Array<{ scope: string; ids: string[] }> = [];
+    for (let projectOffset = 0; projectOffset < projectIds.length; projectOffset += 50) {
+      const scope = `project_id=${encodeURIComponent(buildInFilter(projectIds.slice(projectOffset, projectOffset + 50)))}`;
+      const staleIds: string[] = [];
+      staleGroups.push({ scope, ids: staleIds });
+      let offset = 0;
+      while (true) {
+        const rows = await supabaseRequest<Array<{ id: string; notion_page_id: string }>>(
+          `/rest/v1/student_works?select=id,notion_page_id&${scope}&order=id.asc&limit=500&offset=${offset}`,
+          { method: 'GET', headers: supabaseHeaders() },
+        );
+        if (!rows.length) break;
+        for (const row of rows) {
+          if (!row.id || !row.notion_page_id || seenIds.has(row.id)) {
+            throw new Error('Invalid or repeated work in cleanup snapshot; stale-work deletion skipped.');
+          }
+          seenIds.add(row.id);
+          if (!activeIds.has(row.notion_page_id)) staleIds.push(row.id);
+        }
+        offset += rows.length;
+      }
+    }
+    let deletedCount = 0;
+    for (const { scope, ids } of staleGroups) {
+      for (let offset = 0; offset < ids.length; offset += 50) {
+        const batch = ids.slice(offset, offset + 50);
+        const deleted = await supabaseRequest<Array<{ id: string }>>(
+          `/rest/v1/student_works?${scope}&id=${encodeURIComponent(buildInFilter(batch))}`,
+          { method: 'DELETE', headers: supabaseHeaders({ Prefer: 'return=representation' }) },
+        );
+        deletedCount += deleted.length;
+      }
+    }
+    return deletedCount;
+  }
+
   const deleted = await supabaseRequest<Array<{ id: string }>>(
-    `/rest/v1/student_works?${projectScope}${staleFilter}`,
+    deletePath,
     {
       method: 'DELETE',
       headers: supabaseHeaders({ Prefer: 'return=representation' }),

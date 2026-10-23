@@ -470,3 +470,66 @@ test('external project settings survive Supabase serialization and loading', asy
   assert.equal(result?.projects[0].contentType, 'external');
   assert.equal(result?.projects[0].externalUrl, 'https://example.com/exhibit');
 });
+
+test('large assignment cleanup keeps requests short and preserves every active work across pages', async () => {
+  const active = Array.from({ length: 612 }, (_, i) => `00000000-0000-4000-8000-${String(i).padStart(12, '0')}`);
+  const stale = Array.from({ length: 120 }, (_, i) => ({ id: `stored-stale-${i}`, notion_page_id: `stale-${i}` }));
+  const stored = [...active.map((notion_page_id, i) => ({ id: `stored-active-${i}`, notion_page_id })), ...stale];
+  const deletedIds: string[] = [];
+  let finishedReading = false;
+  let reads = 0;
+  globalThis.fetch = async (input, init) => {
+    const url = new URL(String(input));
+    if (url.toString().length > 8000) return new Response('Bad Request', { status: 400 });
+    assert.equal(url.searchParams.get('project_id'), 'in.("target-project")');
+    if (init?.method === 'GET') {
+      reads += 1;
+      const offset = Number(url.searchParams.get('offset') || 0);
+      // Simulate a server returning fewer rows than the requested page size.
+      const page = stored.slice(offset, offset + 200);
+      if (!page.length) finishedReading = true;
+      return new Response(JSON.stringify(page), { status: 200 });
+    }
+    assert.equal(init?.method, 'DELETE');
+    assert.equal(finishedReading, true, 'take the full snapshot before deleting');
+    assert.equal(url.searchParams.has('notion_page_id'), false);
+    const ids = [...(url.searchParams.get('id') || '').matchAll(/"([^"]+)"/g)].map(match => match[1]);
+    deletedIds.push(...ids);
+    return new Response(JSON.stringify(ids.map(id => ({ id }))), { status: 200 });
+  };
+  assert.equal(await deleteStudentWorksNotInProjects({ projectIds: ['target-project'], activeWorkNotionIds: active }), stale.length);
+  assert.ok(reads > 1);
+  assert.deepEqual(deletedIds.sort(), stale.map(row => row.id).sort());
+});
+
+test('large assignment cleanup performs no deletions if a later snapshot page fails', async () => {
+  const active = Array.from({ length: 612 }, (_, i) => `00000000-0000-4000-8000-${String(i).padStart(12, '0')}`);
+  let reads = 0;
+  let deletes = 0;
+  globalThis.fetch = async (_input, init) => {
+    if (init?.method === 'DELETE') { deletes += 1; return new Response('[]'); }
+    if (++reads === 1) return new Response(JSON.stringify([{ id: 'stale-row', notion_page_id: 'stale-page' }]));
+    return new Response('Read failed', { status: 500 });
+  };
+  await assert.rejects(deleteStudentWorksNotInProjects({ projectIds: ['target-project'], activeWorkNotionIds: active }), /500/);
+  assert.equal(deletes, 0);
+});
+
+test('large assignment cleanup with no stale records does not issue a delete', async () => {
+  const active = Array.from({ length: 612 }, (_, i) => `00000000-0000-4000-8000-${String(i).padStart(12, '0')}`);
+  globalThis.fetch = async (input, init) => {
+    assert.equal(init?.method, 'GET');
+    const offset = Number(new URL(String(input)).searchParams.get('offset'));
+    return new Response(JSON.stringify(offset ? [] : active.map((notion_page_id, i) => ({ id: `row-${i}`, notion_page_id }))));
+  };
+  assert.equal(await deleteStudentWorksNotInProjects({ projectIds: ['target-project'], activeWorkNotionIds: active }), 0);
+});
+
+test('large assignment cleanup rejects repeated pages before issuing a delete', async () => {
+  const active = Array.from({ length: 612 }, (_, i) => `00000000-0000-4000-8000-${String(i).padStart(12, '0')}`);
+  globalThis.fetch = async (_input, init) => {
+    assert.equal(init?.method, 'GET');
+    return new Response(JSON.stringify([{ id: 'stale-row', notion_page_id: 'stale-page' }]));
+  };
+  await assert.rejects(deleteStudentWorksNotInProjects({ projectIds: ['target-project'], activeWorkNotionIds: active }), /repeated work/);
+});
