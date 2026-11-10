@@ -59,7 +59,7 @@ function supabaseConfig() {
   return { url: url.replace(/\/$/, ''), key };
 }
 
-export function supabaseHeaders(extra?: Record<string, string>) {
+function supabaseHeaders(extra?: Record<string, string>) {
   const { key } = supabaseConfig();
   return {
     apikey: key,
@@ -69,7 +69,7 @@ export function supabaseHeaders(extra?: Record<string, string>) {
   };
 }
 
-export async function supabaseRequest<T>(path: string, init: RequestInit): Promise<T> {
+async function supabaseRequest<T>(path: string, init: RequestInit): Promise<T> {
   const { url } = supabaseConfig();
   const response = await fetch(`${url}${path}`, init);
   if (!response.ok) {
@@ -353,11 +353,11 @@ function mapWorkRowToStudentWork(row: SupabaseStudentWorkRow): StudentWork {
 }
 
 function buildInFilter(values: string[]): string {
-  return `in.(${values.map((value) => JSON.stringify(value)).join(',')})`;
+  return `in.(${values.map((value) => `"${value}"`).join(',')})`;
 }
 
 function buildNotInFilter(values: string[]): string {
-  return `not.in.(${values.map((value) => JSON.stringify(value)).join(',')})`;
+  return `not.in.(${values.map((value) => `"${value}"`).join(',')})`;
 }
 
 function groupRowsByShape(rows: Array<Record<string, unknown>>): Array<Array<Record<string, unknown>>> {
@@ -781,14 +781,5 @@ export async function validateCourseSyncToken(courseSlug: string, token: string)
       );
     }
     throw error;
-  }
-}
-
-// Partial sync must never run a whole-project NOT IN cleanup.
-export async function deleteStudentWorksByNotionIds(projectId: string, ids: string[]): Promise<void> {
-  for (let offset = 0; offset < ids.length; offset += 50) {
-    await supabaseRequest(`/rest/v1/student_works?project_id=eq.${encodeURIComponent(projectId)}&notion_page_id=${encodeURIComponent(buildInFilter(ids.slice(offset, offset + 50)))}`, {
-      method: 'DELETE', headers: supabaseHeaders(),
-    });
   }
 }

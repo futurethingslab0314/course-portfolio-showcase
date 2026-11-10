@@ -1,5 +1,3 @@
-import { syncProjectChanges } from './services/eventSync';
-import { createNotionWebhookRouter } from './services/notionWebhook';
 import 'dotenv/config';
 import express from 'express';
 import fs from 'node:fs';
@@ -42,10 +40,8 @@ if (fs.existsSync(path.join(wallDir, 'digital-wall-data.json'))) {
   app.get('/shared-wall/reference-wall.jpg', (_req,res)=>res.sendFile(path.join(wallDir,'reference-wall.jpg')));
   app.use('/shared-wall/note-originals', express.static(path.join(wallDir,'note-originals')));
 }
-// Signature verification requires the original request bytes.
-app.use('/api/notion/events', createNotionWebhookRouter());
 app.use(express.json());
-app.use('/api/admin/session', createAdminRouter(syncProjectChanges, () => invalidateAllApiCache()));
+app.use('/api/admin/session', createAdminRouter(syncProjectToSupabase, () => invalidateAllApiCache()));
 
 const port = Number(process.env.PORT || 8787);
 const baseUrl = process.env.BASE_URL || `http://localhost:${port}`;

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { ChevronDown, ChevronUp, LogIn, LogOut, RefreshCw, X } from 'lucide-react';
-import { ProjectSyncJob, SyncMode } from '../../shared/adminSync';
+import { ProjectSyncJob } from '../../shared/adminSync';
 
 class ApiError extends Error { constructor(message: string, public status: number) { super(message); } }
 async function api<T>(path: string, body?: unknown): Promise<T> {
@@ -20,7 +20,7 @@ type AdminState = {
   job: ProjectSyncJob | null;
   openLogin: () => void;
   logout: () => Promise<void>;
-  start: (slug: string, projectId: string, name: string, mode?: SyncMode) => Promise<void>;
+  start: (slug: string, projectId: string, name: string) => Promise<void>;
   starting: boolean;
 };
 const Context = createContext<AdminState>({ authenticated: false, job: null, openLogin: () => {}, logout: async () => {}, start: async () => {}, starting: false });
@@ -42,12 +42,6 @@ export function AdminSyncProvider({ children }: { children: React.ReactNode }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const passwordInput = useRef<HTMLInputElement>(null);
   const startLock = useRef(false);
-  const [webhookSetup, setWebhookSetup] = useState<{ configured: boolean; lastReceivedAt?: string; verificationToken?: string } | null>(null);
-  const [setupError, setSetupError] = useState('');
-  const checkWebhook = async () => {
-    try { setWebhookSetup(await api('/webhook-setup')); setSetupError(''); }
-    catch (error) { setSetupError(error instanceof Error ? error.message : '無法讀取通知設定'); }
-  };
 
   useEffect(() => {
     let active = true;
@@ -89,11 +83,11 @@ export function AdminSyncProvider({ children }: { children: React.ReactNode }) {
     return () => { active = false; clearTimeout(timer); };
   }, [authenticated, jobId]);
 
-  const start = async (slug: string, projectId: string, projectName: string, mode: SyncMode = 'changes') => {
+  const start = async (slug: string, projectId: string, projectName: string) => {
     if (startLock.current) return;
     startLock.current = true; setStarting(true); setError(''); setCollapsed(false);
     try {
-      const next = await api<ProjectSyncJob>('/jobs', { slug, projectId, mode });
+      const next = await api<ProjectSyncJob>('/jobs', { slug, projectId });
       setJob(next); setJobId(next.id); setName(projectName);
       try { sessionStorage.setItem(storageKey, JSON.stringify({ id: next.id, name: projectName })); } catch {}
     } catch (e) {
@@ -109,15 +103,6 @@ export function AdminSyncProvider({ children }: { children: React.ReactNode }) {
   const activeJob = job?.status === 'queued' || job?.status === 'running';
   return <Context.Provider value={{ authenticated, job, openLogin: () => { setLoginError(''); setLoginOpen(true); }, logout, start, starting }}>
     {children}
-    {authenticated && <details className="fixed bottom-4 right-4 z-[80] max-w-sm rounded border border-black/15 bg-white p-3 text-xs shadow">
-      <summary className="cursor-pointer" onClick={() => void checkWebhook()}>Notion 變更通知設定</summary>
-      <div className="mt-2 space-y-2 break-words">
-        <p>{webhookSetup?.lastReceivedAt ? `最近收到通知：${new Date(webhookSetup.lastReceivedAt).toLocaleString()}` : '尚未確認收到通知，請完成訂閱驗證並修改一筆作品測試。'}</p>
-        {webhookSetup?.verificationToken && <><p>將此驗證碼貼入 Notion 連線的 Webhooks 訂閱驗證欄位：</p><code className="block select-all break-all">{webhookSetup.verificationToken}</code></>}
-        {setupError && <p role="alert" className="text-red-700">{setupError}</p>}
-        <button type="button" className="underline" onClick={() => void checkWebhook()}>重新檢查通知設定</button>
-      </div>
-    </details>}
     <dialog ref={dialog} onCancel={closeLogin} onClose={closeLogin} className="m-auto w-[calc(100%-2rem)] max-w-sm rounded-lg p-6 backdrop:bg-black/50" aria-labelledby="admin-login-title">
       <form onSubmit={async event => {
         event.preventDefault(); setBusy(true); setLoginError('');
@@ -137,13 +122,12 @@ export function AdminSyncProvider({ children }: { children: React.ReactNode }) {
         {activeJob ? <button aria-label={collapsed ? '展開進度' : '收合進度'} title={collapsed ? '展開進度' : '收合進度'} aria-expanded={!collapsed} onClick={() => setCollapsed(!collapsed)}>{collapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}</button> : <button aria-label="關閉通知" title="關閉通知" onClick={() => { setJob(null); setJobId(null); setError(''); }}><X size={16} /></button>}
       </div>
       {job && authenticated && <>
-        <p className="text-sm mt-2">{job.status === 'success' && job.noChanges ? '沒有收到新的變更' : stageLabels[job.stage]}{job.status === 'success' && job.warnings > 0 ? `（${job.warnings} 項警告）` : ''}</p>
+        <p className="text-sm mt-2">{stageLabels[job.stage]}{job.status === 'success' && job.warnings > 0 ? `（${job.warnings} 項警告）` : ''}</p>
         {!collapsed && (job.stage === 'images' ? <>
           <progress aria-label="圖片處理進度" max={Math.max(job.total, 1)} value={job.processed} className="w-full h-2 mt-3 accent-emerald-600" />
           <p className="text-xs mt-2">{job.processed} / {job.total} 張 · 上傳 {job.uploaded} · 跳過 {job.skipped} · 失敗 {job.failed}</p>
         </> : activeJob ? <progress aria-label="同步進行中" className="w-full h-2 mt-3" /> : null)}
-        {job.message && <p className="text-sm mt-2">{job.message}</p>}
-        {job.status === 'success' && !job.noChanges && <p className="text-xs mt-2">圖片上傳 {job.uploaded} · 跳過 {job.skipped} · 失敗 {job.failed}</p>}
+        {job.status === 'success' && <p className="text-xs mt-2">圖片上傳 {job.uploaded} · 跳過 {job.skipped} · 失敗 {job.failed}</p>}
         {job.error && <p className="text-sm text-red-700 mt-2 break-words">{job.error}</p>}
       </>}
       {error && <p className="text-sm text-red-700 mt-2 break-words">{error}</p>}
@@ -162,10 +146,7 @@ export function ProjectSyncButton({ slug, projectId, name }: { slug: string; pro
   const admin = useAdminSync();
   if (!admin.authenticated) return null;
   const busy = admin.starting || admin.job?.status === 'queued' || admin.job?.status === 'running';
-  return <div className="flex flex-wrap items-center gap-3">
-    <button disabled={busy} onClick={() => void admin.start(slug, projectId, name)} className="flex items-center gap-2 border border-black/20 rounded px-3 py-2 text-sm disabled:opacity-40">
-      <RefreshCw size={15} />同步變更
-    </button>
-    <button disabled={busy} onClick={() => void admin.start(slug, projectId, name, 'full')} title="重新讀取此分頁全部資料，用於首次建立基準或補查通知" className="text-xs underline underline-offset-4 text-black/50 hover:text-black disabled:opacity-40">完整比對</button>
-  </div>;
+  return <button disabled={busy} onClick={() => void admin.start(slug, projectId, name)} className="flex items-center gap-2 border border-black/20 rounded px-3 py-2 text-sm disabled:opacity-40">
+    <RefreshCw size={15} />Sync Data
+  </button>;
 }

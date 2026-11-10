@@ -1,4 +1,3 @@
-import { notionId, notionSnapshotContext, queryKey } from './notionSnapshot';
 import { Course, Project, StudentWork } from '../../src/types';
 import { CardCaseRelationConfig, FieldMapping, NormalizationWarning } from '../../shared/contracts';
 import { mapUiPattern, normalizeStudentWork, parseFieldMapping } from '../../shared/notionMapper';
@@ -7,9 +6,6 @@ export interface NotionPage {
   id: string;
   cover?: { type: 'external' | 'file'; external?: { url: string }; file?: { url: string } };
   last_edited_time?: string;
-  archived?: boolean;
-  in_trash?: boolean;
-  parent?: { type: string; database_id?: string; data_source_id?: string; page_id?: string; id?: string };
   properties: Record<string, any>;
 }
 
@@ -144,13 +140,6 @@ async function notionRequestRaw(path: string, init: RequestInit): Promise<Respon
 }
 
 async function queryDatabase(databaseId: string, body: Record<string, unknown> = {}): Promise<NotionPage[]> {
-  const cached = notionSnapshotContext();
-  const key = queryKey(databaseId, body);
-  if (cached?.replay) {
-    const ids = cached.snapshot.queries[key];
-    if (!ids) throw new Error('Notion source structure changed. Run a full reconciliation.');
-    return ids.map(id => cached.snapshot.pages[id]).filter(Boolean);
-  }
   const results: NotionPage[] = [];
   let hasMore = true;
   let cursor: string | undefined;
@@ -170,10 +159,6 @@ async function queryDatabase(databaseId: string, body: Record<string, unknown> =
     cursor = data.next_cursor;
   }
 
-  if (cached) {
-    cached.snapshot.queries[key] = results.map(page => notionId(page.id));
-    for (const page of results) cached.snapshot.pages[notionId(page.id)] = page;
-  }
   return results;
 }
 
@@ -461,9 +446,6 @@ export async function blockToBlogSectionForTest(block: NotionBlock): Promise<Stu
 
 async function fetchBlogContentFromPageBlocks(pageId: string): Promise<NonNullable<StudentWork['blogContent']>> {
   const sections: NonNullable<StudentWork['blogContent']> = [];
-  const cached = notionSnapshotContext();
-  const key = notionId(pageId);
-  if (cached?.replay && cached.snapshot.blogs[key]) return cached.snapshot.blogs[key];
   const blocks = await fetchBlockChildren(pageId);
 
   for (const block of blocks) {
@@ -473,19 +455,14 @@ async function fetchBlogContentFromPageBlocks(pageId: string): Promise<NonNullab
     }
   }
 
-  if (cached) cached.snapshot.blogs[key] = sections;
   return sections;
 }
 
 export async function fetchPageById(pageId: string): Promise<NotionPage> {
-  const cached = notionSnapshotContext();
-  const key = notionId(pageId);
-  if (cached?.replay && cached.snapshot.pages[key]) return cached.snapshot.pages[key];
-  const page = await notionRequest<NotionPage>(`/pages/${normalizeNotionId(pageId)}`, {
-    method: 'GET', headers: notionHeaders(),
+  return notionRequest<NotionPage>(`/pages/${normalizeNotionId(pageId)}`, {
+    method: 'GET',
+    headers: notionHeaders(),
   });
-  if (cached) cached.snapshot.pages[key] = page;
-  return page;
 }
 
 export async function fetchDatabaseSchema(databaseId: string): Promise<Record<string, any>> {
@@ -717,8 +694,7 @@ function relationIds(page: NotionPage, ...names: string[]): string[] {
 async function fetchPagesByIds(pageIds: string[]): Promise<NotionPage[]> {
   const uniqueIds = [...new Set(pageIds.map((id) => normalizeNotionId(id)).filter(Boolean))];
   if (!uniqueIds.length) return [];
-  const removed = notionSnapshotContext()?.snapshot.removed || [];
-  return Promise.all(uniqueIds.filter(id => !removed.includes(notionId(id))).map((pageId) => fetchPageById(pageId)));
+  return Promise.all(uniqueIds.map((pageId) => fetchPageById(pageId)));
 }
 
 interface CardCaseMember {
@@ -811,7 +787,6 @@ async function fetchCardCaseWorksForProject(
     const linkedCaseIds = relationIds(studentPage, ...caseCardsAliases);
 
     for (const rawCaseId of linkedCaseIds) {
-      if (notionSnapshotContext()?.snapshot.removed.includes(notionId(rawCaseId))) continue;
       if(known.has(stripNotionId(rawCaseId)))continue;
       const casePage = caseById.get(stripNotionId(rawCaseId));
       if (!casePage) {

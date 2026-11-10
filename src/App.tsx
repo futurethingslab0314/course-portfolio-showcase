@@ -122,7 +122,7 @@ const CourseDetailPage = () => {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
 
-  const completedJobId = job?.status === 'success' && !job.noChanges && job.slug === id ? job.id : undefined;
+  const completedJobId = job?.status === 'success' && job.slug === id ? job.id : undefined;
 
   useEffect(() => {
     if (!course || (course.slug !== id && course.id !== id)) return;

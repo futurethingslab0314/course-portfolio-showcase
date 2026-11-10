@@ -1,10 +1,9 @@
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { Router } from 'express';
-import { SyncMode, SyncProgress, SyncResult } from '../../shared/adminSync';
+import { SyncProgress } from '../../shared/adminSync';
 import { createProjectJobStore } from './projectSyncJobs';
-import { notionEventStore } from './notionEventStore';
 
-type Sync = (input: { slug: string; projectId: string; mode?: SyncMode; report: (p: SyncProgress) => void }) => Promise<SyncResult>;
+type Sync = (input: { slug: string; projectId: string; report: (p: SyncProgress) => void }) => Promise<{ warnings: unknown[] }>;
 
 export function createAdminRouter(sync: Sync, invalidate: () => void, options: { password?: string; origin?: string; secure?: boolean; now?: () => number } = {}) {
   const router = Router();
@@ -58,22 +57,15 @@ export function createAdminRouter(sync: Sync, invalidate: () => void, options: {
     if (!sessions.has(tokenFrom(req.get('cookie')) || '')) { res.status(401).json({ error: 'Please sign in again.' }); return; }
     next();
   });
-  router.get('/webhook-setup', async (_req, res) => {
-    try {
-      const token = process.env.NOTION_WEBHOOK_VERIFICATION_TOKEN || await notionEventStore.setting('verification_token');
-      const lastReceivedAt = await notionEventStore.setting('last_received_at');
-      res.json({ configured: Boolean(token), lastReceivedAt, verificationToken: lastReceivedAt ? undefined : token });
-    } catch (error) { res.status(503).json({ error: error instanceof Error ? error.message : '無法讀取通知設定' }); }
-  });
   router.post('/jobs', (req, res) => {
-    const { slug, projectId, mode = 'changes' } = req.body || {};
-    if (!['changes', 'full'].includes(mode) || typeof slug !== 'string' || !slug.trim() || slug.length > 200 || typeof projectId !== 'string' || !/^[a-f0-9-]{32,36}$/i.test(projectId)) {
+    const { slug, projectId } = req.body || {};
+    if (typeof slug !== 'string' || !slug.trim() || slug.length > 200 || typeof projectId !== 'string' || !/^[a-f0-9-]{32,36}$/i.test(projectId)) {
       res.status(400).json({ error: 'Invalid assignment' }); return;
     }
     try {
-      const job = jobs.start({ slug, projectId, projectName: projectId, mode }, async report => {
-        const result = await sync({ slug, projectId, mode, report });
-        if (!result.noChanges) invalidate();
+      const job = jobs.start({ slug, projectId, projectName: projectId }, async report => {
+        const result = await sync({ slug, projectId, report });
+        invalidate();
         return result;
       });
       res.status(202).json(job);
