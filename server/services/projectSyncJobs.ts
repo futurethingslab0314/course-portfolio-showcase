@@ -1,11 +1,11 @@
 import { randomUUID } from 'node:crypto';
-import { ProjectSyncJob, SyncProgress } from '../../shared/adminSync';
+import { ProjectSyncJob, SyncProgress, SyncMode, SyncResult } from '../../shared/adminSync';
 
 export function createProjectJobStore() {
   const jobs = new Map<string, ProjectSyncJob>();
   return {
     get(id: string) { const job = jobs.get(id); return job ? { ...job } : undefined; },
-    start(input: { slug: string; projectId: string; projectName: string }, run: (report: (p: SyncProgress) => void) => Promise<{ warnings: unknown[] }>) {
+    start(input: { slug: string; projectId: string; projectName: string; mode?: SyncMode }, run: (report: (p: SyncProgress) => void) => Promise<SyncResult>) {
       const active = [...jobs.values()].find(j => j.projectId === input.projectId && (j.status === 'queued' || j.status === 'running'));
       if (active) return { ...active };
       for (const [id, job] of jobs) {
@@ -18,7 +18,7 @@ export function createProjectJobStore() {
       void Promise.resolve().then(async () => {
         try {
           const result = await run(p => Object.assign(job, p, { status: 'running' }));
-          Object.assign(job, { status: 'success', stage: 'complete', warnings: result.warnings.length });
+          Object.assign(job, { status: 'success', stage: 'complete', warnings: result.warnings.length, changed: result.changed, deleted: result.deleted, noChanges: result.noChanges, message: result.message });
         } catch (error) {
           Object.assign(job, { status: 'failed', stage: 'failed', error: error instanceof Error ? error.message : 'Sync failed' });
         }

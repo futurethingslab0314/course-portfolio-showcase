@@ -195,3 +195,21 @@ test('filterAndSortWorksForDisplay sorts gallery-story by createdAt descending',
     ['latest', 'older', 'no-created-at'],
   );
 });
+
+for (const displayStyle of ['generic-card', 'gallery-slide', 'card-spec', 'blog-post', 'card-case', 'gallery-story'] as const) {
+  test(`${displayStyle} pins instruction and orders by creation date with deterministic ties`, () => {
+    const works = [
+      { ...baseWork, id: 'z', assignmentName: 'Z', createdAt: '2026-01-01' },
+      { ...baseWork, id: 'missing-z', assignmentName: 'Missing' },
+      { ...baseWork, id: 'instruction', assignmentName: 'Guide', tags: [' Instruction '], createdAt: '2020-01-01' },
+      { ...baseWork, id: 'new', assignmentName: 'New', createdAt: '2026-06-01' },
+      { ...baseWork, id: 'a', assignmentName: 'A', createdAt: '2026-01-01' },
+      { ...baseWork, id: 'missing-a', assignmentName: 'Invalid', createdAt: 'invalid' },
+    ] as StudentWork[];
+    const options = { displayStyle, selectedYear: 'ALL', selectedThemeTag: 'ALL', selectedKeywordTag: 'ALL', starredOnly: false };
+    const expected = ['instruction', 'new', 'a', 'z', 'missing-a', 'missing-z'];
+    assert.deepEqual(filterAndSortWorksForDisplay(works, options).map(work => work.id), expected);
+    assert.deepEqual(filterAndSortWorksForDisplay([...works].reverse(), options).map(work => work.id), expected);
+    assert.equal(works[0].id, 'z');
+  });
+}

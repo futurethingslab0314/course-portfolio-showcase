@@ -18,7 +18,7 @@ import {
   upsertProjectsToSupabase,
   upsertStudentWorksToSupabase,
 } from './supabase';
-import { BlogContentSection, StudentWork } from '../../src/types';
+import { BlogContentSection, ImageAsset, StudentWork } from '../../src/types';
 import { SyncProgress } from '../../shared/adminSync';
 import { serializeSync } from './syncQueue';
 import { preflightProjectSync } from './supabase';
@@ -190,7 +190,7 @@ export function countWorkImages(work: StudentWork): number {
   return [work.mainImage, ...(work.moreImages || []), work.interactionPart].filter(url => url?.trim()).length + countSections(work.blogContent);
 }
 
-async function rewriteWorkImagesToR2(payload: CoursePayload, runId: string, report?: (p: SyncProgress) => void): Promise<{ uploaded: number; skipped: number }> {
+export async function rewriteWorkImagesToR2(payload: CoursePayload, runId: string, report?: (p: SyncProgress) => void, reuse?: { assets: Map<string, ImageAsset>; urls: Set<string> }): Promise<{ uploaded: number; skipped: number }> {
   const progress: SyncProgress = { stage: 'images', total: payload.studentWorks.reduce((sum, work) => sum + countWorkImages(work), 0), processed: 0, uploaded: 0, skipped: 0, failed: 0 };
   const advance = (outcome: 'uploaded' | 'skipped' | 'failed') => {
     progress.processed += 1;
@@ -245,6 +245,10 @@ async function rewriteWorkImagesToR2(payload: CoursePayload, runId: string, repo
         return { asset: { original: trimmed }, uploaded: false };
       }
 
+      if (reuse?.assets.has(trimmed)) {
+        advance('skipped'); skipped += 1;
+        return { asset: reuse.assets.get(trimmed)!, uploaded: false };
+      }
       try {
         const common = {
           sourceUrl: trimmed, courseSlug: payload.course.slug || payload.course.id,
@@ -299,6 +303,7 @@ async function rewriteWorkImagesToR2(payload: CoursePayload, runId: string, repo
         return trimmed;
       }
 
+      if (reuse?.urls.has(trimmed)) { advance('skipped'); return trimmed; }
       try {
         const result = await uploadImageUrlToR2({
           sourceUrl: trimmed,
@@ -363,8 +368,15 @@ export function syncCourseToSupabase(params: Parameters<typeof runCourseSync>[0]
   return serializeSync(() => runCourseSync(params));
 }
 
-export function syncProjectToSupabase(params: { slug: string; projectId: string; report: (p: SyncProgress) => void }) {
-  return serializeSync(async () => {
+export interface FullProjectSyncParams {
+  slug: string; projectId: string; report: (p: SyncProgress) => void;
+  allowEmpty?: boolean;
+  onSaved?: (payload: CoursePayload, sourceWorks: StudentWork[], storedProjectId: string) => Promise<void>;
+}
+export function syncProjectToSupabase(params: FullProjectSyncParams) {
+  return serializeSync(() => runFullProjectSync(params));
+}
+export async function runFullProjectSync(params: FullProjectSyncParams) {
     let progress: SyncProgress = { stage: 'reading', total: 0, processed: 0, uploaded: 0, skipped: 0, failed: 0 };
     params.report(progress);
     const payload = await buildCourseSyncPayloadBySlug(params.slug, params.projectId);
@@ -382,11 +394,13 @@ export function syncProjectToSupabase(params: { slug: string; projectId: string;
       params.report({ ...progress, stage: 'saving' });
       const rows = await upsertProjectsToSupabase([project], courseId);
       if (rows.length !== 1 || rows[0].notion_page_id !== project.id) throw new Error('Assignment write did not return the expected project.');
+      await params.onSaved?.(payload, [], rows[0].id);
       return { warnings: payload.warnings };
     }
-    if (!payload.studentWorks.length) throw new Error('Notion returned no works. Existing works preserved; check the source database.');
+    if (!payload.studentWorks.length && !params.allowEmpty) throw new Error('Notion returned no works. Existing works preserved; check the source database.');
     if (payload.studentWorks.some(w => w.sourceDatabaseId !== project.sourceDatabaseId)) throw new Error('Assignment source mismatch.');
     const courseId = await preflightProjectSync(payload.course.id, project, payload.studentWorks);
+    const sourceWorks = structuredClone(payload.studentWorks);
     await rewriteWorkImagesToR2(payload, `project-sync-${randomUUID()}`, p => { progress = p; params.report(p); });
     params.report({ ...progress, stage: 'saving' });
     const projectRows = await upsertProjectsToSupabase([project], courseId);
@@ -394,8 +408,8 @@ export function syncProjectToSupabase(params: { slug: string; projectId: string;
     const result = await upsertStudentWorksToSupabase({ studentWorks: payload.studentWorks, projectIdBySourceDb: buildProjectLookup(projectRows), warnings: payload.warnings });
     if (result.skipped || result.upserted !== payload.studentWorks.length) throw new Error('Some works were not saved. Stale-work deletion skipped.');
     await deleteStudentWorksNotInProjects({ projectIds: [projectRows[0].id], activeWorkNotionIds: payload.studentWorks.map(w => w.id) });
+    await params.onSaved?.(payload, sourceWorks, projectRows[0].id);
     return { warnings: payload.warnings };
-  });
 }
 
 async function runCourseSync(params: {

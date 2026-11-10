@@ -9,7 +9,7 @@ import { Header } from '../Header';
 import { ProjectSyncButton, useAdminSync } from '../AdminSync';
 import { Footer } from '../Footer';
 import { Filter, Star, ChevronDown, Download } from 'lucide-react';
-import { collectKeywordTags, collectThemeTags, filterAndSortWorksForDisplay } from './courseDetailViewModel';
+import { collectKeywordTags, collectThemeTags, filterAndSortWorksForDisplay, sortCardCaseWorks } from './courseDetailViewModel';
 import { buildCardCasePrintHtml, CardCasePrintLayout, collectCardCaseMemberNames, filterCardCaseWorksByStudent, getCardCaseAvailableYears, getCardCaseStudentLabel, inlinePrintDocumentImages, waitForPrintDocumentAssets } from './cardCaseUtils';
 
 interface CourseDetailTemplateProps {
@@ -78,7 +78,7 @@ export const CourseDetailTemplate = ({
 
   const filteredWorks = useMemo(
     () => {
-      if (isCardCaseProject) return works;
+      if (isCardCaseProject) return sortCardCaseWorks(works);
       return filterAndSortWorksForDisplay(works, {
         displayStyle: activeProject?.displayStyle,
         selectedYear,

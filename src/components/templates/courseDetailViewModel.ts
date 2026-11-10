@@ -76,31 +76,30 @@ export function filterAndSortWorksForDisplay(
     result = result.filter((work) => work.isStarred);
   }
 
-  if (options.displayStyle === 'activity-event') {
-    result = [...result]
-      .map((work, index) => ({ work, index }))
-      .sort((left, right) => {
-        const timeDelta = activitySortTimestamp(right.work) - activitySortTimestamp(left.work);
-        if (timeDelta !== 0) {
-          return timeDelta;
-        }
-        return left.index - right.index;
-      })
-      .map(({ work }) => work);
-  }
+  if (options.displayStyle === 'data-matrix') return result;
 
-  if (options.displayStyle === 'gallery-story') {
-    result = [...result]
-      .map((work, index) => ({ work, index }))
-      .sort((left, right) => {
-        const timeDelta = createdAtTimestamp(right.work) - createdAtTimestamp(left.work);
-        if (timeDelta !== 0) {
-          return timeDelta;
-        }
-        return left.index - right.index;
-      })
-      .map(({ work }) => work);
-  }
+  return [...result].sort((left, right) => {
+    const isInstruction = (work: StudentWork) =>
+      (work.tags || []).some((tag) => tag.trim().toLowerCase() === 'instruction');
+    const instructionDelta = Number(isInstruction(right)) - Number(isInstruction(left));
+    if (instructionDelta) return instructionDelta;
 
-  return result;
+    const timestamp = options.displayStyle === 'activity-event'
+      ? activitySortTimestamp
+      : createdAtTimestamp;
+    const leftTime = timestamp(left);
+    const rightTime = timestamp(right);
+    if (leftTime !== rightTime) return leftTime > rightTime ? -1 : 1;
+    return left.id.localeCompare(right.id);
+  });
+}
+
+export function sortCardCaseWorks(works: StudentWork[]): StudentWork[] {
+  return filterAndSortWorksForDisplay(works, {
+    displayStyle: 'card-case',
+    selectedYear: 'ALL',
+    selectedThemeTag: 'ALL',
+    selectedKeywordTag: 'ALL',
+    starredOnly: false,
+  });
 }
