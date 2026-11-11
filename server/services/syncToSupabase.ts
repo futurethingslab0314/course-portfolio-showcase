@@ -7,6 +7,7 @@ import {
   isR2ImageSyncEnabled,
   uploadImageAssetToR2,
   uploadImageUrlToR2,
+  uploadPdfToR2,
 } from './imageStoreR2';
 import {
   appendSyncLog,
@@ -49,6 +50,7 @@ type BlogImageRewriteResult = {
 async function rewriteBlogContentImagesToR2(
   blogContent: StudentWork['blogContent'],
   rewriteUrl: (sourceUrl: string) => Promise<string>,
+  rewritePdf?: (section: Extract<BlogContentSection, { type: 'pdf' }>) => Promise<Extract<BlogContentSection, { type: 'pdf' }>>,
 ): Promise<BlogImageRewriteResult> {
   if (!Array.isArray(blogContent) || !blogContent.length) {
     return { blogContent, uploaded: 0, skipped: 0 };
@@ -58,6 +60,7 @@ async function rewriteBlogContentImagesToR2(
   let skipped = 0;
 
   const rewriteSection = async (section: BlogContentSection): Promise<BlogContentSection> => {
+    if (section.type === 'pdf' && rewritePdf) return rewritePdf(section);
     if (section.type === 'image') {
       const nextUrl = await rewriteUrl(section.content);
       if (nextUrl !== section.content) {
@@ -97,8 +100,9 @@ async function rewriteBlogContentImagesToR2(
 export async function rewriteBlogContentImagesToR2ForTest(
   blogContent: StudentWork['blogContent'],
   rewriteUrl: (sourceUrl: string) => Promise<string>,
+  rewritePdf?: (section: Extract<BlogContentSection, { type: 'pdf' }>) => Promise<Extract<BlogContentSection, { type: 'pdf' }>>,
 ): Promise<BlogImageRewriteResult> {
-  return rewriteBlogContentImagesToR2(blogContent, rewriteUrl);
+  return rewriteBlogContentImagesToR2(blogContent, rewriteUrl, rewritePdf);
 }
 
 async function rewriteWorkMediaToR2(
@@ -182,8 +186,8 @@ async function rewriteCourseCoverToR2(payload: CoursePayload, runId: string): Pr
 
 export function countWorkImages(work: StudentWork): number {
   const countSections = (sections: StudentWork['blogContent']): number => (sections || []).reduce((n, section) => {
-    if (section.type === 'image') return n + 1;
-    if (section.type === 'toggle' || (section.type === 'text' && section.blockType === 'callout')) return n + countSections(section.children);
+    if (section.type === 'image' || section.type === 'pdf') return n + 1;
+    if (section.type === 'toggle' || section.type === 'text') return n + countSections(section.children);
     if (section.type === 'column_list') return n + section.columns.reduce((sum, column) => sum + countSections(column.children), 0);
     return n;
   }, 0);
@@ -214,7 +218,8 @@ async function rewriteWorkImagesToR2(payload: CoursePayload, runId: string, repo
         return sections.reduce((count, section) => {
           if (section.type === 'image') return count + 1;
           if (section.type === 'toggle') return count + countBlogImages(section.children);
-          if (section.type === 'text' && section.blockType === 'callout') return count + countBlogImages(section.children);
+          if (section.type === 'text') return count + countBlogImages(section.children);
+          if (section.type === 'pdf') return count + 1;
           if (section.type === 'column_list') {
             return count + section.columns.reduce((columnCount, column) => columnCount + countBlogImages(column.children), 0);
           }
@@ -327,6 +332,21 @@ async function rewriteWorkImagesToR2(payload: CoursePayload, runId: string, repo
         }).catch(() => undefined);
 
         return trimmed;
+      }
+    }, async (section) => {
+      try {
+        const result = await uploadPdfToR2({ sourceUrl: section.content,
+          courseSlug: payload.course.slug || payload.course.id, projectNotionId: project.id,
+          workNotionId: work.id, fileName: section.fileName });
+        advance(result.uploaded ? 'uploaded' : 'skipped');
+        if (result.uploaded) uploaded += 1; else skipped += 1;
+        return { ...section, content: result.publicUrl, downloadUrl: result.downloadUrl };
+      } catch (error) {
+        advance('failed');
+        payload.warnings.push({ level: 'warning', code: 'R2_BLOG_PDF_UPLOAD_FAILED',
+          message: error instanceof Error ? error.message : 'PDF upload failed', workId: work.id,
+          sourceDatabaseId: work.sourceDatabaseId });
+        return section;
       }
     });
     work.blogContent = blogImageResult.blogContent;

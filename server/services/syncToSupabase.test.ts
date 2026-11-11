@@ -3,6 +3,16 @@ import assert from 'node:assert/strict';
 import { assertSourceReadsSucceeded, rewriteBlogContentImagesToR2ForTest, rewriteWorkMediaToR2ForTest } from './syncToSupabase';
 import { StudentWork } from '../../src/types';
 
+test('PDF synchronization reaches documents nested under a toggle and list item', async () => {
+  const result = await rewriteBlogContentImagesToR2ForTest([
+    { type: 'toggle', content: 'Files', children: [{ type: 'text', blockType: 'numbered_list_item', content: 'Manual', children: [
+      { type: 'pdf', content: 'https://notion.example/manual.pdf' },
+    ] }] },
+  ], async (url) => url, async (pdf) => ({ ...pdf, content: 'https://r2.example/manual.pdf', downloadUrl: 'https://r2.example/download.pdf' }));
+  assert.match(JSON.stringify(result.blogContent), /https:\/\/r2.example\/download.pdf/);
+  assert.doesNotMatch(JSON.stringify(result.blogContent), /notion.example/);
+});
+
 test('failed source reads abort sync instead of treating missing works as deletions', () => {
   assert.throws(() => assertSourceReadsSucceeded([
     { level: 'error', code: 'SOURCE_DB_FETCH_FAILED', projectId: 'project-1', message: 'Notion timeout' },

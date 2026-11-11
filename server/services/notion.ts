@@ -373,6 +373,20 @@ async function blockToBlogSection(block: NotionBlock): Promise<StudentWork['blog
     return { type: 'image', content: url, caption: caption || undefined };
   }
 
+  if (block.type === 'pdf' || block.type === 'file' || block.type === 'embed') {
+    const media = block[block.type];
+    const url = media?.external?.url || media?.file?.url || media?.url || '';
+    let isPdf = block.type === 'pdf' || /\.pdf$/i.test(media?.name || '');
+    try { isPdf ||= /\.pdf$/i.test(new URL(url).pathname); } catch { /* Ignore invalid URLs. */ }
+    if (isPdf && /^https?:\/\//i.test(url)) {
+      return {
+        type: 'pdf', content: url,
+        caption: richTextToPlainText(media?.caption) || undefined,
+        fileName: typeof media?.name === 'string' ? media.name : decodeURIComponent(new URL(url).pathname.split('/').pop() || 'document.pdf'),
+      };
+    }
+  }
+
   if (block.type === 'embed' || block.type === 'video') {
     const url = asVideoUrlFromBlock(block);
     if (!url) return null;

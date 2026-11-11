@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Download, ExternalLink } from 'lucide-react';
 import { BlogContentSection, BlogRichTextSpan } from '../../types';
 
 interface RenderBlogSectionOptions {
@@ -321,6 +321,24 @@ export function renderBlogSection(section: BlogContentSection, index: number, op
           )}
         </figure>
       </div>
+    );
+  }
+
+  if (section.type === 'pdf') {
+    let fileName = section.fileName || 'document.pdf';
+    try { fileName = section.fileName || decodeURIComponent(new URL(section.content).pathname.split('/').pop() || fileName); } catch { /* Use the default filename. */ }
+    if (!/^https?:\/\//i.test(section.content)) return null;
+    return (
+      <figure key={index} className="blog-section my-8 min-w-0">
+        <div className="flex flex-wrap items-center justify-between gap-3 border border-black/10 px-4 py-3">
+          <span className="min-w-0 break-all text-sm font-medium">{section.caption || fileName}</span>
+          <div className="flex shrink-0 items-center gap-4 text-sm">
+            <a href={section.content} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 underline underline-offset-4"><ExternalLink size={16} aria-hidden="true" />開新分頁</a>
+            <a href={section.downloadUrl || section.content} download={fileName} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 underline underline-offset-4"><Download size={16} aria-hidden="true" />下載</a>
+          </div>
+        </div>
+        <iframe src={section.content} title={section.caption || fileName} loading="lazy" className="block h-[65vh] min-h-[360px] max-h-[900px] w-full border border-t-0 border-black/10 bg-white" />
+      </figure>
     );
   }
 

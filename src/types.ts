@@ -61,7 +61,15 @@ export interface BlogColumnListSection {
   columns: BlogColumnSection[];
 }
 
-export type BlogContentSection = BlogTextSection | BlogImageSection | BlogVideoSection | BlogCodeSection | BlogTableSection | BlogToggleSection | BlogColumnListSection;
+export interface BlogPdfSection {
+  type: 'pdf';
+  content: string;
+  caption?: string;
+  fileName?: string;
+  downloadUrl?: string;
+}
+
+export type BlogContentSection = BlogTextSection | BlogImageSection | BlogVideoSection | BlogCodeSection | BlogTableSection | BlogToggleSection | BlogColumnListSection | BlogPdfSection;
 
 export type ImageVariant = 'thumbnail' | 'preview' | 'original';
 

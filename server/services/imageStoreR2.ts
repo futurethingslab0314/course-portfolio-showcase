@@ -98,6 +98,7 @@ async function requestObjectSigned(params: {
   method: 'PUT' | 'HEAD';
   body?: Uint8Array;
   contentType?: string;
+  contentDisposition?: string;
 }): Promise<Response> {
   const cfg = r2Config();
   const endpoint = new URL(cfg.endpoint);
@@ -130,6 +131,7 @@ async function requestObjectSigned(params: {
       'x-amz-date': amzDate,
       'x-amz-content-sha256': payloadHash,
       ...(params.contentType ? { 'Content-Type': params.contentType } : {}),
+      ...(params.contentDisposition ? { 'Content-Disposition': params.contentDisposition } : {}),
       ...(params.method === 'PUT' ? { 'Cache-Control': 'public, max-age=2592000, immutable' } : {}),
     },
     body: params.body,
@@ -143,12 +145,52 @@ async function objectExists(key: string): Promise<boolean> {
   throw new Error(`R2 existence check failed (${response.status}): ${key}`);
 }
 
-async function putObjectSigned(params: { key: string; body: Uint8Array; contentType: string }): Promise<void> {
+async function putObjectSigned(params: { key: string; body: Uint8Array; contentType: string; contentDisposition?: string }): Promise<void> {
   const response = await requestObjectSigned({ ...params, method: 'PUT' });
   if (!response.ok) {
     const text = await response.text();
     throw new Error(`R2 upload failed (${response.status}): ${text}`);
   }
+}
+
+export async function uploadPdfToR2(params: {
+  sourceUrl: string; courseSlug: string; projectNotionId: string; workNotionId: string; fileName?: string;
+}): Promise<{ publicUrl: string; downloadUrl: string; uploaded: boolean }> {
+  const cfg = r2Config();
+  const source = new URL(params.sourceUrl);
+  if (!['https:', 'http:'].includes(source.protocol)) throw new Error('PDF source must use HTTP(S)');
+  const response = await fetch(source, { signal: AbortSignal.timeout(60000) });
+  if (!response.ok) throw new Error(`PDF download failed (${response.status})`);
+  const limit = 50 * 1024 * 1024;
+  if (Number(response.headers.get('content-length')) > limit) throw new Error('PDF exceeds 50 MB');
+  const chunks: Uint8Array[] = [];
+  let length = 0;
+  if (!response.body) throw new Error('PDF response is empty');
+  const reader = response.body.getReader();
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      length += value.length;
+      if (length > limit) throw new Error('PDF exceeds 50 MB');
+      chunks.push(value);
+    }
+  } finally { await reader.cancel(); }
+  const body = Buffer.concat(chunks);
+  if (!body.subarray(0, 1024).includes(Buffer.from('%PDF-'))) throw new Error('Source is not a PDF file');
+  const key = ['courses', sanitizePathSegment(params.courseSlug), 'projects', sanitizePathSegment(params.projectNotionId),
+    `${sanitizePathSegment(params.workNotionId)}-pdf-${sha256Hex(body).slice(0, 16)}.pdf`].join('/');
+  const downloadKey = key.replace(/\.pdf$/, '-download.pdf');
+  const fileName = params.fileName || decodeURIComponent(source.pathname.split('/').pop() || 'document.pdf');
+  let uploaded = false;
+  for (const [objectKey, disposition] of [[key, 'inline'], [downloadKey, 'attachment']] as const) {
+    if (!(await objectExists(objectKey))) {
+      await putObjectSigned({ key: objectKey, body, contentType: 'application/pdf',
+        contentDisposition: `${disposition}; filename="document.pdf"; filename*=UTF-8''${encodeRfc3986(fileName)}` });
+      uploaded = true;
+    }
+  }
+  return { publicUrl: `${cfg.publicBaseUrl}/${key}`, downloadUrl: `${cfg.publicBaseUrl}/${downloadKey}`, uploaded };
 }
 
 export interface ImageAssetUploadParams {

@@ -144,6 +144,16 @@ function parseMaybeBlogContent(value: unknown): StudentWork['blogContent'] {
     if (!item || typeof item !== 'object') continue;
     const type = (item as any).type;
     const content = (item as any).content;
+    if (type === 'pdf' && typeof content === 'string' && /^https?:\/\//i.test(content.trim())) {
+      rows.push({
+        type: 'pdf', content: content.trim(),
+        ...Object.fromEntries(['caption', 'fileName', 'downloadUrl'].flatMap((key) => {
+          const entry = (item as any)[key];
+          return typeof entry === 'string' && entry.trim() && (key !== 'downloadUrl' || /^https?:\/\//i.test(entry.trim())) ? [[key, entry.trim()]] : [];
+        })),
+      });
+      continue;
+    }
     if ((type === 'text' || type === 'image' || type === 'code') && typeof content === 'string' && content.trim()) {
       rows.push(
         Object.fromEntries(

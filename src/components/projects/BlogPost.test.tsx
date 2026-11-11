@@ -4,6 +4,16 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { renderBlogSection, renderBlogSections } from './BlogPostContent';
 import { buildBlogQuickJumpItems } from './blogPostNavigation';
 
+test('PDF sections embed previews with separate open and download links inside toggles', () => {
+  const html = renderToStaticMarkup(renderBlogSection({ type: 'toggle', content: 'Documents', children: [
+    { type: 'pdf', content: 'https://r2.example/manual.pdf', downloadUrl: 'https://r2.example/manual-download.pdf', fileName: 'manual.pdf' },
+  ] }, 0));
+  assert.match(html, /<iframe[^>]*src="https:\/\/r2.example\/manual.pdf"/);
+  assert.match(html, /href="https:\/\/r2.example\/manual-download.pdf" download="manual.pdf"/);
+  assert.match(html, /開新分頁/);
+  assert.match(html, /下載/);
+});
+
 test('renderBlogSection renders table sections with column headers and cell content', () => {
   const html = renderToStaticMarkup(
     renderBlogSection(

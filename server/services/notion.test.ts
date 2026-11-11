@@ -1,6 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+test('Notion uploaded PDFs, file PDFs and embed PDF URLs become PDF sections', async () => {
+  for (const [type, media] of [
+    ['pdf', { type: 'file', file: { url: 'https://notion.example/signed-resource?token=1' } }],
+    ['file', { type: 'external', name: 'manual.pdf', external: { url: 'https://example.com/manual.pdf' } }],
+    ['embed', { url: 'https://example.com/manual.PDF?download=1' }],
+  ] as const) {
+    const section = await blockToBlogSectionForTest({ id: 'pdf', type, [type]: media } as any);
+    assert.equal(section?.type, 'pdf');
+  }
+});
+
 test('paragraph children preserve nested numbered instructions and images', async () => {
   const section = await blockToBlogSectionForTest({
     id: 'settings', type: 'paragraph',

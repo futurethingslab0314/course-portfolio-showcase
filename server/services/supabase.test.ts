@@ -241,6 +241,7 @@ test('fetchCoursePayloadBySlugFromSupabase returns only published projects and t
               provider: 'youtube',
               caption: 'Demo video',
             },
+            { type: 'pdf', content: 'https://r2.example/manual.pdf', downloadUrl: 'https://r2.example/manual-download.pdf', fileName: 'manual.pdf', caption: 'Manual' },
           ],
           metadata: {
             mainImageThumbnail: 'https://example.com/thumb.webp',
@@ -315,6 +316,7 @@ test('fetchCoursePayloadBySlugFromSupabase returns only published projects and t
       provider: 'youtube',
       caption: 'Demo video',
     },
+    { type: 'pdf', content: 'https://r2.example/manual.pdf', downloadUrl: 'https://r2.example/manual-download.pdf', fileName: 'manual.pdf', caption: 'Manual' },
   ]);
   assert.deepEqual(payload.studentWorks[0]?.moreImages, ['https://example.com/2.jpg']);
   assert.deepEqual(payload.studentWorks[0]?.moreImageAssets, [
